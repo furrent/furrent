@@ -38,7 +38,8 @@ $ ctest -C valgrind
 ## Coverage
 To enable coverage support, add the `-DCOVERAGE=ON` flag when running `cmake`. Then build the `furrent` or `furrent_test`
 executables. From now on you can use `make coverage` to spawn a `coverage.html` report. Note that you will need to
-run the executables that you're interested in before you can see any actual coverage result.
+run the executables that you're interested in before you can see any actual coverage result (and also run `make coverage`
+every time you want to refresh the results).
 
 This step requires you to have `gcov` and `gcovr` installed on your system.
 
