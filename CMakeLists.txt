@@ -32,6 +32,9 @@ add_executable(furrent)
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
+target_sources(furrent
+        PRIVATE ${PROJECT_SOURCE_DIR}/src/tokenizer.cpp
+)
 target_include_directories(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src
 )
