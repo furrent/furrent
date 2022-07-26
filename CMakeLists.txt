@@ -17,7 +17,6 @@ target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
 target_include_directories(furrent
-    PUBLIC  ${PROJECT_SOURCE_DIR}/include
     PRIVATE ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_options(furrent
