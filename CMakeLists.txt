@@ -105,8 +105,14 @@ target_link_options(furrent_test
 # Testing
 # =======
 enable_testing()
-add_test(NAME valgrind
+add_test(NAME tstandard
+    COMMAND ${CMAKE_BINARY_DIR}/furrent_test
+)
+add_test(NAME tvalgrind
     COMMAND valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes
     --track-origins=yes
     ${CMAKE_BINARY_DIR}/furrent_test
+    # This line disables the test by default.
+    # If you want to run it, use `ctest -C valgrind`
+    CONFIGURATIONS valgrind
 )

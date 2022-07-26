@@ -30,7 +30,10 @@ You can run all tests like so:
 $ make furrent_test
 $ make test
 ```
-Note that you will need to have Valgrind installed on your system.
+Additionally, if you have Valgrind installed on your system, you can run the tests using that with:
+```shell
+$ ctest -C valgrind
+```
 
 ## Coverage
 To enable coverage support, add the `-DCOVERAGE=ON` flag when running `cmake`. Then build the `furrent` or `furrent_test`
