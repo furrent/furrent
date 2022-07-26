@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.22)
+cmake_minimum_required (VERSION 3.10)
 project (Furrent
     DESCRIPTION  "A tiny BitTorrent client made for furrents"
     HOMEPAGE_URL "github.com/furrent/furrent"
