@@ -34,6 +34,7 @@ target_sources(furrent
 )
 target_include_directories(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src
+    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
 )
 target_compile_options(furrent
     PRIVATE ${COMPILER_FLAGS}
@@ -41,6 +42,7 @@ target_compile_options(furrent
 target_link_options(furrent
     PRIVATE ${LINKER_FLAGS}
 )
+target_compile_definitions(furrent PRIVATE FMT_HEADER_ONLY)
 
 # ======================
 # Install binary to bin/
@@ -92,7 +94,7 @@ target_sources(furrent_test
 )
 target_include_directories(furrent_test
     PRIVATE ${PROJECT_SOURCE_DIR}/src
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party/catch2
+    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
 )
 target_compile_options(furrent_test
     PRIVATE ${COMPILER_FLAGS}
@@ -100,6 +102,7 @@ target_compile_options(furrent_test
 target_link_options(furrent_test
     PRIVATE ${LINKER_FLAGS}
 )
+target_compile_definitions(furrent_test PRIVATE FMT_HEADER_ONLY)
 
 # =======
 # Testing
