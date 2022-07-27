@@ -88,7 +88,6 @@ add_executable(furrent_test EXCLUDE_FROM_ALL)
 target_sources(furrent_test
     # Every source file except src/main.cpp should appear here
     PRIVATE ${PROJECT_SOURCE_DIR}/test/entrypoint.cpp
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party/catch2/catch.hpp
 )
 target_include_directories(furrent_test
     PRIVATE ${PROJECT_SOURCE_DIR}/src
