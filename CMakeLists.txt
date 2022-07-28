@@ -31,6 +31,7 @@ set(LINKER_FLAGS
 add_executable(furrent)
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/peer.cpp
 )
 target_include_directories(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src
@@ -89,6 +90,8 @@ endif()
 add_executable(furrent_test EXCLUDE_FROM_ALL)
 target_sources(furrent_test
     # Every source file except src/main.cpp should appear here
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/peer.cpp
+
     PRIVATE ${PROJECT_SOURCE_DIR}/test/entrypoint.cpp
     PRIVATE ${PROJECT_SOURCE_DIR}/test/peer.cpp
 )
