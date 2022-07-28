@@ -32,6 +32,7 @@ set(LINKER_FLAGS
     $<$<BOOL:${COVERAGE}>:--coverage>
 )
 
+<<<<<<< HEAD
 # ===============
 # SHA1 dependency
 # ===============
@@ -76,6 +77,12 @@ target_link_libraries(furrent_lib cpr::cpr)
 # Setup main executable
 # =====================
 add_executable(furrent)
+=======
+# ================
+# Setup executable
+# ================
+add_executable(furrent src/mt/thread_pool.hpp src/mt/thread_pool.inl)
+>>>>>>> First iteration of the worker thread pool and data router.
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
