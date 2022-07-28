@@ -28,7 +28,7 @@ set(LINKER_FLAGS
 # ================
 # Setup executable
 # ================
-add_executable(furrent)
+add_executable(furrent src/mt/thread_pool.hpp src/mt/thread_pool.inl)
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
