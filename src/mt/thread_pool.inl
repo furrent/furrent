@@ -3,6 +3,7 @@
 //
 
 #include <mt/thread_pool.hpp>
+#include <mt/router.hpp>
 
 #include <iostream>
 #include <functional>

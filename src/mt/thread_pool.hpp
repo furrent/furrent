@@ -13,15 +13,8 @@
 
 namespace fur::mt {
 
-/// Allows workers to find work to do using different strategies.
-/// Only one thread is allowed to use it at any same time
 template<typename T>
-class router {
- public:
-  virtual ~router() = default;
-  virtual bool work_is_available() = 0;
-  virtual T get_work() = 0;
-};
+class router;
 
 template<typename T>
 class worker_thread_pool {
