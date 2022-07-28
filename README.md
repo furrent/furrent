@@ -2,7 +2,10 @@
 Furrent is a tiny BitTorrent client
 
 ## Building
-To build Furrent you just need a C++17 compiler and a linker.
+The requirements are:
+- libcurl
+
+When you have them set up, building Furrent is just:
 ```shell
 $ mkdir build
 $ cd build
