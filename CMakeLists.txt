@@ -31,10 +31,11 @@ set(LINKER_FLAGS
 add_executable(furrent)
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/tokenizer.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/decoder.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/bencode_value.cpp
 )
-target_sources(furrent
-        PRIVATE ${PROJECT_SOURCE_DIR}/src/tokenizer.cpp
-)
+
 target_include_directories(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src
 )
@@ -90,8 +91,12 @@ endif()
 add_executable(furrent_test EXCLUDE_FROM_ALL)
 target_sources(furrent_test
     # Every source file except src/main.cpp should appear here
-    PRIVATE ${PROJECT_SOURCE_DIR}/test/entrypoint.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/tokenizer.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/decoder.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/bencode_value.cpp
     PRIVATE ${PROJECT_SOURCE_DIR}/third_party/catch2/catch.hpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/test/entrypoint.cpp
+    PRIVATE ${PROJECT_SOURCE_DIR}/test/bencode_value.cpp
 )
 target_include_directories(furrent_test
     PRIVATE ${PROJECT_SOURCE_DIR}/src
