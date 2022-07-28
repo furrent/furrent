@@ -67,14 +67,14 @@ add_executable(furrent)
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
-target_include_directories(furrent_lib
+target_include_directories(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src
     PRIVATE ${PROJECT_SOURCE_DIR}/third_party
 )
-target_compile_options(furrent_lib
+target_compile_options(furrent
     PRIVATE ${COMPILER_FLAGS}
 )
-target_link_options(furrent_lib
+target_link_options(furrent
     PRIVATE ${LINKER_FLAGS}
 )
 target_compile_definitions(furrent PRIVATE ${COMPILER_DEFINITIONS})
