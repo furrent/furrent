@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "hash.hpp"
 #include "bencode_value.hpp"
+#include "hash.hpp"
 
 /// Represents a parsed .torrent file
 struct TorrentFile {
