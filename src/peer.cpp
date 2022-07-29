@@ -18,7 +18,6 @@ std::string Peer::address() const {
 // Forward declare
 AnnounceResult parse_tracker_response(const std::string& text);
 
-// TODO Add test
 AnnounceResult announce(const TorrentFile& torrent_f) {
   auto res = cpr::Get(cpr::Url{torrent_f.announce_url},
                       cpr::Parameters{
