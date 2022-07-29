@@ -1,5 +1,10 @@
 #include "peer.hpp"
 
+#include <memory>
+#include <stdexcept>
+
+#include "bencode_parser.hpp"
+#include "bencode_value.hpp"
 #include "cpr/cpr.h"
 #include "fmt/core.h"
 #include "hash.hpp"
@@ -11,7 +16,7 @@ std::string Peer::address() const {
 }
 
 // TODO Add test
-std::vector<Peer> announce(const TorrentFile& torrent_f) {
+AnnounceResult announce(const TorrentFile& torrent_f) {
   auto res = cpr::Get(cpr::Url{torrent_f.announce_url},
                       cpr::Parameters{
                           {"info_hash", hash_to_str(torrent_f.info_hash)},
@@ -22,7 +27,37 @@ std::vector<Peer> announce(const TorrentFile& torrent_f) {
                           {"compact", "0"},
                           {"left", std::to_string(torrent_f.length)},
                       });
-  // TODO Parse tracker response
-  return std::vector<Peer>{};
+
+  if (res.status_code == 0 || res.status_code >= 400) {
+    throw std::runtime_error("could not announce to tracker");
+  }
+
+  AnnounceResult result;
+
+  bencode::BencodeParser parser;
+  std::unique_ptr<bencode::BencodeValue> tree = parser.decode(res.text);
+  auto& dict = dynamic_cast<bencode::BencodeDict&>(*tree).value();
+
+  auto& interval = dynamic_cast<bencode::BencodeInt&>(*dict.at("interval"));
+  result.interval = interval.value();
+
+  auto& peers = dynamic_cast<bencode::BencodeString&>(*dict.at("peers"));
+  for (auto it = peers.value().begin(); it < peers.value().end(); it += 6) {
+    // Each byte is an octet
+    uint32_t ip = 0;
+    ip |= *(it++) << 24;
+    ip |= *(it++) << 16;
+    ip |= *(it++) << 8;
+    ip |= *(it++);
+
+    // Big endian
+    uint16_t port = 0;
+    port |= *(it++) << 8;
+    port |= *(it++);
+
+    result.peers.push_back(Peer{ip, port});
+  }
+
+  return result;
 }
 }  // namespace peer

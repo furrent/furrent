@@ -19,7 +19,16 @@ struct Peer {
   [[nodiscard]] std::string address() const;
 };
 
+/// The response sent from the tracker when announcing
+struct AnnounceResult {
+  /// How often (in seconds) we're expected to re-announce ourselves and refresh
+  /// the list of peers
+  int interval;
+  /// The list of peers that we can download the file from
+  std::vector<Peer> peers;
+};
+
 /// Announce ourselves to the tracker and get a list of peers to download the
 /// file from
-[[nodiscard]] std::vector<Peer> announce(const TorrentFile& torrent_f);
+[[nodiscard]] AnnounceResult announce(const TorrentFile& torrent_f);
 }  // namespace peer
