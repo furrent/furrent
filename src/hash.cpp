@@ -1,5 +1,6 @@
 #include "hash.hpp"
 
+// TODO Add test
 std::string hash_to_str(const hash_t& hash) {
   // "static_cast" cannot be used because the compiler cannot infer that
   // "char" is the same as "unsigned char" even though we forced that with a

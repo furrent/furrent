@@ -6,4 +6,5 @@
 /// Type for a SHA1 hash
 using hash_t = uint8_t[20];
 
+// TODO Write test
 std::string hash_to_str(const hash_t& hash);
