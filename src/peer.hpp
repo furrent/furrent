@@ -21,4 +21,8 @@ struct Peer {
    */
   [[nodiscard]] std::string address() const;
 };
+
+/// Announce ourselves to the tracker and get a list of peers to download the
+/// file from
+[[nodiscard]] std::vector<Peer> announce(const TorrentFile& torrent_f);
 }  // namespace peer
