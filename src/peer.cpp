@@ -15,6 +15,9 @@ std::string Peer::address() const {
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
 }
 
+// Forward declare
+AnnounceResult parse_tracker_response(const std::string& text);
+
 // TODO Add test
 AnnounceResult announce(const TorrentFile& torrent_f) {
   auto res = cpr::Get(cpr::Url{torrent_f.announce_url},
@@ -32,10 +35,14 @@ AnnounceResult announce(const TorrentFile& torrent_f) {
     throw std::runtime_error("could not announce to tracker");
   }
 
+  return parse_tracker_response(res.text);
+}
+
+AnnounceResult parse_tracker_response(const std::string& text) {
   AnnounceResult result;
 
   bencode::BencodeParser parser;
-  std::unique_ptr<bencode::BencodeValue> tree = parser.decode(res.text);
+  std::unique_ptr<bencode::BencodeValue> tree = parser.decode(text);
   auto& dict = dynamic_cast<bencode::BencodeDict&>(*tree).value();
 
   auto& interval = dynamic_cast<bencode::BencodeInt&>(*dict.at("interval"));
