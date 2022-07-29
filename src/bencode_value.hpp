@@ -28,7 +28,7 @@ class BencodeInt : public BencodeValue {
   explicit BencodeInt(int data);
   virtual std::string to_string() const override;
   virtual BencodeType get_type() const override;
-  [[nodiscard]] int value() const;
+  [[nodiscard]] int value();
 };
 
 class BencodeString : public BencodeValue {
@@ -39,7 +39,7 @@ class BencodeString : public BencodeValue {
   explicit BencodeString(std::string data);
   virtual std::string to_string() const override;
   virtual BencodeType get_type() const override;
-  [[nodiscard]] std::string value() const;
+  [[nodiscard]] std::string value();
 };
 
 class BencodeList : public BencodeValue {
@@ -50,7 +50,7 @@ class BencodeList : public BencodeValue {
   explicit BencodeList(std::vector<std::unique_ptr<BencodeValue>> data);
   virtual std::string to_string() const override;
   virtual BencodeType get_type() const override;
-  std::vector<std::unique_ptr<BencodeValue>> value() const;
+  [[nodiscard]] std::vector<std::unique_ptr<BencodeValue>> value();
 };
 
 class BencodeDict : public BencodeValue {
@@ -62,6 +62,6 @@ class BencodeDict : public BencodeValue {
       std::map<std::string, std::unique_ptr<BencodeValue>> data);
   virtual std::string to_string() const override;
   virtual BencodeType get_type() const override;
-  std::map<std::string, std::unique_ptr<BencodeValue>> value() const;
+  [[nodiscard]] std::map<std::string, std::unique_ptr<BencodeValue>> value();
 };
 }  // namespace bencode

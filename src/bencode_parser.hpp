@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "bencode_value.hpp"
 
@@ -13,7 +14,7 @@ namespace bencode {
    public:
     BencodeParser() = default;
     ~BencodeParser() = default;
-    BencodeValue decode(std::string &decoded);
-    std::string encode(BencodeValue &value);
+    std::unique_ptr<BencodeValue> decode(std::string const &decoded);
+    std::string encode(BencodeValue const &value);
   };
 }
