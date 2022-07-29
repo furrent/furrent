@@ -16,6 +16,11 @@ option(COVERAGE OFF)
 
 set(COMPILER_FLAGS
     -Wall -Wextra -Wpedantic
+
+    # We need to force "char" to be undefined because bencoded strings can contain any unsigned byte value ranging from
+    # 0 to 255
+    -funsigned-char
+
     $<$<BOOL:${USAN}>:-fsanitize=undefined -fno-omit-frame-pointer>
     $<$<BOOL:${COVERAGE}>:--coverage>
 )
