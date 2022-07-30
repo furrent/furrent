@@ -21,8 +21,12 @@ AnnounceResult parse_tracker_response(const std::string& text);
 }
 
 TEST_CASE("[Peer] Parse tracker response") {
-  char raw[] = "d8:intervali900e5:peers6:" "\xc0\x00\x02\x7b\x1a\xe1" "e";
-  AnnounceResult result = parse_tracker_response(std::string{raw, sizeof(raw)-1});
+  char raw[] =
+      "d8:intervali900e5:peers6:"
+      "\xc0\x00\x02\x7b\x1a\xe1"
+      "e";
+  AnnounceResult result =
+      parse_tracker_response(std::string{raw, sizeof(raw) - 1});
   REQUIRE(result.interval == 900);
   REQUIRE(result.peers.size() == 1);
 
