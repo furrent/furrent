@@ -32,6 +32,13 @@ TEST_CASE("[Hash] Convert to string (With null character inside)") {
   check_string(string, not_quite_debian_info_hash);
 }
 
+TEST_CASE("[Hash] Hex string") {
+  hash_t some_hash = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0xAA, 0x00, 0x00, 0x00, 0xFF, 0x00,
+                      0x00, 0x00, 0x00, 0xCC, 0x00, 0x00};
+  REQUIRE(hash_to_hex(some_hash) == "0000000000000000aa000000ff00000000cc0000");
+}
+
 TEST_CASE("[Hash] Split pieces string") {
   char piece_hashes[] =
       "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
