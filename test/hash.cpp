@@ -1,10 +1,12 @@
 #include "hash.hpp"
 
 #include <cstdint>
+#include <iostream>
 #include <string>
 #include <vector>
 
 #include "catch2/catch.hpp"
+#include "smallsha1/sha1.hpp"
 
 static void check_string(const std::string& string, const hash_t& hash) {
   REQUIRE(string.length() == 20);
@@ -45,4 +47,14 @@ TEST_CASE("[Hash] Split pieces string") {
     std::fill(want.begin(), want.end(), i);
     REQUIRE(pieces[i] == want);
   }
+}
+
+TEST_CASE("[Hash] SHA1 dependency is correct") {
+  hash_t hash;
+  std::fill(hash.begin(), hash.end(), 0);
+
+  unsigned char hash_this[] = "Furrent is a neat BitTorrent client with fur";
+  sha1::calc(hash_this, sizeof(hash_this) - 1, hash.begin());
+
+  REQUIRE(hex(hash) == "3a773b8553a663941552a0df3b5968b4695cb212");
 }
