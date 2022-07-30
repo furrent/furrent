@@ -18,6 +18,13 @@ std::string hash_to_hex(const hash_t& hash) {
   return std::string{result, 40};
 }
 
+hash_t compute_info_hash(const std::string& bencoded_info_dict) {
+  hash_t buffer;
+  sha1::calc(bencoded_info_dict.data(), bencoded_info_dict.length(),
+             buffer.begin());
+  return buffer;
+}
+
 std::vector<hash_t> split_piece_hashes(const std::string& piece_hashes_str) {
   if (piece_hashes_str.length() % 20 > 0) {
     throw std::invalid_argument("malformed piece hashes string");

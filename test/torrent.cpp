@@ -6,8 +6,10 @@
 
 #include "bencode_value.hpp"
 #include "catch2/catch.hpp"
+#include "hash.hpp"
 
 using namespace fur::torrent;
+using namespace fur::hash;
 
 /// Sequence of hashes for pieces of a Debian torrent. There are 1516 pieces
 /// in total and each occupies 20 bytes for a SHA1 hash. Forward declared here
@@ -30,6 +32,10 @@ TEST_CASE("[Torrent] Parse .torrent") {
   REQUIRE(f.piece_length == 262144);
 
   REQUIRE(f.piece_hashes.size() == debian_pieces_n);
+
+  REQUIRE(hash_to_hex(f.info_hash) ==
+          // We know this to be the Debian ISO info-hash
+          "cc5bf72c0db84e2de95f967954441c017c5a3631");
 }
 
 std::unique_ptr<bencode::BencodeValue> get_debian_tree() {
