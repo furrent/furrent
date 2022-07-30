@@ -1,13 +1,15 @@
 #include "hash.hpp"
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 #include "catch2/catch.hpp"
 
 static void check_string(const std::string& string, const hash_t& hash) {
   REQUIRE(string.length() == 20);
   for (int i = 0; i < 10; i++) {
-    REQUIRE(string[i] == (char)hash[i]);
+    REQUIRE(static_cast<uint8_t>(string[i]) == hash[i]);
   }
 }
 
@@ -25,4 +27,22 @@ TEST_CASE("[Hash] Convert to string (With null character inside)") {
                                        0x1c, 0x01, 0x7c, 0x5a, 0x36, 0x31};
   auto string = hash_to_str(not_quite_debian_info_hash);
   check_string(string, not_quite_debian_info_hash);
+}
+
+TEST_CASE("[Hash] Split pieces string") {
+  char piece_hashes[] =
+      "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+      "\x00\x00"
+      "\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
+      "\x01\x01"
+      "\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02"
+      "\x02\x02";
+  std::vector<hash_t> pieces =
+      split_piece_hashes(std::string{piece_hashes, 3 * 20});
+  REQUIRE(pieces.size() == 3);
+  for (int i = 0; i < 3; i++) {
+    hash_t want;
+    std::fill(want.begin(), want.end(), i);
+    REQUIRE(pieces[i] == want);
+  }
 }
