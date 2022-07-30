@@ -132,6 +132,7 @@ add_executable(furrent_test EXCLUDE_FROM_ALL)
 target_sources(furrent_test PRIVATE ${SOURCES_TEST})
 target_include_directories(furrent_test
     PRIVATE ${PROJECT_SOURCE_DIR}/src
+    PRIVATE ${PROJECT_SOURCE_DIR}/test
     PRIVATE ${PROJECT_SOURCE_DIR}/third_party
 )
 target_compile_options(furrent_test
