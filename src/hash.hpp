@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+namespace fur::hash {
 /// Type for a SHA1 hash
 using hash_t = std::array<uint8_t, 20>;
 
@@ -17,3 +18,4 @@ std::string hex(const hash_t& hash);
 /// Takes a string with the hashes of pieces from a torrent file and parses
 /// them into a vector of "hash_t". Each hash is 20 bytes long
 std::vector<hash_t> split_piece_hashes(const std::string& pieces);
+}  // namespace fur::hash

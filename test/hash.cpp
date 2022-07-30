@@ -7,6 +7,8 @@
 #include "catch2/catch.hpp"
 #include "smallsha1/sha1.hpp"
 
+using namespace fur::hash;
+
 static void check_string(const std::string& string, const hash_t& hash) {
   REQUIRE(string.length() == 20);
   for (int i = 0; i < 10; i++) {

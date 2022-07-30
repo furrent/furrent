@@ -7,6 +7,8 @@
 #include "bencode_value.hpp"
 #include "catch2/catch.hpp"
 
+using namespace fur::torrent;
+
 /// Sequence of hashes for pieces of a Debian torrent. There are 1516 pieces
 /// in total and each occupies 20 bytes for a SHA1 hash. Forward declared here
 /// but provided below in order to now clutter the source file

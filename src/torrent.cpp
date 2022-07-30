@@ -3,6 +3,7 @@
 #include "bencode_value.hpp"
 #include "hash.hpp"
 
+namespace fur::torrent {
 TorrentFile::TorrentFile(const bencode::BencodeValue& tree) {
   // We know the torrent starts with a dict
   auto& dict = dynamic_cast<const bencode::BencodeDict&>(tree).value();
@@ -24,5 +25,6 @@ TorrentFile::TorrentFile(const bencode::BencodeValue& tree) {
 
   auto pieces =
       dynamic_cast<bencode::BencodeString&>(*info_dict.at("pieces")).value();
-  this->piece_hashes = split_piece_hashes(pieces);
+  this->piece_hashes = hash::split_piece_hashes(pieces);
 }
+}  // namespace fur::torrent

@@ -7,6 +7,7 @@
 #include "bencode_value.hpp"
 #include "hash.hpp"
 
+namespace fur::torrent {
 /// Represents a parsed .torrent file
 struct TorrentFile {
  public:
@@ -15,9 +16,9 @@ struct TorrentFile {
   std::string announce_url;
   /// The SHA1 hash of the "info" dict from the decoded .torrent file. Uniquely
   /// identifies this torrent to the tracker and other peers
-  hash_t info_hash;
+  hash::hash_t info_hash;
   /// SHA1 hashes, one for each piece of the shared file
-  std::vector<hash_t> piece_hashes;
+  std::vector<hash::hash_t> piece_hashes;
   /// The length, in bytes, of each piece
   int piece_length;
   /// The length, in bytes, of the entire shared file
@@ -32,3 +33,4 @@ struct TorrentFile {
   /// is assumed to be the parsed .torrent file
   explicit TorrentFile(const bencode::BencodeValue& tree);
 };
+}  // namespace fur::torrent

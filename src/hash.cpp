@@ -7,6 +7,7 @@
 
 #include "smallsha1/sha1.hpp"
 
+namespace fur::hash {
 std::string hash_to_str(const hash_t& hash) {
   return std::string{hash.begin(), hash.end()};
 }
@@ -42,3 +43,4 @@ std::vector<hash_t> split_piece_hashes(const std::string& piece_hashes_str) {
   }
   return result;
 }
+}  // namespace fur::hash

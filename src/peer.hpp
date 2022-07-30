@@ -8,7 +8,7 @@
 
 /// Contains data structures and facilities for representing and discovering
 /// BitTorrent peers
-namespace peer {
+namespace fur::peer {
 /// Represents a single peer as given by the tracker
 struct Peer {
   uint32_t ip;
@@ -30,5 +30,5 @@ struct AnnounceResult {
 
 /// Announce ourselves to the tracker and get a list of peers to download the
 /// file from
-[[nodiscard]] AnnounceResult announce(const TorrentFile& torrent_f);
-}  // namespace peer
+[[nodiscard]] AnnounceResult announce(const torrent::TorrentFile& torrent_f);
+}  // namespace fur::peer

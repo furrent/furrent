@@ -9,7 +9,7 @@
 #include "fmt/core.h"
 #include "hash.hpp"
 
-namespace peer {
+namespace fur::peer {
 std::string Peer::address() const {
   return fmt::format("{}.{}.{}.{}:{}", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
@@ -18,10 +18,10 @@ std::string Peer::address() const {
 // Forward declare
 AnnounceResult parse_tracker_response(const std::string& text);
 
-AnnounceResult announce(const TorrentFile& torrent_f) {
+AnnounceResult announce(const torrent::TorrentFile& torrent_f) {
   auto res = cpr::Get(cpr::Url{torrent_f.announce_url},
                       cpr::Parameters{
-                          {"info_hash", hash_to_str(torrent_f.info_hash)},
+                          {"info_hash", hash::hash_to_str(torrent_f.info_hash)},
                           {"peer_id", "FUR-----------------"},
                           {"port", "6881"},
                           {"uploaded", "0"},
@@ -66,4 +66,4 @@ AnnounceResult parse_tracker_response(const std::string& text) {
 
   return result;
 }
-}  // namespace peer
+}  // namespace fur::peer
