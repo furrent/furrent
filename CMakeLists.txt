@@ -32,6 +32,11 @@ set(LINKER_FLAGS
     $<$<BOOL:${COVERAGE}>:--coverage>
 )
 
+# ===============
+# SHA1 dependency
+# ===============
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/smallsha1)
+
 # ======================
 # HTTP client dependency
 # ======================
@@ -64,6 +69,7 @@ target_link_options(furrent_lib
     PRIVATE ${LINKER_FLAGS}
 )
 target_compile_definitions(furrent_lib PRIVATE ${COMPILER_DEFINITIONS})
+target_link_libraries(furrent_lib smallsha1)
 target_link_libraries(furrent_lib cpr::cpr)
 
 # =====================
