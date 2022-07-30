@@ -57,5 +57,5 @@ TEST_CASE("[Hash] SHA1 dependency is correct") {
   unsigned char hash_this[] = "Furrent is a neat BitTorrent client with fur";
   sha1::calc(hash_this, sizeof(hash_this) - 1, hash.begin());
 
-  REQUIRE(hex(hash) == "3a773b8553a663941552a0df3b5968b4695cb212");
+  REQUIRE(hash_to_hex(hash) == "3a773b8553a663941552a0df3b5968b4695cb212");
 }

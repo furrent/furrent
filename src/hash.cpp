@@ -12,7 +12,7 @@ std::string hash_to_str(const hash_t& hash) {
   return std::string{hash.begin(), hash.end()};
 }
 
-std::string hex(const hash_t& hash) {
+std::string hash_to_hex(const hash_t& hash) {
   char result[41];
   sha1::toHexString(hash.begin(), result);
   return std::string{result, 40};
