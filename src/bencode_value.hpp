@@ -12,13 +12,10 @@
 /// Contains the structure for decoding and encoding bencode data
 namespace fur::bencode{
 
-/// Represents a possible type of a bencode value
 enum class BencodeType { Integer, String, List, Dict };
 
-/// The base class for all bencode values
 class BencodeValue {
  public:
-  /// Computes the string of a bencode value in bencode format
   virtual std::string to_string() const = 0;
   /// Returns the type of the bencode value as a BencodeType enum
   virtual BencodeType get_type() const = 0;

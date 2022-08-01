@@ -1,13 +1,12 @@
 #include <iostream>
+#include "bencode_parser.hpp"
+#include "bencode_value.hpp"
 #include <vector>
-
-#include "tokenizer.h"
-#include "bencode_value.h"
-
+using namespace fur::bencode;
 int main() {
-  std::vector<std::string> tokens = {};
-  bencode::Tokenizer::tokenize("d3:bar4:spam3:fooi42ee", tokens);
-  auto c = bencode::BencodeInt("i-0e");
-  std::cout << c.value() << std::endl;
+  std::cout << "Hello, World!" << std::endl;
+  BencodeParser parser;
+  auto l2 = parser.decode("4:spam");
+  std::cout << l2->to_string() << std::endl;
   return 0;
 }
