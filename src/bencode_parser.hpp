@@ -11,13 +11,16 @@
 
 namespace fur::bencode {
 
+/// Contains the structure for decoding and encoding bencode data
 class BencodeParser {
  public:
   BencodeParser() = default;
   ~BencodeParser() = default;
+  /// Parses a bencode string and returns a BencodeValue object
   std::unique_ptr<BencodeValue> decode(std::string const &decoded);
+  /// Encodes a BencodeValue object into a bencode string
   std::string encode(BencodeValue const &value);
 };
 
-}
+} // namespace fur::bencode
 
