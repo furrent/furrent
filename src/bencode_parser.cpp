@@ -62,7 +62,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_int(
     const std::vector<std::string>& tokens) {
   // The token must be in the form ["i", "number", "e"]
   std::cout << "decode_int " << tokens[_index] << std::endl;
-  if(tokens.size()-_index < 2) {
+  if(tokens.size()-_index < 3) {
     throw std::invalid_argument("BencodeParser::decode_int(std::vector<std::string>& encoded): no tokens to decode");
   }
   if(tokens[_index] != "i" || tokens[_index+2] != "e") {
@@ -71,9 +71,9 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_int(
   if(tokens[_index+1] == "-0"){
     throw std::invalid_argument("BencodeParser::decode_int(std::vector<std::string>& encoded): invalid integer");
   }
-  //"number" and "i" for the next decode
-  _index+=2;
-  return std::make_unique<BencodeInt>(std::stoi(tokens[_index-1]));
+  //skip "e", "number" and "i" for the next decode
+  _index+=3;
+  return std::make_unique<BencodeInt>(std::stoi(tokens[_index-2]));
 }
 std::unique_ptr<BencodeValue> BencodeParser::decode_string(
     const std::vector<std::string>& tokens) {
@@ -115,6 +115,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_dict(
   // increment index to skip the first "d"
   _index+=1;
   auto ptr = std::map<std::string, std::unique_ptr<BencodeValue>>();
+  std::vector<std::string> keys = std::vector<std::string>();
   while(tokens[_index] != "e") {
       auto key = std::move(BencodeParser::decode(tokens));
       // The key must be a string
@@ -123,11 +124,17 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_dict(
       }
       // Cast the key to a BencodeString
       auto value = BencodeParser::decode(tokens);
-      auto key_str = dynamic_cast<BencodeString&>(*key);
-      ptr.insert({key_str.value(), std::move(value)});
+      auto key_str = dynamic_cast<BencodeString&>(*key).value();
+      keys.push_back(key_str);
+      ptr.insert({key_str, std::move(value)});
     }
+  // Check if the keys array is sorted by lexicographical order
+  for(unsigned long i=0; i<keys.size()-1; i++) {
+    if(keys[i] > keys[i+1]) {
+      throw std::invalid_argument("BencodeParser::bencode_dict(std::vector<std::string>& encoded): keys of dict are not sorted");
+    }
+  }
   // increment index to skip the last "e"
   _index+=1;
   return std::make_unique<BencodeDict>(std::move(ptr));
-
 }
