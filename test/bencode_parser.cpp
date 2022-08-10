@@ -83,5 +83,30 @@ TEST_CASE("[BencodeParser::decode()] Wrong decode of a dictionary"){
   REQUIRE_THROWS_AS(parser.decode("d3:foo4:spam3:bari42ee"), std::invalid_argument);
 }
 
+TEST_CASE("[BencodeParser::encode()] Correct encode of BencodeValue"){
+  // The function is the same of the to_string, so the test are already
+  // implemented in BencodeValue
+  BencodeParser parser{};
+  // Integer
+  auto b_1 = BencodeInt{42};
+  REQUIRE(parser.encode(b_1) == "i42e");
+  // String
+  auto b_2 = BencodeString{"spam"};
+  REQUIRE(parser.encode(b_2) == "4:spam");
+  // List
+  std::vector<std::unique_ptr<BencodeValue>> v;
+  v.push_back(std::make_unique<BencodeInt>(42));
+  v.push_back(std::make_unique<BencodeString>("spam"));
+  auto b_4 = BencodeList{std::move(v)};
+  REQUIRE(parser.encode(b_4) == "li42e4:spame");
+  // Dictionary
+  std::map<std::string, std::unique_ptr<BencodeValue>> m;
+  m["bar"] = std::make_unique<BencodeString>("spam");
+  m["foo"] = std::make_unique<BencodeInt>(42);
+  auto b_5 = BencodeDict{std::move(m)};
+  REQUIRE(parser.encode(b_5) == "d3:bar4:spam3:fooi42ee");
+
+}
+
 
 

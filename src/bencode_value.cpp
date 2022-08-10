@@ -68,7 +68,7 @@ std::string BencodeDict::to_string() const {
   // Return the encoded string of the BencodeDict d + ... + e
   std::string ret = "d";
   // Map is already sorted by key, so we can just iterate over it
-  for (auto const&[key, val] : _val) {
+  for (auto const& [key, val] : _val) {
     // Format of element is size:key + value
     ret += std::to_string(key.size()) + ":" + key;
     ret += val->to_string();

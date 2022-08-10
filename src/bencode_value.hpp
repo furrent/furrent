@@ -6,12 +6,14 @@
 #include <vector>
 
 /// Contains the structure for decoding and encoding bencode data
-namespace fur::bencode{
+namespace fur::bencode {
 
+/// Enumeration for the different types of bencode data
 enum class BencodeType { Integer, String, List, Dict };
 
 class BencodeValue {
  public:
+  /// Return the string representation of the bencode value
   [[nodiscard]] virtual std::string to_string() const = 0;
   /// Returns the type of the bencode value as a BencodeType enum
   [[nodiscard]] virtual BencodeType get_type() const = 0;
@@ -19,6 +21,7 @@ class BencodeValue {
 
 class BencodeInt : public BencodeValue {
  private:
+  /// The integer value of the bencode value
   int _val;
 
  public:
@@ -31,6 +34,7 @@ class BencodeInt : public BencodeValue {
 
 class BencodeString : public BencodeValue {
  private:
+  /// The string value of the bencode value
   std::string _val;
 
  public:
@@ -43,6 +47,7 @@ class BencodeString : public BencodeValue {
 
 class BencodeList : public BencodeValue {
  private:
+  /// The list of bencode values of the bencode value
   std::vector<std::unique_ptr<BencodeValue>> _val;
 
  public:
@@ -50,23 +55,23 @@ class BencodeList : public BencodeValue {
   [[nodiscard]] std::string to_string() const override;
   [[nodiscard]] BencodeType get_type() const override;
   /// Returns the list of BencodeValue objects that are contained in the list
-  [[nodiscard]] std::vector<std::unique_ptr<BencodeValue>>&
-  value();
+  [[nodiscard]] std::vector<std::unique_ptr<BencodeValue>>& value();
 };
 
 class BencodeDict : public BencodeValue {
  private:
+  /// The dictionary of bencode values of the bencode value
   std::map<std::string, std::unique_ptr<BencodeValue>> _val;
 
  public:
+  /// Constructs a BencodeDict object from a map of strings and BencodeValue
   explicit BencodeDict(
       std::map<std::string, std::unique_ptr<BencodeValue>> data);
   [[nodiscard]] std::string to_string() const override;
   [[nodiscard]] BencodeType get_type() const override;
   /// Returns the dictionary of BencodeValue objects that are contained in the
   /// dict
-  [[nodiscard]] std::map<std::string, std::unique_ptr<BencodeValue>>&
-  value();
+  [[nodiscard]] std::map<std::string, std::unique_ptr<BencodeValue>>& value();
 };
 
-}
+}  // namespace fur::bencode
