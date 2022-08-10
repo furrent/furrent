@@ -1,6 +1,3 @@
-//
-// Created by nicof on 01/08/22.
-//
 #include "bencode_parser.hpp"
 
 #include <regex>
@@ -40,7 +37,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode(
   return decode(tokens);
 }
 
-/// Given a vector of tokens, returns a BencodeValue object
+// Given a vector of tokens, returns a BencodeValue object
 std::unique_ptr<BencodeValue> BencodeParser::decode(
     const std::vector<std::string>& tokens) {
   std::regex reg_string("^\\d+:$");
@@ -92,7 +89,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_string(
 }
 std::unique_ptr<BencodeValue> BencodeParser::decode_list(
     const std::vector<std::string>& tokens) {
-  // The token must be in the form ["l", ...,"e"]
+  // The token must be in the form ["l",...,"e"]
   if(tokens.size()-_index < 3) {
     throw std::invalid_argument("BencodeList::BencodeList(std::vector<std::string>& encoded): invalid encoded string");
   }

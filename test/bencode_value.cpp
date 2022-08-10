@@ -1,37 +1,37 @@
-//
-// Created by nicof on 28/07/22.
-//
 #include "bencode_value.hpp"
 
 #include "catch2/catch.hpp"
-using namespace bencode;
+using namespace fur::bencode;
 
 // ================
 // BencodeInt
 // ================
-TEST_CASE("[BencodeInt] Correctly decodes an encoded integer") {
-  BencodeInt b_1("i42e");
-  BencodeInt b_2("i-42e");
-  BencodeInt b_3("i0e");
+TEST_CASE("[BencodeValue::BencodeInt] Correctly decodes an encoded integer") {
+  BencodeInt b_1(42);
+  BencodeInt b_2(-42);
+  REQUIRE(b_1.to_string() == "i42e");
   REQUIRE(b_1.value() == 42);
+  REQUIRE(b_2.to_string() == "i-42e");
   REQUIRE(b_2.value() == -42);
-  REQUIRE(b_3.value() == 0);
+  REQUIRE(b_1.value() + b_2.value() == 0);
 }
 
-TEST_CASE("[BencodeInt] Wrongly decodes an encoded integer") {
-  REQUIRE_THROWS_AS(BencodeInt("i42"), std::invalid_argument);
-  REQUIRE_THROWS_AS(BencodeInt("i-42"), std::invalid_argument);
-  REQUIRE_THROWS_AS(BencodeInt("i-0"), std::invalid_argument);
+// ================
+// BencodeInt
+// ================
+TEST_CASE("[BencodeValue::BencodeString] Correctly decodes an encoded string") {
+  BencodeString b_1("foo");
+  REQUIRE(b_1.value() == "foo");
+  REQUIRE(b_1.to_string() == "3:foo");
 }
 
-TEST_CASE("[BencodeString] Correctly decodes an encoded string") {
-  BencodeString b_1("4:spam");
-  BencodeString b_2("3:foo");
-  REQUIRE(b_1.value() == "spam");
-  REQUIRE(b_2.value() == "foo");
-}
-
-TEST_CASE("[BencodeString] Wrongly decodes an encoded string") {
-  REQUIRE_THROWS_AS(BencodeString("3:spam"), std::invalid_argument);
-  REQUIRE_THROWS_AS(BencodeString("3x:foo"), std::invalid_argument);
+// ================
+// BencodeList
+// ================
+TEST_CASE("[BencodeValue::BencodeList] Correctly decodes an encoded list") {
+  std::vector<std::unique_ptr<BencodeValue>> v;
+  v.push_back(std::make_unique<BencodeInt>(1));
+  v.push_back(std::make_unique<BencodeString>("spam"));
+  BencodeList l = BencodeList(std::move(v));
+  REQUIRE(l.to_string() == "li1e4:spame");
 }

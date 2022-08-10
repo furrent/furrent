@@ -1,7 +1,3 @@
-//
-// Created by nicof on 28/07/22.
-//
-
 #pragma once
 
 #include <map>
@@ -54,7 +50,7 @@ class BencodeList : public BencodeValue {
   [[nodiscard]] std::string to_string() const override;
   [[nodiscard]] BencodeType get_type() const override;
   /// Returns the list of BencodeValue objects that are contained in the list
-  [[nodiscard]] std::unique_ptr<std::vector<std::unique_ptr<BencodeValue>>>&
+  [[nodiscard]] std::vector<std::unique_ptr<BencodeValue>>&
   value();
 };
 
