@@ -5,9 +5,8 @@ using namespace fur::bencode;
 int main() {
   std::cout << "Hello, World!" << std::endl;
   BencodeParser parser{};
-  auto l2 = parser.decode("li1ei2ee");
+  auto l2 = parser.decode("d3:fooi1e4:bar4:spame");
   // cast l2 in BencodeList
-  auto l = dynamic_cast<BencodeList*>(l2.get());
-  std::cout << l->to_string() << std::endl;
+  std::cout << l2->to_string() << std::endl;
   return 0;
 }

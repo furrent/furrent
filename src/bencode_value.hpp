@@ -61,8 +61,8 @@ class BencodeDict : public BencodeValue {
  public:
   explicit BencodeDict(
       std::map<std::string, std::unique_ptr<BencodeValue>> data);
-  virtual std::string to_string() const override;
-  virtual BencodeType get_type() const override;
+  [[nodiscard]] std::string to_string() const override;
+  [[nodiscard]] BencodeType get_type() const override;
   /// Returns the dictionary of BencodeValue objects that are contained in the
   /// dict
   [[nodiscard]] std::map<std::string, std::unique_ptr<BencodeValue>>&

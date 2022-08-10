@@ -15,11 +15,12 @@ namespace fur::bencode {
 class BencodeParser {
  private:
   unsigned int _index;
-  std::vector<std::string> tokenizer (const std::string& encoded);
-  std::unique_ptr<BencodeValue> decode  (const std::vector<std::string>& tokens);
+  std::vector<std::string>      tokenizer     (const std::string& encoded);
+  std::unique_ptr<BencodeValue> decode        (const std::vector<std::string>& tokens);
   std::unique_ptr<BencodeValue> decode_int    (const std::vector<std::string>& tokens);
   std::unique_ptr<BencodeValue> decode_string (const std::vector<std::string>& tokens);
   std::unique_ptr<BencodeValue> decode_list   (const std::vector<std::string>& tokens);
+  std::unique_ptr<BencodeValue> decode_dict   (const std::vector<std::string>& tokens);
  public:
   BencodeParser() = default;
   ~BencodeParser() = default;
