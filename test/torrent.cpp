@@ -10,6 +10,7 @@
 
 using namespace fur::torrent;
 using namespace fur::hash;
+using namespace fur::bencode;
 
 /// Sequence of hashes for pieces of a Debian torrent. There are 1516 pieces
 /// in total and each occupies 20 bytes for a SHA1 hash. Forward declared here
@@ -20,7 +21,7 @@ extern char debian_pieces_bytes[];
 const int debian_pieces_n = 1516;
 
 /// Returns a parsed bencode tree for a Debian .torrent
-std::unique_ptr<bencode::BencodeValue> get_debian_tree();
+std::unique_ptr<BencodeValue> get_debian_tree();
 
 TEST_CASE("[Torrent] Parse .torrent") {
   auto debian_tree = get_debian_tree();
@@ -38,28 +39,28 @@ TEST_CASE("[Torrent] Parse .torrent") {
           "cc5bf72c0db84e2de95f967954441c017c5a3631");
 }
 
-std::unique_ptr<bencode::BencodeValue> get_debian_tree() {
-  std::map<std::string, std::unique_ptr<bencode::BencodeValue>> dict;
-  dict.emplace("announce", std::make_unique<bencode::BencodeString>(
+std::unique_ptr<BencodeValue> get_debian_tree() {
+  std::map<std::string, std::unique_ptr<BencodeValue>> dict;
+  dict.emplace("announce", std::make_unique<BencodeString>(
                                "http://bttracker.debian.org:6969/announce"));
 
-  std::map<std::string, std::unique_ptr<bencode::BencodeValue>> info_dict;
-  info_dict.emplace("length", std::make_unique<bencode::BencodeInt>(397410304));
+  std::map<std::string, std::unique_ptr<BencodeValue>> info_dict;
+  info_dict.emplace("length", std::make_unique<BencodeInt>(397410304));
   info_dict.emplace("piece_length",
-                    std::make_unique<bencode::BencodeInt>(262144));
-  info_dict.emplace("name", std::make_unique<bencode::BencodeString>(
+                    std::make_unique<BencodeInt>(262144));
+  info_dict.emplace("name", std::make_unique<BencodeString>(
                                 "debian-11.4.0-amd64-netinst.iso"));
 
   info_dict.emplace(
-      "pieces", std::make_unique<bencode::BencodeString>(
+      "pieces", std::make_unique<BencodeString>(
                     std::string{debian_pieces_bytes, debian_pieces_n * 20}));
 
   dict.emplace("info",
-               std::make_unique<bencode::BencodeDict>(std::move(info_dict)));
+               std::make_unique<BencodeDict>(std::move(info_dict)));
 
-  bencode::BencodeDict tree{std::move(dict)};
+  BencodeDict tree{std::move(dict)};
 
-  return std::make_unique<bencode::BencodeDict>(std::move(tree));
+  return std::make_unique<BencodeDict>(std::move(tree));
 }
 
 char debian_pieces_bytes[] =
