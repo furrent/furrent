@@ -34,7 +34,12 @@ std::unique_ptr<BencodeValue> BencodeParser::decode(
   }
   _tokens = tokens;
   _index = 0;  // Reset the index
-  return decode();
+  auto r = decode();
+  if(_index != tokens.size()) {
+    throw std::invalid_argument(
+        "BencodeParser::decode(std::string decoded): invalid decoded string");
+  }
+  return r;
 }
 
 // Given a vector of tokens, returns a BencodeValue object
@@ -43,20 +48,8 @@ std::unique_ptr<BencodeValue> BencodeParser::decode() {
   if (!_tokens.empty()) {
     auto token = _tokens[_index];
     if (token == "i") {
-      // If the first token is "i", then it's an integer, so we have a fixed
-      // length
-      if (_index == 0 && _tokens.size() != 3) {
-        throw std::invalid_argument(
-            "BencodeParser::decode(std::string decoded): invalid string");
-      }
       return BencodeParser::decode_int();
     } else if (std::regex_match(token, reg_string)) {
-      // If the first tokes is for a string, then it's a string, so we have a
-      // fixed length
-      if (_index == 0 && _tokens.size() != 2) {
-        throw std::invalid_argument(
-            "BencodeParser::decode(std::string decoded): invalid string");
-      }
       return BencodeParser::decode_string();
     } else if (token == "l") {
       return BencodeParser::decode_list();
@@ -112,7 +105,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_string() {
 }
 std::unique_ptr<BencodeValue> BencodeParser::decode_list() {
   // The token must be in the form ["l",...,"e"]
-  if (_tokens.size() - _index < 4) {
+  if (_tokens.size() - _index < 2) {
     throw std::invalid_argument(
         "BencodeParser::bencode_list(std::vector<std::string>& encoded): "
         "invalid encoded string");
@@ -142,7 +135,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_list() {
 }
 std::unique_ptr<BencodeValue> BencodeParser::decode_dict() {
   // The token must be in the form ["d",...,"e"]
-  if (_tokens.size() - _index < 4) {
+  if (_tokens.size() - _index < 2) {
     throw std::invalid_argument(
         "BencodeParser::bencode_dict(std::vector<std::string>& encoded): "
         "invalid encoded string");
@@ -169,10 +162,10 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_dict() {
   if (_index == _tokens.size()) {
     throw std::invalid_argument(
         "BencodeParser::bencode_list(std::vector<std::string>& encoded): "
-        "invalid encoded stringgggg");
+        "invalid encoded string");
   }
   // Check if the list is closed with "e"
-  if (_index < _tokens.size() && _tokens[_index] != "e") {
+  if (_tokens[_index] != "e") {
     throw std::invalid_argument(
         "BencodeParser::bencode_dict(std::vector<std::string>& encoded): "
         "missing end of the dictionary");
