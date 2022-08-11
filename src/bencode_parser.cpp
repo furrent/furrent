@@ -64,9 +64,9 @@ std::unique_ptr<BencodeValue> BencodeParser::decode(
     } else if (token == "d") {
       return BencodeParser::decode_dict(tokens);
     }
-    throw std::invalid_argument(
-        "BencodeParser::decode(std::string decoded): invalid string");
   }
+  throw std::invalid_argument(
+      "BencodeParser::decode(std::string decoded): invalid string");
 }
 
 std::unique_ptr<BencodeValue> BencodeParser::decode_int(

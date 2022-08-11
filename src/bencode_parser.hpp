@@ -7,7 +7,6 @@
 
 namespace fur::bencode {
 
-/// Contains the structure for decoding and encoding bencode data
 class BencodeParser {
  private:
   /// The index of the current token used for decoding
