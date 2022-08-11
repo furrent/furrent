@@ -46,12 +46,12 @@ TEST_CASE("[BencodeParser::decode()] Wrong decode of a string") {
 TEST_CASE("[BencodeParser::decode()] Correct decode of a list"){
   BencodeParser parser{};
   auto list = parser.decode("l4:spami42ee");
-  auto b = dynamic_cast<BencodeList*>(list.get());
-  REQUIRE(b->to_string() == "l4:spami42ee");
-  REQUIRE(b->get_type() == BencodeType::List);
-  REQUIRE(b->value().size() == 2);
-  REQUIRE(dynamic_cast<BencodeString&>(*b->value()[0]).value() == "spam");
-  REQUIRE(dynamic_cast<BencodeInt&>(*b->value()[1]).value() == 42);
+  auto& b = dynamic_cast<BencodeList&>(*list);
+  REQUIRE(b.to_string() == "l4:spami42ee");
+  REQUIRE(b.get_type() == BencodeType::List);
+  REQUIRE(b.value().size() == 2);
+  REQUIRE(dynamic_cast<BencodeString&>(*b.value()[0]).value() == "spam");
+  REQUIRE(dynamic_cast<BencodeInt&>(*b.value()[1]).value() == 42);
 }
 
 TEST_CASE("[BencodeParser::decode()] Wrong decode of a list"){
@@ -65,12 +65,12 @@ TEST_CASE("[BencodeParser::decode()] Wrong decode of a list"){
 TEST_CASE("[BencodeParser::decode()] Correct decode of a dictionary"){
   BencodeParser parser{};
   auto dict = parser.decode("d3:bar4:spam3:fooi42ee");
-  auto b = dynamic_cast<BencodeDict*>(dict.get());
-  REQUIRE(b->to_string() == "d3:bar4:spam3:fooi42ee");
-  REQUIRE(b->get_type() == BencodeType::Dict);
-  REQUIRE(b->value().size() == 2);
-  REQUIRE(dynamic_cast<BencodeString&>(*b->value()["bar"]).value() == "spam");
-  REQUIRE(dynamic_cast<BencodeInt&>(*b->value()["foo"]).value() == 42);
+  auto& b = dynamic_cast<BencodeDict&>(*dict);
+  REQUIRE(b.to_string() == "d3:bar4:spam3:fooi42ee");
+  REQUIRE(b.get_type() == BencodeType::Dict);
+  REQUIRE(b.value().size() == 2);
+  REQUIRE(dynamic_cast<BencodeString&>(*b.value()["bar"]).value() == "spam");
+  REQUIRE(dynamic_cast<BencodeInt&>(*b.value()["foo"]).value() == 42);
 }
 
 TEST_CASE("[BencodeParser::decode()] Wrong decode of a dictionary"){

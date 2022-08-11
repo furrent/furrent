@@ -10,23 +10,21 @@ namespace fur::bencode {
 class BencodeParser {
  private:
   /// The index of the current token used for decoding
-  unsigned int _index;
+  unsigned int _index{};
+  /// The list of tokens to be decoded
+  std::vector<std::string> _tokens;
   /// Return the tokens of a bencode string
   std::vector<std::string> tokenizer(const std::string& encoded);
   /// Private method used recursively to decode the bencode data
-  std::unique_ptr<BencodeValue> decode(const std::vector<std::string>& tokens);
+  std::unique_ptr<BencodeValue> decode();
   /// Private method used to decode a bencode integer
-  std::unique_ptr<BencodeValue> decode_int(
-      const std::vector<std::string>& tokens);
+  std::unique_ptr<BencodeValue> decode_int();
   /// Private method used to decode a bencode string
-  std::unique_ptr<BencodeValue> decode_string(
-      const std::vector<std::string>& tokens);
+  std::unique_ptr<BencodeValue> decode_string();
   /// Private method used to decode a bencode list
-  std::unique_ptr<BencodeValue> decode_list(
-      const std::vector<std::string>& tokens);
+  std::unique_ptr<BencodeValue> decode_list();
   /// Private method used to decode a bencode dictionary
-  std::unique_ptr<BencodeValue> decode_dict(
-      const std::vector<std::string>& tokens);
+  std::unique_ptr<BencodeValue> decode_dict();
 
  public:
   BencodeParser() = default;
