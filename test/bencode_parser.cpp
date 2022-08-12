@@ -1,6 +1,6 @@
 #include "bencode_parser.hpp"
 
-#include "catch.hpp"
+#include "catch2/catch.hpp"
 using namespace fur::bencode;
 
 TEST_CASE("[BencodeParser::decode()] Correct decode of a integer"){
