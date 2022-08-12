@@ -19,7 +19,7 @@ TEST_CASE("[BencodeValue::BencodeInt] Correctly decodes an encoded integer") {
 }
 
 // ================
-// BencodeInt
+// BencodeString
 // ================
 TEST_CASE("[BencodeValue::BencodeString] Correctly decodes an encoded string") {
   BencodeString b_1("foo");

@@ -36,7 +36,7 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
       dynamic_cast<BencodeInt&>(*info_dict.at("length")).value();
 
   this->piece_length =
-      dynamic_cast<BencodeInt&>(*info_dict.at("piece_length")).value();
+      dynamic_cast<BencodeInt&>(*info_dict.at("piece length")).value();
 
   auto pieces =
       dynamic_cast<BencodeString&>(*info_dict.at("pieces")).value();
