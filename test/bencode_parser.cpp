@@ -110,6 +110,15 @@ TEST_CASE("[BencodeParser::encode()] Correct encode of BencodeValue"){
 
 TEST_CASE("[BencodeParser::decode()] No invalid length of a string with 'i' chars") {
   BencodeParser parser{};
-  parser.decode("l8:intervali3ee");
+  auto b = parser.decode("l8:intervali3ee");
+  REQUIRE(b->to_string() == "l8:intervali3ee");
+  // Check if the values are correct
+  auto& b_list = dynamic_cast<BencodeList&>(*b);
+  auto& b_string = dynamic_cast<BencodeString&>(*b_list.value()[0]);
+  REQUIRE(b_string.value() == "interval");
+  auto& b_int = dynamic_cast<BencodeInt&>(*b_list.value()[1]);
+  REQUIRE(b_int.value() == 3);
+
+
 }
 
