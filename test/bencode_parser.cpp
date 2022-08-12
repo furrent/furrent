@@ -119,6 +119,6 @@ TEST_CASE("[BencodeParser::decode()] No invalid length of a string with 'i' char
   auto& b_int = dynamic_cast<BencodeInt&>(*b_list.value()[1]);
   REQUIRE(b_int.value() == 3);
 
-
 }
+
 
