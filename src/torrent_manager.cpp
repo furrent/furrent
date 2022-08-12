@@ -1,17 +1,10 @@
-#include "torrent_manager.h"
+#include "torrent_manager.hpp"
 
 using namespace fur::manager;
 
-TorrentManager::TorrentManager(unsigned int priority,
-                               fur::torrent::TorrentFile torrent,
-                               std::queue<Task> task,
-                               std::queue<Result> result,
-                               std::vector<fur::peer::Peer> peers)
-    : _priority(priority),
-      _torrent(torrent),
-      _task(task),
-      _result(result),
-      _peers(peers)
-{
+TorrentManager::TorrentManager(fur::torrent::TorrentFile torrent)
+    : _torrent(torrent),
+      _priority(0){
+
 }
 

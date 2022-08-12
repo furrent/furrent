@@ -14,10 +14,10 @@
 /// Contains the TorrentManager, every torrent file is mapped to a
 /// TorrentManager object.
 namespace fur::manager {
-
-/// Used to store the data of a torrent file that is divided into many Results,
-/// after the entire download there are to combine all the Results into a single
-/// file
+/// @class TorrentManager
+/// Used to store every sub-data of a torrent file because is divided into many
+/// Result, after the entire download there are to combine all the Results into
+/// a single file
 struct Result{
   int index;
   std::vector<uint8_t> content;
@@ -33,16 +33,19 @@ class TorrentManager {
   private:
     unsigned int                  _priority;
     fur::torrent::TorrentFile     _torrent;
-    std::queue<Task>              _task;
-    std::queue<Result>            _result;
+    std::queue<Task>              _task;      // TODO: replace queue
+    std::queue<Result>            _result;    // TODO: replace queue
     std::vector<fur::peer::Peer>  _peers;
+    torrent::TorrentFile          _torrent_file;
+
   public:
-    TorrentManager(unsigned int priority,
-                   fur::torrent::TorrentFile torrent,
-                   std::queue<Task> task,
-                   std::queue<Result> result,
-                   std::vector<fur::peer::Peer> peers);
-    ~TorrentManager();
+    TorrentManager(fur::torrent::TorrentFile torrent);
+    ~TorrentManager() = default;
+
+    // Function for creating the list of tasks for the download, every file is
+    // divided into many parts that are then downloaded in parallel
+    // \return The list of tasks for the download
+    // std::vector<Task> get_tasks() const;
 
 };
 
