@@ -37,6 +37,11 @@ set(LINKER_FLAGS
 # ===============
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/smallsha1)
 
+# ==============
+# TCP dependency
+# ==============
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/asio)
+
 # ======================
 # HTTP client dependency
 # ======================
@@ -61,6 +66,7 @@ target_sources(furrent_lib PRIVATE ${SOURCES_LIB})
 target_include_directories(furrent_lib
     PRIVATE ${PROJECT_SOURCE_DIR}/src
     PRIVATE ${PROJECT_SOURCE_DIR}/third_party
+    PRIVATE ${PROJECT_SOURCE_DIR}/third_party/asio/include
 )
 target_compile_options(furrent_lib
     PRIVATE ${COMPILER_FLAGS}
@@ -70,6 +76,7 @@ target_link_options(furrent_lib
 )
 target_compile_definitions(furrent_lib PRIVATE ${COMPILER_DEFINITIONS})
 target_link_libraries(furrent_lib smallsha1)
+target_link_libraries(furrent_lib asio)
 target_link_libraries(furrent_lib cpr::cpr)
 
 # =====================
