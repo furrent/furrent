@@ -12,6 +12,7 @@ class Furrent {
     ~Furrent() = default;
     void add_torrent(const std::string& path);
     void print_status();
+    torrent::TorrentFile pick_torrent();
 
 };
 

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <ctime>
 
 #include "bencode_parser.hpp"
 #include "torrent_manager.hpp"
@@ -10,9 +11,7 @@
 using namespace fur;
 
 // Create constructor
-Furrent::Furrent() {
-  _downloads = std::vector<fur::manager::TorrentManager>();
-}
+Furrent::Furrent() { _downloads = std::vector<fur::manager::TorrentManager>(); }
 
 // Add torrent to downloads
 
@@ -20,11 +19,11 @@ void Furrent::add_torrent(const std::string& path) {
   // Read all file data located in the path
   std::ifstream file(path);
   std::string content;
-  if(file) {
+  if (file) {
     std::ostringstream ss;
-    ss << file.rdbuf(); // reading data
+    ss << file.rdbuf();  // reading data
     content = ss.str();
-  }else{
+  } else {
     // Trow exception invalid path
     throw std::invalid_argument("fur::Furrent::add_torrent: invalid path");
   }
@@ -32,11 +31,15 @@ void Furrent::add_torrent(const std::string& path) {
   auto parser = fur::bencode::BencodeParser();
   auto b_tree = parser.decode(content);
   auto torrent = fur::torrent::TorrentFile(*b_tree);
-  manager::TorrentManager t{torrent};
-  std::cout << torrent.announce_url << std::endl;
 
+  manager::TorrentManager t{torrent};
+
+  _downloads.push_back(t);
 }
 
 void Furrent::print_status() {
   std::cout << _downloads.size() << std::endl;
+}
+torrent::TorrentFile Furrent::pick_torrent() {
+  return torrent::TorrentFile();
 }
