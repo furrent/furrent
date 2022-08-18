@@ -32,14 +32,50 @@ set(LINKER_FLAGS
     $<$<BOOL:${COVERAGE}>:--coverage>
 )
 
-# ================
-# Setup executable
-# ================
-<<<<<<< HEAD
-add_executable(furrent src/mt/thread_pool.hpp src/mt/thread_pool.inl)
-=======
-add_executable(furrent src/mt/thread_pool.hpp src/mt/thread_pool.inl src/mt/router.hpp)
->>>>>>> d8a05be7ad01b625bd719957f7a52922e16d552c
+# ===============
+# SHA1 dependency
+# ===============
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/smallsha1)
+
+# ======================
+# HTTP client dependency
+# ======================
+include(FetchContent)
+FetchContent_Declare(cpr
+    GIT_REPOSITORY https://github.com/libcpr/cpr.git
+    GIT_TAG 871ed52d350214a034f6ef8a3b8f51c5ce1bd400)
+FetchContent_MakeAvailable(cpr)
+
+# =================
+# Find source files
+# =================
+file(GLOB SOURCES_LIB "${PROJECT_SOURCE_DIR}/src/*.cpp")
+list(REMOVE_ITEM SOURCE "main.cpp")
+file(GLOB SOURCES_TEST "${PROJECT_SOURCE_DIR}/test/*.cpp")
+
+# =============
+# Setup library
+# =============
+add_library(furrent_lib STATIC)
+target_sources(furrent_lib PRIVATE ${SOURCES_LIB})
+target_include_directories(furrent_lib
+    PRIVATE ${PROJECT_SOURCE_DIR}/src
+    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
+)
+target_compile_options(furrent_lib
+    PRIVATE ${COMPILER_FLAGS}
+)
+target_link_options(furrent_lib
+    PRIVATE ${LINKER_FLAGS}
+)
+target_compile_definitions(furrent_lib PRIVATE ${COMPILER_DEFINITIONS})
+target_link_libraries(furrent_lib smallsha1)
+target_link_libraries(furrent_lib cpr::cpr)
+
+# =====================
+# Setup main executable
+# =====================
+add_executable(furrent)
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
