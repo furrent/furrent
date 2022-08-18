@@ -35,7 +35,11 @@ set(LINKER_FLAGS
 # ================
 # Setup executable
 # ================
+<<<<<<< HEAD
 add_executable(furrent src/mt/thread_pool.hpp src/mt/thread_pool.inl)
+=======
+add_executable(furrent src/mt/thread_pool.hpp src/mt/thread_pool.inl src/mt/router.hpp)
+>>>>>>> d8a05be7ad01b625bd719957f7a52922e16d552c
 target_sources(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
