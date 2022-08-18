@@ -11,9 +11,9 @@ namespace fur::mt {
 /// Only one thread is allowed to use it at any same time.
 /// \tparam T Type of data routed
 template<typename T>
-class router {
+class DataRouter {
  public:
-  virtual ~router() = default;
+  virtual ~DataRouter() = default;
 
   /// Returns True if there is work to be done
   virtual bool work_is_available() = 0;

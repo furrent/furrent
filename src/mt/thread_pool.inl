@@ -12,15 +12,17 @@
 namespace fur::mt {
 
 template<typename T>
-void worker_thread_pool<T>::worker() {
+void WorkerThreadPool<T>::worker() {
 
-  bool work_todo = false;
   T work;
-
   while (true) {
+
+    // Used to transfer work-availability outside the critical region    
+    bool work_todo = false;
+
     {
       // Waits for an available torrent or a shutdown event
-      std::unique_lock<std::mutex> lock(m_router_mutex);
+      std::unique_lock<std::mutex> lock(m_mutex);
       m_work_available.wait(lock, [&] {
         return m_should_terminate || m_router->work_is_available();
       });
@@ -41,15 +43,16 @@ void worker_thread_pool<T>::worker() {
     }
   }
 }
+
 template <typename T>
-bool worker_thread_pool<T>::busy() {
-  std::lock_guard<std::mutex> lk(m_router_mutex);
+bool WorkerThreadPool<T>::busy() {
+  std::lock_guard<std::mutex> lk(m_mutex);
   return m_router->work_is_available();
 }
 
 template<typename T>
-worker_thread_pool<T>::worker_thread_pool(
-    std::unique_ptr<router<T>> router,
+WorkerThreadPool<T>::WorkerThreadPool(
+    std::unique_ptr<DataRouter<T>> router,
     std::function<void(T&)> worker_fn,
     size_t max_worker_threads)
     : m_worker_fn{std::move(worker_fn)},
@@ -61,13 +64,14 @@ worker_thread_pool<T>::worker_thread_pool(
 
   for (int i = 0; i < (int)size; i++)
     m_threads.emplace_back(
-        std::bind(&worker_thread_pool::worker, this), i, std::ref(*this));
+        std::bind(&WorkerThreadPool::worker, this), i, std::ref(*this));
 }
 
 template<typename T>
-worker_thread_pool<T>::~worker_thread_pool() {
+WorkerThreadPool<T>::~WorkerThreadPool() {
+
   {
-    std::lock_guard<std::mutex> lk(m_router_mutex);
+    std::lock_guard<std::mutex> lk(m_mutex);
     m_should_terminate = true;
   }
   // Send shutdown request to all workers threads
@@ -78,8 +82,8 @@ worker_thread_pool<T>::~worker_thread_pool() {
 }
 
 template <typename T>
-void worker_thread_pool<T>::change_router(std::unique_ptr<router<T>> router) {
-  std::lock_guard<std::mutex> lk(m_router_mutex);
+void WorkerThreadPool<T>::change_router(std::unique_ptr<DataRouter<T>> router) {
+  std::lock_guard<std::mutex> lk(m_mutex);
   m_router = std::move(router);
 }
 
