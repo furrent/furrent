@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <ctime>
 
 #include "bencode_parser.hpp"
 #include "torrent_manager.hpp"
@@ -14,14 +13,13 @@ using namespace fur;
 Furrent::Furrent() { _downloads = std::vector<fur::manager::TorrentManager>(); }
 
 // Add torrent to downloads
-
 void Furrent::add_torrent(const std::string& path) {
   // Read all file data located in the path
   std::ifstream file(path);
   std::string content;
   if (file) {
     std::ostringstream ss;
-    ss << file.rdbuf();  // reading data
+    ss << file.rdbuf();
     content = ss.str();
   } else {
     // Trow exception invalid path
@@ -38,8 +36,13 @@ void Furrent::add_torrent(const std::string& path) {
 }
 
 void Furrent::print_status() {
-  std::cout << _downloads.size() << std::endl;
+  std::cout << "Download length: " << _downloads.size() << std::endl;
+  for (auto& t_manager : _downloads) {
+    t_manager.print_status();
+  }
 }
-torrent::TorrentFile Furrent::pick_torrent() {
-  return torrent::TorrentFile();
+
+manager::TorrentManager Furrent::pick_torrent() {
+  // TODO: implement some kind of scheduling system
+  return _downloads.front();
 }
