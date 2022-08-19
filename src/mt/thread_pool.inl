@@ -48,7 +48,7 @@ WorkerThreadPool<T, W>::~WorkerThreadPool() {
   {
     // Changes terminate status
     std::scoped_lock<std::mutex> lock(m_mutex);
-    std::cout << "WorkerThreadPool is requesting workers to shutdown\n";
+    //std::cout << "WorkerThreadPool is requesting workers to shutdown\n";
     m_should_terminate = true;
   }
 
@@ -58,7 +58,7 @@ WorkerThreadPool<T, W>::~WorkerThreadPool() {
   for (auto& thread : m_threads)
     if (thread.joinable()) thread.join();
 
-  std::cout << "WorkerThreadPool has joined all threads\n";
+  //std::cout << "WorkerThreadPool has joined all threads\n";
 }
 
 template<typename T, typename W>
