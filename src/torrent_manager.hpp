@@ -39,7 +39,6 @@ static const char* TorrentStateNames[] = {
   "Downloaded"
 };
 
-
 /// @class TorrentManager
 /// Used to store every sub-data of a torrent file because is divided into many
 /// Result, after the entire download there are to combine all the Results into
@@ -73,7 +72,12 @@ class TorrentManager {
     /// Last time we announced ourselves to the tracker
     time_t                        _last_announce{};
     /// The number of tasks that we have to do
-    unsigned int                  _num_tasks;
+    unsigned int                  _num_tasks; // Only for calculate it one time
+    /// The number of tasks that we have done
+    unsigned int                  _num_done{}; // The _result size can't be use
+                                               // because it's size decrease
+                                               // each time the file is written
+                                               // to the disk
   public:
     /// Priority of the torrent
     unsigned short int            priority;
@@ -86,6 +90,8 @@ class TorrentManager {
     /// Function to call when a task is done, it removes the task from the list
     /// of tasks to be done and adds the result to the list of results
     void task_done(const Result& r);
+    /// Function to call when a task is failed, it put back the task in the list
+    void task_failed(const Task& t);
     /// Update the list of peers to download the file from
     void update_peers();
     /// Function that returns true if we have to re-announce ourselves

@@ -49,15 +49,23 @@ void TorrentManager::task_done(const Result& r) {
   // TODO: actually the _tasks is a queue, change it
   // Add the result to the list of results
   _result.push_back(r);
+  _num_done++;
   // No more task to be done, the torrent is downloaded
   if(_result.size() == _num_tasks){
     state = TorrentState::Downloaded;
   }
 }
 
+void TorrentManager::task_failed(const Task& t) {
+  _tasks.push(t);
+  // TODO: should we do something else?
+  // this->update_peers();
+}
+
 void TorrentManager::print_status() const {
   std::cout << "\t" << "Status of " << _torrent.name << ": "
             << std::setw(10)<< TorrentStateNames[static_cast<int>(state)]
-            << " " << std::setw(6) << _result.size()
+            << " " << std::setw(6) << _num_done
             << "/" << _num_tasks << std::endl;
 }
+
