@@ -11,80 +11,59 @@
 
 namespace fur::mt {
 
-template<typename T>
-void WorkerThreadPool<T>::worker() {
+template<typename T, typename W>
+void WorkerThreadPool<T, W>::worker() {
 
-  T work;
-  while (true) {
+  m_mutex.lock();
+  while (!m_should_terminate) {
+    m_mutex.unlock();
 
-    // Used to transfer work-availability outside the critical region    
-    bool work_todo = false;
+    std::optional<W> task_opt = m_task_router->get_work();
+    if (task_opt.has_value())
+      m_worker_fn(task_opt.value());
 
-    {
-      // Waits for an available torrent or a shutdown event
-      std::unique_lock<std::mutex> lock(m_mutex);
-      m_work_available.wait(lock, [&] {
-        return m_should_terminate || m_router->work_is_available();
-      });
-
-      if (m_should_terminate)
-        return;
-
-      // work is an independent piece of data
-      if (m_router->work_is_available()) {
-        work = m_router->get_work();
-        work_todo = true;
-      }
-    }
-
-    if (work_todo) {
-      m_worker_fn(work);
-      work_todo = false;
-    }
+    m_mutex.lock();
   }
+  m_mutex.unlock();
 }
 
-template <typename T>
-bool WorkerThreadPool<T>::busy() {
-  std::lock_guard<std::mutex> lk(m_mutex);
-  return m_router->work_is_available();
-}
+template<typename T, typename W>
+WorkerThreadPool<T, W>::WorkerThreadPool(IVectorRouter<T, W>* router, std::function<void(W&)> worker_fn, size_t max_worker_threads)
+  : m_worker_fn{std::move(worker_fn)}, m_task_router(router), m_should_terminate{false} {
 
-template<typename T>
-WorkerThreadPool<T>::WorkerThreadPool(
-    std::unique_ptr<DataRouter<T>> router,
-    std::function<void(T&)> worker_fn,
-    size_t max_worker_threads)
-    : m_worker_fn{std::move(worker_fn)},
-      m_router{std::move(router)},
-      m_should_terminate{false}
-{
   size_t size = std::thread::hardware_concurrency();
   if (max_worker_threads != 0) size = std::min(size, max_worker_threads);
 
   for (int i = 0; i < (int)size; i++)
     m_threads.emplace_back(
         std::bind(&WorkerThreadPool::worker, this), i, std::ref(*this));
+
+  // Resume serving workers if router was stopped
+  // TODO: This is a side-effect, not so pretty...
+  m_task_router->resume();
 }
 
-template<typename T>
-WorkerThreadPool<T>::~WorkerThreadPool() {
-
+template<typename T, typename W>
+WorkerThreadPool<T, W>::~WorkerThreadPool() {
   {
-    std::lock_guard<std::mutex> lk(m_mutex);
+    // Changes terminate status
+    std::scoped_lock<std::mutex> lock(m_mutex);
+    std::cout << "WorkerThreadPool is requesting workers to shutdown\n";
     m_should_terminate = true;
   }
-  // Send shutdown request to all workers threads
-  m_work_available.notify_all();
+
+  // Ask the router to stop serving the workers
+  m_task_router->stop();
 
   for (auto& thread : m_threads)
     if (thread.joinable()) thread.join();
+
+  std::cout << "WorkerThreadPool has joined all threads\n";
 }
 
-template <typename T>
-void WorkerThreadPool<T>::change_router(std::unique_ptr<DataRouter<T>> router) {
-  std::lock_guard<std::mutex> lk(m_mutex);
-  m_router = std::move(router);
+template<typename T, typename W>
+bool WorkerThreadPool<T, W>::busy() {
+  return m_task_router->busy();
 }
 
 } // namespace fur::mt
