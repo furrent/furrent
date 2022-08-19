@@ -1,58 +1,146 @@
 #include <mt/thread_pool.hpp>
+#include <mt/router.hpp>
+
+#include <random>
+#include <iostream>
+#include <optional>
+#include <unordered_map>
 
 #include "catch2/catch.hpp"
 using namespace fur::mt;
 
-// The custom data to be served to workers by the router
-struct CustomData {
-    int a, b, c;
+// Data inside the router
+struct From {
+    int value;
 };
 
-// Work unit used in this test
-const int WORK_COUNT = 100;
+// Data sent to workers
+struct Bar {
+    int value_processed;
+};
 
-// Custom router used by the workers to find work
-class CustomDataRouter : public DataRouter<CustomData> {
-
-    int work_count = WORK_COUNT;
-
+// Choose at random an element in the collection of Foo transforming it into a Bar
+class UniformRouterStrategy : public IVectorRouterStrategy<From, Bar> {
 public:
-    bool work_is_available() override {
-        return work_count != 0;
+    UniformRouterStrategy() {
+        srand(time(nullptr));
     }
 
-    CustomData get_work() override {
-        CustomData res { work_count, work_count, work_count };
-        work_count -= 1;
-        return res;
+    std::optional<Bar> operator() (std::vector<From>& items) override {
+        if (!items.empty()) {
+        
+            int index = rand() % items.size();
+            From item = items.at(index);
+            items.erase(items.begin() + index);
+
+            Bar work{ item.value };
+            return std::optional<Bar>{ work };
+        }
+        return std::nullopt;
     }
 };
 
-// Counter used by the test as for the correct result condition
-int results[WORK_COUNT] = { 0 };
+TEST_CASE("[mt] Correct uniform strategy behaviour") {
 
-// Function used by the workers threads
-void worker_fn(CustomData& data) {
-    results[data.a - 1] = data.b;
+    UniformRouterStrategy strategy;
+    std::vector<From> input = {
+        { 1 }, { 2 }, { 3 },
+        { 4 }, { 5 }, { 6 },
+        { 7 }, { 8 }, { 9 }
+    };
+
+    std::vector<Bar> output;
+    while(!input.empty()) {
+        std::optional<Bar> selection = strategy(input);
+        REQUIRE(selection);
+        output.push_back(*selection);
+    }
+
+    REQUIRE(input.size()  == 0);
+    REQUIRE(output.size() == 9);
+
+    int sum = 0;
+    for (auto& bar : output)
+        sum += bar.value_processed;
+
+    REQUIRE(sum == 45);
 }
 
-TEST_CASE("[mt] Thread Pool Creation") {
+TEST_CASE("[mt] Worker Thread Pool") {
 
+    const int THREADS_COUNT = 4;
+    const int ITEMS_COUNT = 100;
+
+    typedef VectorRouter<From, Bar> BarVectorRouter;
+    typedef WorkerThreadPool<From, Bar> BarWorkerThreadPool;
+
+    auto strategy = new UniformRouterStrategy();
+    auto router = new BarVectorRouter(strategy);
+
+    SECTION("Spin up and down")
     {
-        WorkerThreadPool<CustomData> pool(
-            std::make_unique<CustomDataRouter>(), 
-            worker_fn, 
-            4
-        );
+        // Only inside the scope there should be parallelism
+        BarWorkerThreadPool pool(router, [&](Bar&) { });
+    }
+
+    SECTION("Busy behaviour")
+    {
+        // Lots of data to be worked on
+        for(int i = 0; i < 1000; i++)
+            router->insert({ 1 });
+
+        BarWorkerThreadPool pool(router, [&](Bar&) { 
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        });
 
         while(pool.busy());
+        REQUIRE(router->size() == 0);
     }
 
-    int counter = 0;
-    for (int i = 0; i < WORK_COUNT; i++) {
-        REQUIRE(results[i] != 0);
-        counter += i;
-    }
+    SECTION("Simple uniform work behaviour")
+    {
+        std::unordered_map<std::thread::id, int> counter;
+        BarWorkerThreadPool pool(router, [&](Bar& bar) { 
+            
+            auto tid = std::this_thread::get_id();
+            if (auto result = counter.find(tid); result != counter.end())
+                result->second += bar.value_processed;
+            else 
+                counter.insert({ tid, bar.value_processed });
 
-    REQUIRE(counter == WORK_COUNT * (WORK_COUNT - 1) / 2);
+        });
+
+        // First work batch 
+        for(int i = 0; i < 10000; i++)
+            router->insert({ 1 });
+        
+        while(pool.busy());
+        REQUIRE(router->size() == 0);
+        
+        // Second work batch
+        for(int i = 0; i < 10000; i++)
+            router->insert({ 1 });
+
+        while(pool.busy());
+        REQUIRE(router->size() == 0);
+
+        SECTION("Work completition") 
+        {
+            int sum = 0;
+            for (auto& elem : counter)
+                sum += elem.second;
+
+            REQUIRE(sum == 20000);
+        }
+
+        SECTION("Work distribution")
+        {
+            const int conc = std::thread::hardware_concurrency();
+            const int mean = 20000 / conc;
+
+            // Check for a uniform distribution
+            for(auto& elem : counter)
+                REQUIRE(abs(mean - elem.second) < 100);
+        }
+    }
 }
