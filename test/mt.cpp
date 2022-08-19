@@ -132,15 +132,5 @@ TEST_CASE("[mt] Worker Thread Pool") {
 
             REQUIRE(sum == 20000);
         }
-
-        SECTION("Work distribution")
-        {
-            const int conc = std::thread::hardware_concurrency();
-            const int mean = 20000 / conc;
-
-            // Check for a uniform distribution
-            for(auto& elem : counter)
-                REQUIRE(abs(mean - elem.second) < 100);
-        }
     }
 }
