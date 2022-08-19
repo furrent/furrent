@@ -10,7 +10,10 @@
 using namespace fur;
 
 // Create constructor
-Furrent::Furrent() { _downloads = std::vector<fur::manager::TorrentManager>(); }
+Furrent::Furrent() :
+         _downloads(std::vector<manager::TorrentManager>()),
+        _index(0) {
+}
 
 // Add torrent to downloads
 void Furrent::add_torrent(const std::string& path) {
@@ -36,7 +39,7 @@ void Furrent::add_torrent(const std::string& path) {
 }
 
 void Furrent::print_status() {
-  std::cout << "Download length: " << _downloads.size() << std::endl;
+  std::cout << "Files in queue:" << std::endl;
   for (auto& t_manager : _downloads) {
     t_manager.print_status();
   }
@@ -44,5 +47,9 @@ void Furrent::print_status() {
 
 manager::TorrentManager Furrent::pick_torrent() {
   // TODO: implement some kind of scheduling system
-  return _downloads.front();
+  auto picked = _downloads[_index];
+  // Increment the index be careful not to go out of bounds
+  _index = (_index + 1) % _downloads.size();
+  return picked;
+
 }

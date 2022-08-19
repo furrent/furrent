@@ -8,6 +8,8 @@ class Furrent {
   private:
     /// List of torrents to download
     std::vector<fur::manager::TorrentManager> _downloads;
+    /// Index of the next last TorrentManager to pick (TODO)
+    unsigned int _index;
   public:
     Furrent();
     ~Furrent() = default;
