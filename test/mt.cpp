@@ -15,26 +15,26 @@ struct From {
 };
 
 // Data sent to workers
-struct Bar {
+struct To {
     int value_processed;
 };
 
 // Choose at random an element in the collection of Foo transforming it into a Bar
-class UniformRouterStrategy : public IVectorRouterStrategy<From, Bar> {
+class UniformRouterStrategy : public IVectorRouterStrategy<From, To> {
 public:
     UniformRouterStrategy() {
         srand(time(nullptr));
     }
 
-    std::optional<Bar> operator() (std::vector<From>& items) override {
+    std::optional<To> operator() (std::vector<From>& items) override {
         if (!items.empty()) {
         
             int index = rand() % items.size();
             From item = items.at(index);
             items.erase(items.begin() + index);
 
-            Bar work{ item.value };
-            return std::optional<Bar>{ work };
+            To work{ item.value };
+            return std::optional<To>{ work };
         }
         return std::nullopt;
     }
@@ -49,9 +49,9 @@ TEST_CASE("[mt] Correct uniform strategy behaviour") {
         { 7 }, { 8 }, { 9 }
     };
 
-    std::vector<Bar> output;
+    std::vector<To> output;
     while(!input.empty()) {
-        std::optional<Bar> selection = strategy(input);
+        std::optional<To> selection = strategy(input);
         REQUIRE(selection);
         output.push_back(*selection);
     }
@@ -71,16 +71,16 @@ TEST_CASE("[mt] Worker Thread Pool") {
     const int THREADS_COUNT = 4;
     const int ITEMS_COUNT = 100;
 
-    typedef VectorRouter<From, Bar> BarVectorRouter;
-    typedef WorkerThreadPool<From, Bar> BarWorkerThreadPool;
+    typedef VectorRouter<From, To> VectorRouter;
+    typedef WorkerThreadPool<From, To> WorkerThreadPool;
 
     auto strategy = new UniformRouterStrategy();
-    auto router = new BarVectorRouter(strategy);
+    auto router = new VectorRouter(strategy);
 
     SECTION("Spin up and down")
     {
         // Only inside the scope there should be parallelism
-        BarWorkerThreadPool pool(router, [&](Bar&) { });
+        WorkerThreadPool pool(router, [&](To&) { });
     }
 
     SECTION("Busy behaviour")
@@ -89,7 +89,7 @@ TEST_CASE("[mt] Worker Thread Pool") {
         for(int i = 0; i < 1000; i++)
             router->insert({ 1 });
 
-        BarWorkerThreadPool pool(router, [&](Bar&) { 
+        WorkerThreadPool pool(router, [&](To&) { 
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
         });
 
@@ -100,7 +100,7 @@ TEST_CASE("[mt] Worker Thread Pool") {
     SECTION("Simple uniform work behaviour")
     {
         std::unordered_map<std::thread::id, int> counter;
-        BarWorkerThreadPool pool(router, [&](Bar& bar) { 
+        WorkerThreadPool pool(router, [&](To& bar) { 
             
             auto tid = std::this_thread::get_id();
             if (auto result = counter.find(tid); result != counter.end())
