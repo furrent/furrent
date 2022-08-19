@@ -6,21 +6,15 @@
 #include "queue"
 #include "peer.hpp"
 
-/// @file torrent_manager.h
-/// @brief TorrentManager class declaration.
-/// Every torrent file is mapped to a TorrentManager object
-
-/// @namespace fur::manager
-/// @brief Namespace for the torrent manager.
-/// Contains the TorrentManager, every torrent file is mapped to a
-/// TorrentManager object.
+/// Namespace for the torrent manager. Contains the TorrentManager, every
+/// torrent file is mapped to a TorrentManager object.
 namespace fur::manager {
 
 /// Enumeration for the different states of a torrent
 enum class TorrentState {
   /// The torrent is downloading
   Download,
-  /// The torrent is paused
+  /// The torrent is stopped/paused
   Paused,
   /// Need to refreshing the list of peers
   Refresh,
@@ -30,7 +24,7 @@ enum class TorrentState {
   Downloaded
 };
 
-/// @brief Names of the different states of a torrent.
+/// Names of the different states of a torrent.
 static const char* TorrentStateNames[] = {
   "Download",
   "Paused",
@@ -39,7 +33,6 @@ static const char* TorrentStateNames[] = {
   "Downloaded"
 };
 
-/// @class TorrentManager
 /// Used to store every sub-data of a torrent file because is divided into many
 /// Result, after the entire download there are to combine all the Results into
 /// a single file
@@ -48,7 +41,6 @@ struct Result{
   std::vector<uint8_t> content;
 };
 
-/// @class TorrentManager
 /// Every torrent file has many pieces to download, each piece is a Task that
 /// have to be done
 struct Task{
@@ -88,14 +80,14 @@ class TorrentManager {
     /// Function to get the next task to be done
     Task pick_task();
     /// Function to call when a task is done, it removes the task from the list
-    /// of tasks to be done and adds the result to the list of results
+    /// of tasks adds the result to the list of results
     void task_done(const Result& r);
     /// Function to call when a task is failed, it put back the task in the list
     void task_failed(const Task& t);
     /// Update the list of peers to download the file from
     void update_peers();
-    /// Function that returns true if we have to re-announce ourselves
-    /// and refresh the list of peers
+    /// Function that put the state of the current object to Refresh if the time
+    /// has passed the announce interval
     void should_announce();
     /// Debug function to print the status of the TorrentManager object
     void print_status() const;
