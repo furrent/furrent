@@ -13,6 +13,7 @@ namespace fur::mt {
 template<typename To, typename C>
 class IRouterStrategy {
 public:
+  virtual ~IRouterStrategy() = default;
   /// This function is guaranteed to be thread-safe.
   virtual std::optional<To> operator() (C& collection) = 0;
 };
@@ -76,7 +77,11 @@ public:
 
   void insert(From&& item) override;
   [[nodiscard]] std::optional<To> get_work() override;
-  
+
+  /// Changes the strategy to be used in selecting the work-items
+  /// @param strategy The new strategy to be used 
+  void set_strategy(IVectorRouterStrategy<From, To>* strategy);
+
   void   stop()   override;
   void   resume() override;
   bool   busy()   override;

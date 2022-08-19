@@ -69,4 +69,11 @@ size_t VectorRouter<T, W>::size() {
   return m_work_items.size();
 }
 
+template<typename T, typename W>
+void VectorRouter<T, W>::set_strategy(IVectorRouterStrategy<T, W>* strategy) {
+  std::scoped_lock<std::mutex> lock(m_mutex);
+  delete m_strategy; // TODO: Use smart pointers
+  m_strategy = strategy;
+}
+
 } // namespace fur::mt
