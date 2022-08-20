@@ -53,8 +53,9 @@ class WorkerThreadPool {
   /// Get number of workers
   size_t get_workers_count() { return m_threads.size(); }
 
-  /// Returns true if there is no more work to do at the moment
-  bool busy();
+  /// Waits until there is no more work to do, this doesn't guarantee
+  /// that the threads have finished working
+  void busy();
 
  private:
   /// Workers' main function, used to control their behaviour

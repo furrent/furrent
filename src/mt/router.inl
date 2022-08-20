@@ -34,7 +34,11 @@ std::optional<W> VectorRouter<T, W>::get_work() {
 
   if (m_should_serve) {
     //std::cout << std::this_thread::get_id() << " is doing work\n";
-    return (*m_strategy)(m_work_items);
+    auto result = (*m_strategy)(m_work_items);
+    if (m_work_items.empty())
+      m_work_finished.notify_all();
+
+    return result;
   }
 
   //std::cout << std::this_thread::get_id() << " has skipped doing work\n";
@@ -59,8 +63,11 @@ void VectorRouter<T, W>::resume() {
 }
 
 template<typename T, typename W>
-bool VectorRouter<T, W>::busy() {
-  return size() != 0;
+void VectorRouter<T, W>::busy() {
+  std::unique_lock<std::mutex> lock(m_mutex);
+  m_work_finished.wait(lock, [this] {
+    return m_work_items.empty();
+  });
 }
 
 template<typename T, typename W>

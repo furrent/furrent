@@ -62,8 +62,8 @@ WorkerThreadPool<T, W>::~WorkerThreadPool() {
 }
 
 template<typename T, typename W>
-bool WorkerThreadPool<T, W>::busy() {
-  return m_task_router->busy();
+void WorkerThreadPool<T, W>::busy() {
+  m_task_router->busy();
 }
 
 } // namespace fur::mt

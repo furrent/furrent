@@ -21,7 +21,7 @@ public:
 template<typename From, typename To>
 using IVectorRouterStrategy = IRouterStrategy<To, std::vector<From>>;
 
-/// Rappresent a syncronization object used to orchestrate the
+/// Represents a synchronization object used to orchestrate the
 /// distribution of work items to threads, it owns the items it serves.
 /// @tparam From Type of the items inside the collection
 /// @tparam To   Type of the work-items produced
@@ -36,7 +36,6 @@ public:
   virtual void insert(From&& item) = 0;
 
   /// Wait for an available work item
-  /// @param exit_condition boolean used to stop waiting if a wakeup occured
   virtual std::optional<To> get_work() = 0;
 
   /// Returns the amount of work items present at the moment
@@ -50,8 +49,8 @@ public:
   /// Resume serving all threads entering the router
   virtual void resume() = 0;
 
-  /// Returns true if there is more work to do
-  virtual bool busy() = 0;
+  /// Blocks until there is no more work to do
+  virtual void busy() = 0;
 };
 
 template<typename From, typename To>
@@ -62,9 +61,14 @@ template<typename From, typename To>
 class VectorRouter : public IVectorRouter<From, To> {
 
 protected:
+  /// Mutex protecting all internal state
   std::mutex m_mutex;
+  /// CV used to signal that new work is available
   std::condition_variable m_work_available;
-  int m_should_serve;
+  /// CV used to signal that there is no more work available
+  std::condition_variable m_work_finished;
+  /// True if workers should be served new work
+  bool m_should_serve;
 
   /// Strategy that will be used to extract work from the collection
   IVectorRouterStrategy<From, To>* m_strategy;
@@ -73,7 +77,7 @@ protected:
 
 public:
   /// Construct a new router with a strategy
-  VectorRouter(IVectorRouterStrategy<From, To>* strategy);
+  explicit VectorRouter(IVectorRouterStrategy<From, To>* strategy);
 
   void insert(From&& item) override;
   [[nodiscard]] std::optional<To> get_work() override;
@@ -84,7 +88,7 @@ public:
 
   void   stop()   override;
   void   resume() override;
-  bool   busy()   override;
+  void   busy()   override;
   size_t size()   override;
 
 }; 
