@@ -68,11 +68,8 @@ TEST_CASE("[mt] Correct uniform strategy behaviour") {
 
 TEST_CASE("[mt] Worker Thread Pool") {
 
-    const int THREADS_COUNT = 4;
-    const int ITEMS_COUNT = 100;
-
-    typedef VectorRouter<From, To> VectorRouter;
-    typedef WorkerThreadPool<From, To> WorkerThreadPool;
+    using VectorRouter     = VectorRouter<From, To>;
+    using WorkerThreadPool = WorkerThreadPool<From, To>;
 
     auto router = std::make_shared<VectorRouter>(
         std::make_unique<UniformRouterStrategy>());
@@ -99,6 +96,8 @@ TEST_CASE("[mt] Worker Thread Pool") {
 
     SECTION("Simple uniform work behaviour")
     {
+      const int ITEMS_COUNT = 10000;
+
         std::unordered_map<std::thread::id, int> counter;
         WorkerThreadPool pool(router, [&](To& bar) { 
             
@@ -111,14 +110,14 @@ TEST_CASE("[mt] Worker Thread Pool") {
         });
 
         // First work batch 
-        for(int i = 0; i < 10000; i++)
+        for(int i = 0; i < ITEMS_COUNT; i++)
             router->insert({ 1 });
         
         pool.busy();
         REQUIRE(router->size() == 0);
         
         // Second work batch
-        for(int i = 0; i < 10000; i++)
+        for(int i = 0; i < ITEMS_COUNT; i++)
             router->insert({ 1 });
 
         pool.busy();
@@ -130,7 +129,7 @@ TEST_CASE("[mt] Worker Thread Pool") {
             for (auto& elem : counter)
                 sum += elem.second;
 
-            REQUIRE(sum == 20000);
+            REQUIRE(sum == ITEMS_COUNT * 2);
         }
     }
 }
