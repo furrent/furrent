@@ -21,7 +21,7 @@ class WorkerThreadPool {
   /// Function executing in all workers
   std::function<void(To&)> m_worker_fn;
   /// Router used to distribute tasks
-  IVectorRouter<From, To>* m_task_router;
+  std::shared_ptr<IVectorRouter<From, To>> m_task_router;
 
   /// Mutex protecting terminate status
   std::mutex m_mutex;
@@ -33,7 +33,8 @@ class WorkerThreadPool {
   /// @brief Construct a new pool of worker threads
   /// @param max_worker_threads maximum number of worker threads
   /// @param router used to find and balance work for the workers
-  WorkerThreadPool(IVectorRouter<From, To>* task_router,
+  /// @param worker_fn function of the worker applied to the router data
+  WorkerThreadPool(std::shared_ptr<IVectorRouter<From, To>> router,
                    std::function<void(To&)> worker_fn,
                    size_t max_worker_threads = 0);
 

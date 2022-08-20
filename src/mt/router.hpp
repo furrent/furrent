@@ -61,7 +61,7 @@ template<typename From, typename To>
 class VectorRouter : public IVectorRouter<From, To> {
 
 protected:
-  /// Mutex protecting all internal state
+ /// Mutex protecting all internal state
   std::mutex m_mutex;
   /// CV used to signal that new work is available
   std::condition_variable m_work_available;
@@ -71,27 +71,27 @@ protected:
   bool m_should_serve;
 
   /// Strategy that will be used to extract work from the collection
-  IVectorRouterStrategy<From, To>* m_strategy;
+  std::unique_ptr<IVectorRouterStrategy<From, To>> m_strategy;
   /// Collection with work items to be distributed
   std::vector<From> m_work_items;
 
 public:
   /// Construct a new router with a strategy
-  explicit VectorRouter(IVectorRouterStrategy<From, To>* strategy);
+  /// @param strategy The strategy to be used, router takes ownership of the object
+  explicit VectorRouter(std::unique_ptr<IVectorRouterStrategy<From, To>> strategy);
 
   void insert(From&& item) override;
   [[nodiscard]] std::optional<To> get_work() override;
 
   /// Changes the strategy to be used in selecting the work-items
-  /// @param strategy The new strategy to be used 
-  void set_strategy(IVectorRouterStrategy<From, To>* strategy);
+  /// @param strategy The new strategy to be used, router takes ownership of the object
+  void set_strategy(std::unique_ptr<IVectorRouterStrategy<From, To>> strategy);
 
   void   stop()   override;
   void   resume() override;
   void   busy()   override;
   size_t size()   override;
-
-}; 
+};
 
 } // namespace fur::mt
 

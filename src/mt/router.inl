@@ -8,8 +8,8 @@
 namespace fur::mt {
 
 template<typename T, typename W>
-VectorRouter<T, W>::VectorRouter(IVectorRouterStrategy<T, W>* strategy)
-: m_should_serve{true}, m_strategy{strategy} { }
+VectorRouter<T, W>::VectorRouter(std::unique_ptr<IVectorRouterStrategy<T, W>> strategy)
+: m_should_serve{true}, m_strategy{std::move(strategy)} { }
 
 template<typename T, typename W>
 void VectorRouter<T, W>::insert(T&& item) {
@@ -77,10 +77,9 @@ size_t VectorRouter<T, W>::size() {
 }
 
 template<typename T, typename W>
-void VectorRouter<T, W>::set_strategy(IVectorRouterStrategy<T, W>* strategy) {
+void VectorRouter<T, W>::set_strategy(std::unique_ptr<IVectorRouterStrategy<T, W>> strategy) {
   std::scoped_lock<std::mutex> lock(m_mutex);
-  delete m_strategy; // TODO: Use smart pointers
-  m_strategy = strategy;
+  m_strategy = std::move(strategy);
 }
 
 } // namespace fur::mt

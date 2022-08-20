@@ -28,7 +28,10 @@ void WorkerThreadPool<T, W>::worker() {
 }
 
 template<typename T, typename W>
-WorkerThreadPool<T, W>::WorkerThreadPool(IVectorRouter<T, W>* router, std::function<void(W&)> worker_fn, size_t max_worker_threads)
+WorkerThreadPool<T, W>::WorkerThreadPool(
+    std::shared_ptr<IVectorRouter<T, W>> router,
+    std::function<void(W&)> worker_fn,
+    size_t max_worker_threads)
   : m_worker_fn{std::move(worker_fn)}, m_task_router(router), m_should_terminate{false} {
 
   size_t size = std::thread::hardware_concurrency();

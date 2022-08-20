@@ -74,8 +74,8 @@ TEST_CASE("[mt] Worker Thread Pool") {
     typedef VectorRouter<From, To> VectorRouter;
     typedef WorkerThreadPool<From, To> WorkerThreadPool;
 
-    auto strategy = new UniformRouterStrategy();
-    auto router = new VectorRouter(strategy);
+    auto router = std::make_shared<VectorRouter>(
+        std::make_unique<UniformRouterStrategy>());
 
     SECTION("Spin up and down")
     {
