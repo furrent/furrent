@@ -10,20 +10,6 @@
 /// torrent file is mapped to a TorrentManager object.
 namespace fur::manager {
 
-/// Enumeration for the different states of a torrent
-enum class TorrentState {
-  /// The torrent is downloading
-  Download,
-  /// The torrent is stopped/paused
-  Paused,
-  /// Need to refreshing the list of peers
-  Refresh,
-  /// There are no more tasks to be done
-  Finished,
-  /// All tasks are done, the torrent is downloaded
-  Downloaded
-};
-
 /// Used to store every sub-data of a torrent file because is divided into many
 /// Result, after the entire download there are to combine all the Results into
 /// a single file
@@ -46,8 +32,6 @@ class TorrentManager {
     const fur::torrent::TorrentFile _torrent;
     /// List of tasks to be done for the download
     std::queue<Task>                _tasks;      // TODO: replace queue
-    /// List of downloaded pieces that have to be combined into a single file
-    std::list<Result>               _result;    // TODO: replace queue
     /// List of peers to download the file from
     std::vector<fur::peer::Peer>    _peers;
     /// The announce interval is the time (in seconds) we're expected to
@@ -55,19 +39,20 @@ class TorrentManager {
     int                             _announce_interval;
     /// Last time we announced ourselves to the tracker
     time_t                          _last_announce;
-    /// The number of tasks that we have to do
-    const int                       _num_tasks; // Only for calculate it one
-                                                // time
-    /// The number of tasks that we have done
-    int                             _num_done; // The _result size can't
-                                                 // be use because it's size
-                                                 // decrease each time the file
-                                                 // is written to the disk
+
   public:
     /// Priority of the torrent
     int                             priority;
-    /// Status of the torrent
-    TorrentState                    state;
+    /// The number of tasks that we have to do
+    const int                       num_tasks;  // Only for calculate it one
+                                                // time
+    /// The number of tasks that we have done
+    int                             num_done;   // The _result size can't
+                                                // be use because it's size
+                                                // decrease each time the file
+                                                // is written to the disk
+    /// List of downloaded pieces that have to be combined into a single file
+    std::list<Result>               result;     // TODO: replace queue
     /// Constructor for the TorrentManager class
     explicit TorrentManager(fur::torrent::TorrentFile &torrent);
     /// Function to get the next task to be done
@@ -81,7 +66,7 @@ class TorrentManager {
     void update_peers();
     /// Function that put the state of the current object to Refresh if the time
     /// has passed the announce interval
-    void should_announce();
+    [[nodiscard]] bool should_announce() const;
     /// Debug function to print the status of the TorrentManager object
     void print_status() const;
 };
