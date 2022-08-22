@@ -4,13 +4,26 @@
 
 using namespace fur::manager;
 
+const char* TorrentStateNames[] = {
+    "Download",
+    "Paused",
+    "Refresh",
+    "Finished",
+    "Downloaded"
+};
+
 TorrentManager::TorrentManager(fur::torrent::TorrentFile& torrent)
-    : _torrent(torrent), priority(0), state(TorrentState::Download) {
+    : _torrent(torrent),
+      _announce_interval(0),
+      _last_announce(0),
+      _num_tasks((torrent.length / torrent.piece_length)),
+      _num_done(0),
+      priority(0),
+      state(TorrentState::Download) {
   // Create all tasks for the file
   _tasks = std::queue<manager::Task>();  // TODO change queue
   _result = std::list<manager::Result>();  // TODO change list
-  _num_tasks = static_cast<unsigned int>(torrent.length / torrent.piece_length);
-  for (unsigned int i = 0; i < _num_tasks; i++) {
+  for (int i = 0; i < static_cast<int>(_num_tasks); i++) {
     _tasks.push(manager::Task{i, torrent});
   }
   // Update the peer list and the announcement interval
@@ -22,7 +35,7 @@ void TorrentManager::update_peers() {
   _peers = result.peers;
   _announce_interval = result.interval;
   _last_announce = time(nullptr);
-  should_announce();
+
 }
 
 void TorrentManager::should_announce() {

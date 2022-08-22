@@ -16,7 +16,7 @@ Furrent::Furrent() :
 }
 
 // Add torrent to downloads
-void Furrent::add_torrent(const std::string& path) {
+void Furrent::add_torrent(const std::string& path){
   // Read all file data located in the path
   std::ifstream file(path);
   std::string content;
@@ -26,7 +26,8 @@ void Furrent::add_torrent(const std::string& path) {
     content = ss.str();
   } else {
     // Trow exception invalid path
-    throw std::invalid_argument("fur::Furrent::add_torrent: invalid path");
+    throw std::invalid_argument("fur::Furrent::add_torrent: invalid path or "
+        "missing permission");
   }
   // Create torrent_manager for the file
   auto parser = fur::bencode::BencodeParser();
@@ -38,18 +39,18 @@ void Furrent::add_torrent(const std::string& path) {
   _downloads.push_back(t);
 }
 
-void Furrent::print_status() {
+void Furrent::print_status() const {
   std::cout << "Files in queue:" << std::endl;
   for (auto& t_manager : _downloads) {
     t_manager.print_status();
   }
 }
 
-manager::TorrentManager Furrent::pick_torrent() {
+manager::TorrentManager& Furrent::pick_torrent() {
   // TODO: implement some kind of scheduling system
-  auto picked = _downloads[_index];
+  manager::TorrentManager& picked = _downloads[_index];
   // Increment the index be careful not to go out of bounds
-  _index = (_index + 1) % _downloads.size();
+  _index = static_cast<int>((_index + 1) % _downloads.size());
   return picked;
 
 }
