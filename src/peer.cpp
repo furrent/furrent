@@ -15,20 +15,9 @@ std::string Peer::address() const {
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
 }
 
-/*
-void Peer::ensure_connected() {
-  using asio::ip::tcp;
-
-  asio::io_context io_context;
-
-  tcp::socket _socket(io_context);
-  auto _ip = asio::ip::address_v4(this->ip);
-  auto _port = asio::ip::port_type(this->port);
-  _socket.connect(tcp::endpoint(_ip, _port));
-
-  //*socket = std::move(_socket);
+bool Peer::operator==(const Peer& other) const {
+  return this->ip == other.ip && this->port == other.port;
 }
- */
 
 // Forward declare
 AnnounceResult parse_tracker_response(const std::string& text);

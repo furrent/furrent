@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <functional>
 
 #include "torrent.hpp"
 
@@ -17,6 +18,8 @@ struct Peer {
   /// Combines the ip and port of the peer into a X.Y.Z.W:PORT string
   /// \return The combined string
   [[nodiscard]] std::string address() const;
+
+  bool operator==(const Peer& other) const;
 };
 
 /// The response sent from the tracker when announcing
@@ -32,3 +35,10 @@ struct AnnounceResult {
 /// file from
 [[nodiscard]] AnnounceResult announce(const torrent::TorrentFile& torrent_f);
 }  // namespace fur::peer
+
+template<>
+struct std::hash<fur::peer::Peer> {
+  std::size_t operator()(const fur::peer::Peer& key) const {
+    return key.ip ^ key.port;
+  }
+};
