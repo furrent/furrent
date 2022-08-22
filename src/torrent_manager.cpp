@@ -60,4 +60,10 @@ void TorrentManager::print_status() const {
             << " " << std::setw(6) << num_done
             << "/" << num_tasks << std::endl;
 }
-
+bool TorrentManager::has_tasks() const {
+  // If all tasks are done, return false
+  if(num_done == num_tasks) {
+    return false;
+  }
+  return !_tasks.empty();
+}

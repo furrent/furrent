@@ -55,6 +55,8 @@ class TorrentManager {
     std::list<Result>               result;     // TODO: replace queue
     /// Constructor for the TorrentManager class
     explicit TorrentManager(fur::torrent::TorrentFile &torrent);
+    /// Function to know if there are tasks to do
+    [[nodiscard]] bool has_tasks() const;
     /// Function to get the next task to be done
     Task pick_task();
     /// Function to call when a task is done, it removes the task from the list
