@@ -3,7 +3,6 @@
 #include <memory>
 #include <stdexcept>
 
-#include "asio.hpp"
 #include "bencode_parser.hpp"
 #include "bencode_value.hpp"
 #include "cpr/cpr.h"
@@ -11,14 +10,13 @@
 #include "hash.hpp"
 
 namespace fur::peer {
-Peer::Peer(uint32_t ip, uint16_t port) : ip{ip}, port{port} {}
-
 std::string Peer::address() const {
   return fmt::format("{}.{}.{}.{}:{}", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
 }
 
-void Peer::connect() {
+/*
+void Peer::ensure_connected() {
   using asio::ip::tcp;
 
   asio::io_context io_context;
@@ -28,8 +26,9 @@ void Peer::connect() {
   auto _port = asio::ip::port_type(this->port);
   _socket.connect(tcp::endpoint(_ip, _port));
 
-  *socket = std::move(_socket);
+  //*socket = std::move(_socket);
 }
+ */
 
 // Forward declare
 AnnounceResult parse_tracker_response(const std::string& text);
