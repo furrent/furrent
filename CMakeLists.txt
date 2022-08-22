@@ -32,6 +32,11 @@ set(LINKER_FLAGS
     $<$<BOOL:${COVERAGE}>:--coverage>
 )
 
+set(INCLUDES
+    ${PROJECT_SOURCE_DIR}/third_party
+    ${PROJECT_SOURCE_DIR}/third_party/asio/include
+)
+
 # ===============
 # SHA1 dependency
 # ===============
@@ -65,8 +70,7 @@ add_library(furrent_lib STATIC)
 target_sources(furrent_lib PRIVATE ${SOURCES_LIB})
 target_include_directories(furrent_lib
     PRIVATE ${PROJECT_SOURCE_DIR}/src
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party/asio/include
+    PRIVATE ${INCLUDES}
 )
 target_compile_options(furrent_lib
     PRIVATE ${COMPILER_FLAGS}
@@ -88,7 +92,7 @@ target_sources(furrent
 )
 target_include_directories(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
+    PRIVATE ${INCLUDES}
 )
 target_compile_options(furrent
     PRIVATE ${COMPILER_FLAGS}
@@ -146,7 +150,7 @@ target_sources(furrent_test PRIVATE ${SOURCES_TEST})
 target_include_directories(furrent_test
     PRIVATE ${PROJECT_SOURCE_DIR}/src
     PRIVATE ${PROJECT_SOURCE_DIR}/test
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
+    PRIVATE ${INCLUDES}
 )
 target_compile_options(furrent_test
     PRIVATE ${COMPILER_FLAGS}
