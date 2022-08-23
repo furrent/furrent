@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "bencode_parser.hpp"
+#include "bencode/bencode_parser.hpp"
 #include "torrent_manager.hpp"
 
 using namespace fur;

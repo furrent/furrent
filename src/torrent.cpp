@@ -1,7 +1,7 @@
 #include "torrent.hpp"
 
-#include "bencode_parser.hpp"
-#include "bencode_value.hpp"
+#include "bencode/bencode_parser.hpp"
+#include "bencode/bencode_value.hpp"
 #include "hash.hpp"
 
 using namespace fur::bencode;

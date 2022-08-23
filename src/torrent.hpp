@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "bencode_value.hpp"
+#include "bencode/bencode_value.hpp"
 #include "hash.hpp"
 
 namespace fur::torrent {

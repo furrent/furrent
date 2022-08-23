@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "bencode_value.hpp"
+#include "bencode/bencode_value.hpp"
 #include "catch2/catch.hpp"
 #include "hash.hpp"
 
