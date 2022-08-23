@@ -8,7 +8,7 @@
 namespace fur::mt {
 
 template<typename T, typename W>
-VectorRouter<T, W>::VectorRouter(std::unique_ptr<IVectorRouterStrategy<T, W>> strategy)
+VectorRouter<T, W>::VectorRouter(std::unique_ptr<IVectorPickStrategy<T, W>> strategy)
 : m_should_serve{true}, m_strategy{std::move(strategy)} { }
 
 template<typename T, typename W>
@@ -77,7 +77,7 @@ size_t VectorRouter<T, W>::size() {
 }
 
 template<typename T, typename W>
-void VectorRouter<T, W>::set_strategy(std::unique_ptr<IVectorRouterStrategy<T, W>> strategy) {
+void VectorRouter<T, W>::set_strategy(std::unique_ptr<IVectorPickStrategy<T, W>> strategy) {
   std::scoped_lock<std::mutex> lock(m_mutex);
   m_strategy = std::move(strategy);
 }

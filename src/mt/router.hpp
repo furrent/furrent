@@ -7,20 +7,9 @@
 #include <optional>
 #include <condition_variable>
 
+#include "strategy.hpp"
+
 namespace fur::mt {
-
-/// Given a collection of type C extracts a work item.
-template<typename To, typename C>
-class IRouterStrategy {
-public:
-  virtual ~IRouterStrategy() = default;
-  /// This function is guaranteed to be thread-safe.
-  virtual std::optional<To> operator() (C& collection) = 0;
-};
-
-template<typename From, typename To>
-using IVectorRouterStrategy = IRouterStrategy<To, std::vector<From>>;
-
 /// Represents a synchronization object used to orchestrate the
 /// distribution of work items to threads, it owns the items it serves.
 /// @tparam From Type of the items inside the collection
@@ -71,21 +60,21 @@ protected:
   bool m_should_serve;
 
   /// Strategy that will be used to extract work from the collection
-  std::unique_ptr<IVectorRouterStrategy<From, To>> m_strategy;
+  std::unique_ptr<IVectorPickStrategy<From, To>> m_strategy;
   /// Collection with work items to be distributed
   std::vector<From> m_work_items;
 
 public:
   /// Construct a new router with a strategy
   /// @param strategy The strategy to be used, router takes ownership of the object
-  explicit VectorRouter(std::unique_ptr<IVectorRouterStrategy<From, To>> strategy);
+  explicit VectorRouter(std::unique_ptr<IVectorPickStrategy<From, To>> strategy);
 
   void insert(From&& item) override;
   [[nodiscard]] std::optional<To> get_work() override;
 
   /// Changes the strategy to be used in selecting the work-items
   /// @param strategy The new strategy to be used, router takes ownership of the object
-  void set_strategy(std::unique_ptr<IVectorRouterStrategy<From, To>> strategy);
+  void set_strategy(std::unique_ptr<IVectorPickStrategy<From, To>> strategy);
 
   void   stop()   override;
   void   resume() override;
