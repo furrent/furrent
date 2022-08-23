@@ -4,6 +4,8 @@
 
 #include "catch2/catch.hpp"
 
+/// A dummy type that cannot be copied. Used to demonstrate the usage of
+/// `LenderPool` with non-copyable types.
 class NonCopyable {
  private:
   int value;
@@ -12,8 +14,8 @@ class NonCopyable {
   explicit NonCopyable(int value) : value{value} {}
 
   // Successfully being able to call this function somewhat proves that you
-  // got a reference to it from the LenderPool
-  int proof_of_access() { return value; }
+  // got a reference to it from the `LenderPool`.
+  [[nodiscard]] int proof_of_access() const { return value; }
 
   NonCopyable(const NonCopyable&) = delete;
   NonCopyable& operator=(const NonCopyable&) = delete;
@@ -43,9 +45,9 @@ TEST_CASE("[LenderPool] Basic") {
 }
 
 TEST_CASE("[LenderPool] Moving backing vector") {
-  // This test case demonstrates that the destruction of a borrow keeps working
-  // even after the contents of the pool are moved due to the backing vector
-  // being reallocated.
+  // This test case demonstrates that a value of type `Borrow` can still
+  // point to the lent object even when the backing vector inside `LenderPool`
+  // is reallocated, thus moving all elements in memory.
 
   LenderPool<NonCopyable> pool;
   pool.put(NonCopyable(27));
@@ -69,6 +71,8 @@ TEST_CASE("[LenderPool] Moving backing vector") {
   t2.join();
 }
 
+/// A custom picking strategy for the `LenderPool`. Returns elements 2,1,3 in
+/// this order.
 struct CustomStrategy {
   using T = NonCopyable;
   SlotPtr<T>* operator()(std::vector<SlotPtr<T>>& storage) {
