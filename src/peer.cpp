@@ -15,10 +15,6 @@ std::string Peer::address() const {
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
 }
 
-bool Peer::operator==(const Peer& other) const {
-  return this->ip == other.ip && this->port == other.port;
-}
-
 // Forward declare
 AnnounceResult parse_tracker_response(const std::string& text);
 
