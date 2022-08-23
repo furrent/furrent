@@ -32,10 +32,20 @@ set(LINKER_FLAGS
     $<$<BOOL:${COVERAGE}>:--coverage>
 )
 
+set(INCLUDES
+    ${PROJECT_SOURCE_DIR}/third_party
+    ${PROJECT_SOURCE_DIR}/third_party/asio/include
+)
+
 # ===============
 # SHA1 dependency
 # ===============
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/smallsha1)
+
+# ==============
+# TCP dependency
+# ==============
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/asio)
 
 # ======================
 # HTTP client dependency
@@ -49,7 +59,7 @@ FetchContent_MakeAvailable(cpr)
 # =================
 # Find source files
 # =================
-file(GLOB SOURCES_LIB "${PROJECT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE SOURCES_LIB "${PROJECT_SOURCE_DIR}/src/*.cpp")
 list(REMOVE_ITEM SOURCE "main.cpp")
 file(GLOB SOURCES_TEST "${PROJECT_SOURCE_DIR}/test/*.cpp")
 
@@ -60,7 +70,7 @@ add_library(furrent_lib STATIC)
 target_sources(furrent_lib PRIVATE ${SOURCES_LIB})
 target_include_directories(furrent_lib
     PRIVATE ${PROJECT_SOURCE_DIR}/src
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
+    PRIVATE ${INCLUDES}
 )
 target_compile_options(furrent_lib
     PRIVATE ${COMPILER_FLAGS}
@@ -70,6 +80,7 @@ target_link_options(furrent_lib
 )
 target_compile_definitions(furrent_lib PRIVATE ${COMPILER_DEFINITIONS})
 target_link_libraries(furrent_lib smallsha1)
+target_link_libraries(furrent_lib asio)
 target_link_libraries(furrent_lib cpr::cpr)
 
 # =====================
@@ -81,7 +92,7 @@ target_sources(furrent
 )
 target_include_directories(furrent
     PRIVATE ${PROJECT_SOURCE_DIR}/src
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
+    PRIVATE ${INCLUDES}
 )
 target_compile_options(furrent
     PRIVATE ${COMPILER_FLAGS}
@@ -139,7 +150,7 @@ target_sources(furrent_test PRIVATE ${SOURCES_TEST})
 target_include_directories(furrent_test
     PRIVATE ${PROJECT_SOURCE_DIR}/src
     PRIVATE ${PROJECT_SOURCE_DIR}/test
-    PRIVATE ${PROJECT_SOURCE_DIR}/third_party
+    PRIVATE ${INCLUDES}
 )
 target_compile_options(furrent_test
     PRIVATE ${COMPILER_FLAGS}
