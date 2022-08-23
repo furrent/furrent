@@ -1,8 +1,10 @@
+#include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <vector>
 
 template <typename T>
-class Pool {
+class LenderPool {
  private:
   struct Slot {
     explicit Slot(T inner) : inner{std::move(inner)}, is_borrowed{false} {}
