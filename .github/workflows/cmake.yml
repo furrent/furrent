@@ -40,4 +40,4 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}}
 
     - name: Stop faker
-      run: kill '$!'
+      run: kill $$!
