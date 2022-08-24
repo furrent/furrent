@@ -89,6 +89,9 @@ struct CustomStrategy {
       if (e->is_borrowed) continue;
       if (e->inner.proof_of_access() == 3) return &e;
     }
+
+    // This code is unreachable but required in order to suppress a warning
+    return nullptr;
   }
 };
 
