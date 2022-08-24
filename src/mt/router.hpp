@@ -10,16 +10,19 @@
 namespace fur::mt {
 
 /// Given a collection of type C extracts a work item.
-template<typename To, typename C>
-class IRouterStrategy {
+template<typename From, typename To, typename C>
+class IStrategy {
 public:
-  virtual ~IRouterStrategy() = default;
+  virtual ~IStrategy() = default;
   /// This function is guaranteed to be thread-safe.
   virtual std::optional<To> operator() (C& collection) = 0;
+
+  /// Transforms From type to To type if it is possible
+  virtual std::optional<To> transform(From&) = 0;
 };
 
 template<typename From, typename To>
-using IVectorRouterStrategy = IRouterStrategy<To, std::vector<From>>;
+using IVectorStrategy = IStrategy<From, To, std::vector<From>>;
 
 /// Represents a synchronization object used to orchestrate the
 /// distribution of work items to threads, it owns the items it serves.
@@ -33,7 +36,7 @@ public:
 
   /// Insert a work item inside the collection in a thread-safe manner
   /// @param item The items to be inserted
-  virtual void insert(From&& item) = 0;
+  virtual void mutate(std::function<void(C&)>) = 0;
 
   /// Wait for an available work item
   virtual std::optional<To> get_work() = 0;
@@ -71,21 +74,21 @@ protected:
   bool m_should_serve;
 
   /// Strategy that will be used to extract work from the collection
-  std::unique_ptr<IVectorRouterStrategy<From, To>> m_strategy;
+  std::unique_ptr<IVectorStrategy<From, To>> m_strategy;
   /// Collection with work items to be distributed
   std::vector<From> m_work_items;
 
 public:
   /// Construct a new router with a strategy
   /// @param strategy The strategy to be used, router takes ownership of the object
-  explicit VectorRouter(std::unique_ptr<IVectorRouterStrategy<From, To>> strategy);
+  explicit VectorRouter(std::unique_ptr<IVectorStrategy<From, To>> strategy);
 
-  void insert(From&& item) override;
+  void mutate(std::function<void(std::vector<From>&)>) override;
   [[nodiscard]] std::optional<To> get_work() override;
 
   /// Changes the strategy to be used in selecting the work-items
   /// @param strategy The new strategy to be used, router takes ownership of the object
-  void set_strategy(std::unique_ptr<IVectorRouterStrategy<From, To>> strategy);
+  void set_strategy(std::unique_ptr<IVectorStrategy<From, To>> strategy);
 
   void   stop()   override;
   void   resume() override;

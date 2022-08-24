@@ -1,15 +1,18 @@
 #pragma once
 
 #include "torrent_manager.hpp"
+#include <mt/thread_pool.hpp>
+#include <download/lender_pool.hpp>
+#include <furrent.hpp>
 
 namespace fur {
 
 class Furrent {
-  private:
+
     /// List of torrents to download
-    std::vector<fur::manager::TorrentManager> _downloads;
-    /// Index of the next last TorrentManager to pick (TODO)
-    int _index;
+    std::shared_ptr<mt::VectorRouter<TorrentManager, Piece>> _downloads;
+    mt::WorkerThreadPool<TorrentManager, Piece> _thread_pool;
+
   public:
     Furrent();
     ~Furrent() = default;
@@ -18,10 +21,6 @@ class Furrent {
     void add_torrent(const std::string& path);
     /// Print the status of the downloads
     void print_status() const;
-    /// Pick the next torrent to download, then inside the TorrentManager object
-    /// pick the next task to be done
-    manager::TorrentManager& pick_torrent();
-
 };
 
 }

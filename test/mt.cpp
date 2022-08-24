@@ -20,7 +20,7 @@ struct To {
 };
 
 // Choose at random an element in the collection of Foo transforming it into a Bar
-class UniformRouterStrategy : public IVectorRouterStrategy<From, To> {
+class UniformRouterStrategy : public IVectorStrategy<From, To> {
 public:
     UniformRouterStrategy() {
         srand(time(nullptr));

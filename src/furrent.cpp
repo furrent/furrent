@@ -3,20 +3,36 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <random>
 
+#include <strategies/uniform.hpp>
 #include "bencode/bencode_parser.hpp"
 #include "torrent_manager.hpp"
 
-using namespace fur;
+namespace fur {
+
+class TMTStrategy : public strategy::UniformStrategy<TorrentManager, Piece> {
+
+ public:
+  TMTStrategy()
+      : UniformStrategy<TorrentManager, Piece>(false) { }
+
+  std::optional<Piece> transform(TorrentManager& manager) override {
+    auto socket = manager.get_lender_pool().get();
+    auto task = manager.pick_task();
+    if (task)
+        return std::optional{ Piece{ *task, socket }};
+    return std::nullopt;
+  }
+};
 
 // Create constructor
-Furrent::Furrent() :
-         _downloads(std::vector<manager::TorrentManager>()),
-        _index(0) {
-}
+Furrent::Furrent()
+    : _downloads(std::make_shared<mt::VectorRouter<TorrentManager, Piece>>(std::make_unique<TMTStrategy>())),
+      _thread_pool{_downloads, [](Piece&){ }} { }
 
 // Add torrent to downloads
-void Furrent::add_torrent(const std::string& path){
+void Furrent::add_torrent(const std::string& path) {
   // Read all file data located in the path
   std::ifstream file(path);
   std::string content;
@@ -26,7 +42,8 @@ void Furrent::add_torrent(const std::string& path){
     content = ss.str();
   } else {
     // Trow exception invalid path
-    throw std::invalid_argument("fur::Furrent::add_torrent: invalid path or "
+    throw std::invalid_argument(
+        "fur::Furrent::add_torrent: invalid path or "
         "missing permission");
   }
   // Create torrent_manager for the file
@@ -34,23 +51,19 @@ void Furrent::add_torrent(const std::string& path){
   auto b_tree = parser.decode(content);
   auto torrent = fur::torrent::TorrentFile(*b_tree);
 
-  manager::TorrentManager t{torrent};
-
-  _downloads.push_back(t);
+  /*
+  _downloads->mutate([&](std::vector<TorrentManager>& vec) {
+    vec.emplace_back(torrent);
+  });
+   */
 }
 
 void Furrent::print_status() const {
   std::cout << "Files in queue:" << std::endl;
+  /*
   for (auto& t_manager : _downloads) {
     t_manager.print_status();
   }
+   */
 }
-
-manager::TorrentManager& Furrent::pick_torrent() {
-  // TODO: implement some kind of scheduling system
-  manager::TorrentManager& picked = _downloads[_index];
-  // Increment the index be careful not to go out of bounds
-  _index = static_cast<int>((_index + 1) % _downloads.size());
-  return picked;
-
 }
