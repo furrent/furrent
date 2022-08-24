@@ -10,6 +10,17 @@
 using namespace fur::peer;
 using namespace fur::torrent;
 
+// TODO Remove once the real struct is merged
+struct Task {
+  int index;
+};
+
+// TODO Remove once the real struct is merged
+struct Result {
+  int index;
+  std::vector<uint8_t> content;
+};
+
 namespace fur::downloader {
 /// The type used for TCP communication
 using Socket = asio::ip::tcp::socket;
@@ -21,6 +32,8 @@ class Downloader {
  public:
   /// Construct a new `Downloader`. No TCP socket is established at this time.
   explicit Downloader(const TorrentFile& torrent, const Peer& peer);
+
+  [[nodiscard]] std::optional<Result> try_download(const Task&);
 
  private:
   const TorrentFile& torrent;

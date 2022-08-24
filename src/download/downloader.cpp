@@ -77,4 +77,6 @@ void Downloader::handshake() {
     throw std::runtime_error("bad handshake");
   }
 }
+
+std::optional<Result> Downloader::try_download(const Task&) { return std::nullopt; }
 }  // namespace fur::downloader
