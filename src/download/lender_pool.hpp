@@ -7,6 +7,7 @@
 #include <optional>
 #include <vector>
 
+namespace fur::lender_pool {
 /// Used by the `LenderPool` to store a generic object of type `T` while
 /// tracking whether or not it is currently borrowed.
 template <typename T>
@@ -121,3 +122,4 @@ SlotPtr<T>* StratFirstAvailable<T>::operator()(
   }
   return nullptr;
 }
+}  // namespace fur::lender_pool
