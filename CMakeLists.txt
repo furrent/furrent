@@ -35,6 +35,7 @@ set(LINKER_FLAGS
 set(INCLUDES
     ${PROJECT_SOURCE_DIR}/third_party
     ${PROJECT_SOURCE_DIR}/third_party/asio/include
+    ${PROJECT_SOURCE_DIR}/test
 )
 
 # ===============
