@@ -41,3 +41,4 @@ jobs:
 
     - name: Stop faker
       run: kill $!
+
