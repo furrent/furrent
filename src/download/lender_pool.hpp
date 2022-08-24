@@ -36,6 +36,9 @@ class LenderPool {
   std::vector<Slot> storage;
 
  public:
+
+
+
   void put(T inner) {
     std::unique_lock lock(mx);
     storage.push_back(Slot(std::move(inner)));

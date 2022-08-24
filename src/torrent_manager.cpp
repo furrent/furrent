@@ -21,7 +21,7 @@ TorrentManager::TorrentManager(fur::torrent::TorrentFile& torrent)
   // Update the peer list and the announcement interval
   this->update_peers();
 }
-
+/*
 TorrentManager::TorrentManager(TorrentManager&& other) noexcept {
     _torrent = other._torrent;
     _tasks = std::move(other._tasks);
@@ -90,7 +90,7 @@ bool TorrentManager::has_tasks() const {
   return !_tasks.empty();
 }
 
-TorrentManager::MyLenderPool& TorrentManager::get_lender_pool() {
+LenderPool<Socket>& TorrentManager::get_lender_pool() {
   return _lender_pool;
 }
 

@@ -12,10 +12,10 @@ VectorRouter<T, W>::VectorRouter(std::unique_ptr<IVectorStrategy<T, W>> strategy
 : m_should_serve{true}, m_strategy{std::move(strategy)} { }
 
 template<typename T, typename W>
-void VectorRouter<T, W>::mutate(std::function<void(std::vector<T>&)> fn) {
+void VectorRouter<T, W>::insert(T& item) {
   {
     std::scoped_lock<std::mutex> lock(m_mutex);
-    fn(m_work_items);
+    m_work_items.push_back(item);
   }
   m_work_available.notify_one();
 }

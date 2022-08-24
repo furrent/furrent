@@ -11,17 +11,20 @@
 
 namespace fur {
 
-class TMTStrategy : public strategy::UniformStrategy<TorrentManager, Piece> {
+class TMTStrategy : public strategy::UniformStrategy<TorrentManagerRef, Piece> {
 
  public:
   TMTStrategy()
-      : UniformStrategy<TorrentManager, Piece>(false) { }
+      : UniformStrategy<TorrentManagerRef, Piece>(false) { }
 
-  std::optional<Piece> transform(TorrentManager& manager) override {
-    auto socket = manager.get_lender_pool().get();
-    auto task = manager.pick_task();
-    if (task)
+  std::optional<Piece> transform(TorrentManagerRef& ptr) override {
+    // Check if manager exists
+    if (auto manager = ptr.lock()) {
+      auto socket = manager->get_lender_pool().get();
+      auto task = manager->pick_task();
+      if (task)
         return std::optional{ Piece{ *task, socket }};
+    }
     return std::nullopt;
   }
 };
@@ -51,11 +54,13 @@ void Furrent::add_torrent(const std::string& path) {
   auto b_tree = parser.decode(content);
   auto torrent = fur::torrent::TorrentFile(*b_tree);
 
-  /*
-  _downloads->mutate([&](std::vector<TorrentManager>& vec) {
-    vec.emplace_back(torrent);
-  });
-   */
+  // Create new shared torrent manager from torrent file
+  auto manager = std::make_shared<TorrentManager>(torrent);
+  _downloads.push_back(manager);
+
+  // Create weak reference to newly added torrent manager
+  TorrentManagerRef weak = manager;
+  _router->insert(weak);
 }
 
 void Furrent::print_status() const {

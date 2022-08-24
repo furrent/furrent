@@ -9,9 +9,14 @@ namespace fur {
 
 class Furrent {
 
+    typedef mt::VectorRouter<TorrentManagerRef, Piece> MyVectorRouter;
+
     /// List of torrents to download
-    std::shared_ptr<mt::VectorRouter<TorrentManager, Piece>> _downloads;
-    mt::WorkerThreadPool<TorrentManager, Piece> _thread_pool;
+    std::list<std::shared_ptr<TorrentManager>> _downloads;
+    /// Router used to orchestrate workers' work
+    std::shared_ptr<MyVectorRouter> _router;
+    /// Pool managing workers threads
+    mt::WorkerThreadPool<TorrentManagerRef, Piece> _thread_pool;
 
   public:
     Furrent();

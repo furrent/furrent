@@ -36,7 +36,7 @@ public:
 
   /// Insert a work item inside the collection in a thread-safe manner
   /// @param item The items to be inserted
-  virtual void mutate(std::function<void(C&)>) = 0;
+  virtual void insert(From& item) = 0;
 
   /// Wait for an available work item
   virtual std::optional<To> get_work() = 0;
@@ -83,8 +83,8 @@ public:
   /// @param strategy The strategy to be used, router takes ownership of the object
   explicit VectorRouter(std::unique_ptr<IVectorStrategy<From, To>> strategy);
 
-  void mutate(std::function<void(std::vector<From>&)>) override;
   [[nodiscard]] std::optional<To> get_work() override;
+  void insert(From&) override;
 
   /// Changes the strategy to be used in selecting the work-items
   /// @param strategy The new strategy to be used, router takes ownership of the object

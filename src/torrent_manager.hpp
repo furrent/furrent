@@ -33,6 +33,7 @@ struct Task {
   fur::torrent::TorrentFile &torrent;
 };
 
+/// Work item for the workers, used to download a piece of the torrent
 struct Piece {
   Task task;
   LenderPool<Socket>::Borrow socket;
@@ -40,9 +41,6 @@ struct Piece {
 
 /// Every torrent to download is mapped to a TorrentManager object
 class TorrentManager {
-
-  typedef LenderPool<Socket> MyLenderPool;
-
  private:
     /// The parsed .torrent file
     fur::torrent::TorrentFile _torrent;
@@ -55,9 +53,9 @@ class TorrentManager {
     int                             _announce_interval;
     /// Last time we announced ourselves to the tracker
     time_t                          _last_announce;
-    /// Pool of opened sockets
-    MyLenderPool _lender_pool;
-    // Define a strategy for choosing the task
+    /// Pool of reusable sockets
+    LenderPool<Socket>              _lender_pool;
+    /// Define a strategy for choosing the task
     std::unique_ptr<mt::IVectorStrategy<Task, Task>> _task_strategy;
 
   public:
@@ -80,9 +78,8 @@ class TorrentManager {
     // LenderPool is not copyable
     TorrentManager(TorrentManager& other) = delete;
     TorrentManager& operator= (TorrentManager& other) = delete;
-
-    TorrentManager(TorrentManager&& other) noexcept;
-    TorrentManager& operator= (TorrentManager&& other) noexcept;
+    TorrentManager(TorrentManager&& other) noexcept = delete;
+    TorrentManager& operator= (TorrentManager&& other) noexcept = delete;
 
     /// Function to know if there are tasks to do
     [[nodiscard]] bool has_tasks() const;
@@ -101,9 +98,13 @@ class TorrentManager {
     /// Debug function to print the status of the TorrentManager object
     void print_status() const;
 
-    MyLenderPool& get_lender_pool();
-
+    /// Set the stategy used to pick a piece for the workers
     void set_strategy(std::unique_ptr<mt::IVectorStrategy<Task, Task>> strategy);
+    /// Returns the _lender_pool of the current object
+    LenderPool<Socket>& get_lender_pool();
 };
+
+/// Type used to reference a Torrent Manager without owning it or moving it
+using TorrentManagerRef = std::weak_ptr<TorrentManager>;
 
 } // namespace fur
