@@ -7,6 +7,6 @@ using namespace fur::peer;
 
 TEST_CASE("[Download] Handshake") {
   // Localhost faker
-  Peer peer{2130706433, 4242};
+  Peer peer("127.0.0.1", 4242);
   Downloader down(peer);
 }

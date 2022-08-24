@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <regex>
 
 #include "bencode_parser.hpp"
 #include "bencode_value.hpp"
@@ -13,6 +14,24 @@ namespace fur::peer {
 std::string Peer::address() const {
   return fmt::format("{}.{}.{}.{}:{}", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
+}
+
+Peer::Peer(uint32_t ip, uint16_t port) : ip{ip}, port{port} {}
+
+Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
+  const std::regex ip_regex(R"(\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\s*)");
+
+  std::smatch match;
+  std::regex_match(ip_s, match, ip_regex);
+
+  if (match.empty()) {
+    throw std::invalid_argument("not a valid ip");
+  }
+
+  for (int i=1; i<=4; i++) {
+    uint32_t octet = std::stoi(match[i]);
+    ip |= octet << 8*(4-i);
+  }
 }
 
 // Forward declare
