@@ -18,8 +18,6 @@ void Downloader::ensure_connected() {
   auto port = asio::ip::port_type(peer.port);
   sock.connect(asio::ip::tcp::endpoint(ip, port));
 
-  // sock.set_option(asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO>(200));
-
   socket = std::move(sock);
 
   handshake();
