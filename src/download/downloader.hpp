@@ -63,4 +63,4 @@ class Downloader {
   // Befriend this class so the unit tests are able to access private members.
   friend TestingFriend;
 };
-}  // namespace fur::downloader
+}  // namespace fur::download::downloader

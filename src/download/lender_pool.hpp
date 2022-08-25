@@ -122,4 +122,4 @@ SlotPtr<T>* StratFirstAvailable<T>::operator()(
   }
   return nullptr;
 }
-}  // namespace fur::lender_pool
+}  // namespace fur::download::lender_pool
