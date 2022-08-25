@@ -19,5 +19,9 @@ TEST_CASE("[Downloader] Handshake") {
 
   Downloader down(torrent, peer);
 
+  // Assert that the socket is not yet present (lazily initialized)
+  REQUIRE(!TestingFriend::Downloader_socket(down).has_value());
   TestingFriend::Downloader_ensure_connected(down);
+  // Assert that the socket is now present
+  REQUIRE(TestingFriend::Downloader_socket(down).has_value());
 }

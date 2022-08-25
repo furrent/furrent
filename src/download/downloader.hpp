@@ -2,13 +2,14 @@
 
 #include <optional>
 
-#include "asio.hpp"
+#include "download/socket.hpp"
 #include "peer.hpp"
 #include "tfriend_fw.hpp"
 #include "torrent.hpp"
 
 using namespace fur::peer;
 using namespace fur::torrent;
+using namespace fur::download::socket;
 
 /// The `TorrentFile` is not required because any given `Downloader` is already
 /// bound to a specific `TorrentFile` and has a reference to it.
@@ -25,9 +26,6 @@ struct Result {
 };
 
 namespace fur::download::downloader {
-/// The type used for TCP communication
-using Socket = asio::ip::tcp::socket;
-
 /// Handles downloading of torrent pieces. Must be initialized with a
 /// `TorrentFile` and a `Peer` discovered from that same torrent. This type is
 /// intrinsically not copyable because it embeds an ASIO socket.

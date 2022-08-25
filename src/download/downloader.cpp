@@ -11,15 +11,9 @@ Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
 void Downloader::ensure_connected() {
   if (socket.has_value() && socket->is_open()) return;
 
-  asio::io_context io_context;
-
-  asio::ip::tcp::socket sock(io_context);
-  auto ip = asio::ip::address_v4(peer.ip);
-  auto port = asio::ip::port_type(peer.port);
-  sock.connect(asio::ip::tcp::endpoint(ip, port));
-
-  socket = std::move(sock);
-
+  // Construct the socket
+  socket.emplace();
+  socket->connect(peer.ip, peer.port, std::chrono::milliseconds(500));
   handshake();
 }
 
@@ -60,11 +54,11 @@ void Downloader::handshake() {
   message.insert(message.end(), peerId.begin(), peerId.end());
 
   // The message is ready, send it to the peer
-  socket->write_some(asio::buffer(message));
+  socket->write(message, std::chrono::milliseconds(100));
 
   // Read the response
-  std::array<uint8_t, HANDSHAKE_LENGTH> response{};
-  socket->read_some(asio::buffer(response));
+  auto response =
+      socket->read(HANDSHAKE_LENGTH, std::chrono::milliseconds(100));
 
   // Extract the info-hash from the response
   hash::hash_t response_info_hash;
