@@ -20,6 +20,8 @@ class Furrent {
 
   public:
     Furrent();
+    /// Constructor for the tests
+    Furrent(std::function<void(Piece&)>);
     ~Furrent() = default;
     /// Add torrent to the list of downloads creating a TorrentManager object
     /// for it
