@@ -12,8 +12,8 @@ class UniformTaskStrategy : public strategy::UniformStrategy<TaskRef, TaskRef> {
       : UniformStrategy<TaskRef, TaskRef>(true) { }
 
   std::optional<TaskRef> transform(TaskRef& task) override {
-    // Check if tasks exists
-    return task;
+    // Return optional of task
+    return std::optional<TaskRef>{ task };
   }
 };
 
@@ -28,8 +28,7 @@ TorrentManager::TorrentManager(fur::torrent::TorrentFile& torrent)
       result(){
   // Create the list of tasks
   for (int i = 0; i < static_cast<int>(num_tasks); i++) {
-    TaskRef task = std::make_shared<Task>(Task{i, torrent});
-    //_tasks.push_back(Task{i, torrent, });
+    _tasks.push_back(std::make_shared<Task>(Task{i, torrent}));
   }
   // Update the peer list and the announcement interval
   this->update_peers();

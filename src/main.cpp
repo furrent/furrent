@@ -4,14 +4,7 @@
 #include <furrent.hpp>
 
 void test_worker(fur::Piece& p) {
-  std::cout << "test_worker" << std::endl;
-  /*
-  const int piece_count = p.task.torrent.length / p.task.torrent.piece_length;
-
-  std::cout << "Thread[" << std::this_thread::get_id() << "] is downloading piece"
-            << p.task.index << " of " << piece_count << " for "
-            << p.task.torrent.name << std::endl;
-  */
+  std::cout << "[Worker] "<< p.task->index << std::endl;
 }
 
 int main() {
