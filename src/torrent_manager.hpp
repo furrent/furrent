@@ -8,13 +8,13 @@
 
 #include <download/lender_pool.hpp>
 #include <mt/router.hpp>
+#include <strategies/uniform.hpp>
 
 #include <optional>
 
 /// Namespace for the torrent manager. Contains the TorrentManager, every
 /// torrent file is mapped to a TorrentManager object.
 namespace fur {
-
 /// Used to store every sub-data of a torrent file because is divided into many
 /// Result, after the entire download there are to combine all the Results into
 /// a single file
@@ -33,19 +33,24 @@ struct Task {
   fur::torrent::TorrentFile &torrent;
 };
 
+typedef std::shared_ptr<Task> TaskRef;
+
 /// Work item for the workers, used to download a piece of the torrent
 struct Piece {
-  Task task;
-  LenderPool<Socket>::Borrow socket;
+  TaskRef task;
+  // TODO: add LenderPool
+  //LenderPool<Socket>::Borrow socket;
 };
+
+
 
 /// Every torrent to download is mapped to a TorrentManager object
 class TorrentManager {
  private:
     /// The parsed .torrent file
-    fur::torrent::TorrentFile _torrent;
+    fur::torrent::TorrentFile       _torrent;
     /// List of tasks to be done for the download
-    std::vector<Task>                _tasks;      // TODO: replace queue
+    std::vector<TaskRef>            _tasks;      // TODO: replace queue
     /// List of peers to download the file from
     std::vector<fur::peer::Peer>    _peers;
     /// The announce interval is the time (in seconds) we're expected to
@@ -56,13 +61,14 @@ class TorrentManager {
     /// Pool of reusable sockets
     LenderPool<Socket>              _lender_pool;
     /// Define a strategy for choosing the task
-    std::unique_ptr<mt::IVectorStrategy<Task, Task>> _task_strategy;
+    //std::unique_ptr<mt::UniformStrategy<Task>> _task_strategy;
+    std::unique_ptr<mt::IVectorStrategy<TaskRef, TaskRef>> _task_strategy;
 
   public:
     /// Priority of the torrent
     int                             priority;
     /// The number of tasks that we have to do
-    int                       num_tasks;  // Only for calculate it one
+    int                             num_tasks;  // Only for calculate it one
                                                 // time
     /// The number of tasks that we have done
     int                             num_done;   // The _result size can't
@@ -84,12 +90,12 @@ class TorrentManager {
     /// Function to know if there are tasks to do
     [[nodiscard]] bool has_tasks() const;
     /// Function to get the next task to be done
-    std::optional<Task> pick_task();
+    std::optional<TaskRef> pick_task();
     /// Function to call when a task is done, it removes the task from the list
     /// of tasks adds the result to the list of results
     void task_done(const Result& r);
     /// Function to call when a task is failed, it put back the task in the list
-    void task_failed(const Task& t);
+    void task_failed(const TaskRef& t);
     /// Update the list of peers to download the file from
     void update_peers();
     /// Function that put the state of the current object to Refresh if the time
@@ -99,7 +105,7 @@ class TorrentManager {
     void print_status() const;
 
     /// Set the stategy used to pick a piece for the workers
-    void set_strategy(std::unique_ptr<mt::IVectorStrategy<Task, Task>> strategy);
+    void set_strategy(std::unique_ptr<mt::IVectorStrategy<TaskRef, TaskRef>> strategy);
     /// Returns the _lender_pool of the current object
     LenderPool<Socket>& get_lender_pool();
 };

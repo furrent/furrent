@@ -9,8 +9,12 @@
 #include "bencode/bencode_parser.hpp"
 #include "torrent_manager.hpp"
 
+// Add strategy on task picker and fixing the Furrent class
+
 namespace fur {
 
+// Strategy to pick a task from a list of TorrentManager, every TorrentManager
+// has a local strategy to pick a task from its own list of tasks.
 class TMTStrategy : public strategy::UniformStrategy<TorrentManagerRef, Piece> {
 
  public:
@@ -20,11 +24,16 @@ class TMTStrategy : public strategy::UniformStrategy<TorrentManagerRef, Piece> {
   std::optional<Piece> transform(TorrentManagerRef& ptr) override {
     // Check if manager exists
     if (auto manager = ptr.lock()) {
-      auto socket = manager->get_lender_pool().get();
+      // TODO: add LenderPool
+      //auto socket = manager->get_lender_pool().get();
       auto task = manager->pick_task();
-      if (task)
-        return std::optional{ Piece{ *task, socket }};
+      if (task.has_value()){
+        std::cout << "transform() -> piece" << std::endl;
+        // TODO add socker picker from LenderPool
+        return std::optional{ Piece{ task.value() }};
+      }
     }
+    std::cout << "transform() -> null" << std::endl;
     return std::nullopt;
   }
 };
@@ -35,11 +44,13 @@ Furrent::Furrent()
       _router(std::make_shared<mt::VectorRouter<TorrentManagerRef, Piece>>(std::make_unique<TMTStrategy>())),
       _thread_pool{_router, [](Piece&){ }} { }
 
-// New
+// Constructor for the tests
 Furrent::Furrent(std::function<void(Piece&)> fn)
     : _downloads{},
       _router(std::make_shared<mt::VectorRouter<TorrentManagerRef, Piece>>(std::make_unique<TMTStrategy>())),
-      _thread_pool{_router, std::move(fn)} { }
+      _thread_pool{_router, std::move(fn)} {
+    std::cout << "Furrent(()=>{})" << std::endl;
+}
 
 // Add torrent to downloads
 void Furrent::add_torrent(const std::string& path) {

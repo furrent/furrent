@@ -1,54 +1,40 @@
 #include "torrent_manager.hpp"
 #include <iomanip>
 #include <iostream>
+#include <strategies/uniform.hpp>
 
 namespace fur {
 
+class UniformTaskStrategy : public strategy::UniformStrategy<TaskRef, TaskRef> {
+
+ public:
+  UniformTaskStrategy()
+      : UniformStrategy<TaskRef, TaskRef>(true) { }
+
+  std::optional<TaskRef> transform(TaskRef& task) override {
+    // Check if tasks exists
+    return task;
+  }
+};
+
 TorrentManager::TorrentManager(fur::torrent::TorrentFile& torrent)
     : _torrent(torrent),
+      _tasks(),
       _announce_interval(0),
       _last_announce(0),
-      priority(0),
+      _task_strategy(std::make_unique<UniformTaskStrategy>()),
       num_tasks((torrent.length / torrent.piece_length)),
-      num_done(0) {
-  // Create all tasks for the file
-  result = std::list<Result>();  // TODO change list
-  _tasks = std::vector<Task>();   // TODO change queue
-
+      num_done(0),
+      result(){
+  // Create the list of tasks
   for (int i = 0; i < static_cast<int>(num_tasks); i++) {
-    _tasks.push_back(Task{i, torrent, });
+    TaskRef task = std::make_shared<Task>(Task{i, torrent});
+    //_tasks.push_back(Task{i, torrent, });
   }
   // Update the peer list and the announcement interval
   this->update_peers();
 }
-/*
-TorrentManager::TorrentManager(TorrentManager&& other) noexcept {
-    _torrent = other._torrent;
-    _tasks = std::move(other._tasks);
-    _peers = std::move(other._peers);
-    _announce_interval = other._announce_interval;
-    _last_announce = other._last_announce;
-    //_lender_pool = std::move(other._lender_pool);
-    priority = other.priority;
-    num_tasks = other.num_tasks;
-    num_done = other.num_done;
-    result = std::move(other.result);
-}
 
-TorrentManager& TorrentManager::operator= (TorrentManager&& other) noexcept {
-  _torrent = other._torrent;
-  _tasks = std::move(other._tasks);
-  _peers = std::move(other._peers);
-  _announce_interval = other._announce_interval;
-  _last_announce = other._last_announce;
-  //_lender_pool = std::move(other._lender_pool);
-  priority = other.priority;
-  num_tasks = other.num_tasks;
-  num_done = other.num_done;
-  result = std::move(other.result);
-  return *this;
-}
-*/
 void TorrentManager::update_peers() {
   auto r = fur::peer::announce(_torrent);
   _peers = r.peers;
@@ -60,7 +46,8 @@ bool TorrentManager::should_announce() const {
   return (time(nullptr) - _last_announce > _announce_interval);
 }
 
-std::optional<Task> TorrentManager::pick_task() {
+std::optional<TaskRef> TorrentManager::pick_task() {
+  std::cout << "TorrentManager::pick_task()" << std::endl;
   return (*_task_strategy)(_tasks);
 }
 
@@ -71,7 +58,7 @@ void TorrentManager::task_done(const Result& r) {
   num_done++;
 }
 
-void TorrentManager::task_failed(const Task& t) {
+void TorrentManager::task_failed(const TaskRef& t) {
   _tasks.push_back(t);
   // TODO: should we do something else?
   // this->update_peers();
@@ -80,7 +67,8 @@ void TorrentManager::task_failed(const Task& t) {
 void TorrentManager::print_status() const {
   std::cout << "\t"
             << "Status of " << _torrent.name << ": "
-            << " " << std::setw(6) << num_done << "/" << num_tasks << std::endl;
+            << " " << std::setw(6) << num_done << "/" << num_tasks
+            << std::endl;
 }
 bool TorrentManager::has_tasks() const {
   // If all tasks are done, return false
@@ -94,7 +82,7 @@ LenderPool<Socket>& TorrentManager::get_lender_pool() {
   return _lender_pool;
 }
 
-void TorrentManager::set_strategy(std::unique_ptr<mt::IVectorStrategy<Task, Task>> strategy) {
+void TorrentManager::set_strategy(std::unique_ptr<mt::IVectorStrategy<TaskRef, TaskRef>> strategy) {
   _task_strategy = std::move(strategy);
 }
 
