@@ -53,7 +53,6 @@ TEST_CASE("[LenderPool] Moving backing vector") {
 
   LenderPool<NonCopyable> pool;
   pool.put(NonCopyable(27));
-  pool.put(NonCopyable(39));
 
   auto t1 = std::thread([&] {
     auto borrow = pool.get();
@@ -62,12 +61,15 @@ TEST_CASE("[LenderPool] Moving backing vector") {
     REQUIRE(borrow->proof_of_access() == 27);
   });
   auto t2 = std::thread([&] {
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
     auto borrow1 = pool.get();
     auto borrow2 = pool.get();
     REQUIRE(borrow1->proof_of_access() == 27);
     REQUIRE(borrow2->proof_of_access() == 39);
   });
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  pool.put(NonCopyable(39));
 
   t1.join();
   t2.join();
