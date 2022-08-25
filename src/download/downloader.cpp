@@ -4,7 +4,7 @@
 
 #include "asio.hpp"
 
-namespace fur::downloader {
+namespace fur::download::downloader {
 Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
     : torrent{torrent}, peer{peer} {}
 
@@ -78,5 +78,7 @@ void Downloader::handshake() {
   }
 }
 
-std::optional<Result> Downloader::try_download(const Task&) { return std::nullopt; }
-}  // namespace fur::downloader
+std::optional<Result> Downloader::try_download(const Task&) {
+  return std::nullopt;
+}
+}  // namespace fur::download::downloader

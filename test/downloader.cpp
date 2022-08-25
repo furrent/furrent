@@ -6,7 +6,7 @@
 #include "tfriend.hpp"
 
 using namespace fur::peer;
-using namespace fur::downloader;
+using namespace fur::download::downloader;
 
 TEST_CASE("[Download] Handshake") {
   // Localhost faker

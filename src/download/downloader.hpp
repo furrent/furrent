@@ -24,7 +24,7 @@ struct Result {
   std::vector<uint8_t> content;
 };
 
-namespace fur::downloader {
+namespace fur::download::downloader {
 /// The type used for TCP communication
 using Socket = asio::ip::tcp::socket;
 

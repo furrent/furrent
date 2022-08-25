@@ -6,7 +6,8 @@
 /// order to allow private members to be accessed, for testing purposes.
 struct TestingFriend {
  public:
-  static void Downloader_ensure_connected(fur::downloader::Downloader& down) {
+  static void Downloader_ensure_connected(
+      fur::download::downloader::Downloader& down) {
     down.ensure_connected();
   }
 };

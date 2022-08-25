@@ -4,7 +4,7 @@
 
 #include "catch2/catch.hpp"
 
-using namespace fur::lender_pool;
+using namespace fur::download::lender_pool;
 
 /// A dummy type that cannot be copied. Used to demonstrate the usage of
 /// `LenderPool` with non-copyable types.
