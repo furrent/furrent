@@ -31,8 +31,15 @@ class TMTStrategy : public strategy::UniformStrategy<TorrentManagerRef, Piece> {
 
 // Create constructor
 Furrent::Furrent()
-    : _downloads(std::make_shared<mt::VectorRouter<TorrentManager, Piece>>(std::make_unique<TMTStrategy>())),
-      _thread_pool{_downloads, [](Piece&){ }} { }
+    : _downloads{},
+      _router(std::make_shared<mt::VectorRouter<TorrentManagerRef, Piece>>(std::make_unique<TMTStrategy>())),
+      _thread_pool{_router, [](Piece&){ }} { }
+
+// New
+Furrent::Furrent(std::function<void(Piece&)> fn)
+    : _downloads{},
+      _router(std::make_shared<mt::VectorRouter<TorrentManagerRef, Piece>>(std::make_unique<TMTStrategy>())),
+      _thread_pool{_router, std::move(fn)} { }
 
 // Add torrent to downloads
 void Furrent::add_torrent(const std::string& path) {
@@ -45,6 +52,7 @@ void Furrent::add_torrent(const std::string& path) {
     content = ss.str();
   } else {
     // Trow exception invalid path
+    // TODO: manage the exception
     throw std::invalid_argument(
         "fur::Furrent::add_torrent: invalid path or "
         "missing permission");
@@ -65,10 +73,5 @@ void Furrent::add_torrent(const std::string& path) {
 
 void Furrent::print_status() const {
   std::cout << "Files in queue:" << std::endl;
-  /*
-  for (auto& t_manager : _downloads) {
-    t_manager.print_status();
-  }
-   */
 }
 }

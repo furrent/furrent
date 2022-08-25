@@ -48,7 +48,7 @@ TorrentManager& TorrentManager::operator= (TorrentManager&& other) noexcept {
   result = std::move(other.result);
   return *this;
 }
-
+*/
 void TorrentManager::update_peers() {
   auto r = fur::peer::announce(_torrent);
   _peers = r.peers;

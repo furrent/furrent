@@ -23,7 +23,8 @@ TEST_CASE("Furrent base functionality") {
 
   Furrent fur{test_worker};
   fur.add_torrent("../extra/debian-11.4.0-amd64-netinst.iso.torrent");
-  fur.add_torrent("../extra/debian-11.4.0-amd128-netinst.iso.torrent");
+  std::cout << "WORKING" << std::endl;
+  //fur.add_torrent("../extra/debian-11.4.0-amd128-netinst.iso.torrent");
 
   std::this_thread::sleep_for(std::chrono::seconds(3));
 }
