@@ -1,5 +1,6 @@
 #include <mt/thread_pool.hpp>
 #include <mt/router.hpp>
+#include <strategies/uniform.hpp>
 
 #include <random>
 #include <iostream>
@@ -19,31 +20,20 @@ struct To {
     int value_processed;
 };
 
-// Choose at random an element in the collection of Foo transforming it into a Bar
-class UniformRouterStrategy : public IVectorStrategy<From, To> {
-public:
-    UniformRouterStrategy() {
-        srand(time(nullptr));
-    }
+class TestStrategy : public fur::strategy::UniformStrategy<From, To> {
+ public:
+  explicit TestStrategy()
+      : UniformStrategy<From, To>(true) { }
 
-    std::optional<To> operator() (std::vector<From>& items) override {
-        if (!items.empty()) {
-        
-            int index = rand() % items.size();
-            From item = items.at(index);
-            items.erase(items.begin() + index);
-
-            To work{ item.value };
-            return std::optional<To>{ work };
-        }
-        return std::nullopt;
-    }
+  std::optional<To> transform(From& from) override {
+    return {{from.value}};
+  }
 };
 
 TEST_CASE("[mt] Correct uniform strategy behaviour") {
 
-    UniformRouterStrategy strategy;
-    std::vector<From> input = {
+    fur::strategy::IdentityUniformStrategy<To> strategy{true};
+    std::vector<To> input = {
         { 1 }, { 2 }, { 3 },
         { 4 }, { 5 }, { 6 },
         { 7 }, { 8 }, { 9 }
@@ -71,8 +61,9 @@ TEST_CASE("[mt] Worker Thread Pool") {
     using VectorRouter     = VectorRouter<From, To>;
     using WorkerThreadPool = WorkerThreadPool<From, To>;
 
+    From one = { 1 };
     auto router = std::make_shared<VectorRouter>(
-        std::make_unique<UniformRouterStrategy>());
+        std::make_unique<TestStrategy>());
 
     SECTION("Spin up and down")
     {
@@ -84,7 +75,7 @@ TEST_CASE("[mt] Worker Thread Pool") {
     {
         // Lots of data to be worked on
         for(int i = 0; i < 1000; i++)
-            router->insert({ 1 });
+            router->insert(one);
 
         WorkerThreadPool pool(router, [&](To&) { 
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -111,14 +102,14 @@ TEST_CASE("[mt] Worker Thread Pool") {
 
         // First work batch 
         for(int i = 0; i < ITEMS_COUNT; i++)
-            router->insert({ 1 });
+            router->insert(one);
         
         pool.busy();
         REQUIRE(router->size() == 0);
         
         // Second work batch
         for(int i = 0; i < ITEMS_COUNT; i++)
-            router->insert({ 1 });
+            router->insert(one);
 
         pool.busy();
         REQUIRE(router->size() == 0);
