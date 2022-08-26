@@ -28,7 +28,7 @@ enum class MessageKind {
 ///   <length><id><payload>
 class Message {
  public:
-  ~Message() = default;
+  virtual ~Message() = default;
   /// Encode this message to wire format. This is virtual because
   /// `KeepAliveMessage` uses a slightly different encoding that all other
   /// messages. That's the only subclass overriding `encode`.
