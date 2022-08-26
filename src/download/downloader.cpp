@@ -2,9 +2,12 @@
 
 #include <array>
 #include <cstdint>
+#include <stdexcept>
 
 #include "asio.hpp"
 #include "download/util.hpp"
+
+using fur::download::message::MessageKind;
 
 namespace fur::download::downloader {
 Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
@@ -25,6 +28,41 @@ void Downloader::ensure_connected() {
   // `BitfieldMessage` is either the first message sent or the peer has no piece
   // to share. In the latter case, we're not interested in them and can drop the
   // connection.
+  while (!bitfield.has_value()) {
+    auto message = recv_message(std::chrono::seconds(11));
+
+    switch (message->kind()) {
+      case MessageKind::Bitfield: {
+        auto bitfield_message = dynamic_cast<BitfieldMessage&>(*message);
+        bitfield.emplace(bitfield_message.bitfield.get_bytes(),
+                         bitfield_message.bitfield.len);
+        break;
+      }
+      case MessageKind::Choke:
+        choked = true;
+        break;
+      case MessageKind::Unchoke:
+        choked = false;
+        break;
+      default:;  // No need to do anything for all other messages
+    }
+  }
+
+  // Check that the bitfield has the correct length
+  if (bitfield->len != torrent.piece_hashes.size()) {
+    throw std::runtime_error(
+        "peer sent a bitfield with a size that doesn't match the torrent");
+  }
+
+  // Now we need to wait to be unchoked by the peer. Only then can we start to
+  // ask for pieces.
+  while (choked) {
+    auto message = recv_message(std::chrono::seconds(11));
+    if (message->kind() == MessageKind::Unchoke) {
+      choked = false;
+    }
+    // No need to do anything for all other messages
+  }
 }
 
 // 1  for the length of the protocol identifier
@@ -90,8 +128,7 @@ void Downloader::send_message(const Message& msg, timeout timeout) {
   socket->write(msg.encode(), timeout);
 }
 
-std::optional<std::unique_ptr<Message>> Downloader::recv_message(
-    timeout timeout) {
+std::unique_ptr<Message> Downloader::recv_message(timeout timeout) {
   auto before_read_len = std::chrono::steady_clock::now();
 
   auto message_len_bytes = socket->read(4, timeout);
@@ -110,6 +147,16 @@ std::optional<std::unique_ptr<Message>> Downloader::recv_message(
   whole.insert(whole.end(), message_len_bytes.begin(), message_len_bytes.end());
   whole.insert(whole.end(), rest.begin(), rest.end());
 
-  return Message::decode(torrent, whole);
+  auto message = Message::decode(torrent, whole);
+  if (!message.has_value()) {
+    throw std::runtime_error("unable to decode a message from the stream");
+  }
+
+  return std::move(message.value());
+}
+
+void Downloader::abort() {
+  socket->close();
+  socket = std::nullopt;
 }
 }  // namespace fur::download::downloader

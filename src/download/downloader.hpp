@@ -74,7 +74,9 @@ class Downloader {
   void handshake();
 
   void send_message(const Message& msg, timeout timeout);
-  std::optional<std::unique_ptr<Message>> recv_message(timeout timeout);
+  std::unique_ptr<Message> recv_message(timeout timeout);
+
+  void abort();
 
   // Befriend this class so the unit tests are able to access private members.
   friend TestingFriend;

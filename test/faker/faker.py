@@ -2,17 +2,17 @@ import sys
 import threading
 
 from echo10 import faker_echo10
-from handshake import faker_handshake
+from friendly import faker_friendly
 from slow import faker_slow
 
 if len(sys.argv) != 2:
-    print("Usage: python faker.py <all|handshake>")
+    print("Usage: python faker.py <all|echo10|slow|friendly>")
     sys.exit(1)
 
 name = sys.argv[1]
 
 if name == "all":
-    all_fakers = [faker_handshake, faker_echo10, faker_slow]
+    all_fakers = [faker_friendly, faker_echo10, faker_slow]
 
     threads = []
     for faker in all_fakers:
@@ -22,8 +22,8 @@ if name == "all":
 
     for t in threads:
         t.join()
-elif name == "handshake":
-    faker_handshake()
+elif name == "friendly":
+    faker_friendly()
 elif name == "echo10":
     faker_echo10()
 elif name == "slow":
