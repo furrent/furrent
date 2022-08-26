@@ -42,7 +42,7 @@ std::vector<uint8_t> Message::encode() {
 }
 
 std::optional<std::unique_ptr<Message>> Message::decode(
-    const std::vector<uint8_t>& buf) {
+    const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf) {
   // Treat `KeepAliveMessage` differently because that's the only message
   // with no payload and such.
   if (buf == KeepAliveMessage().encode()) {
@@ -80,12 +80,12 @@ std::optional<std::unique_ptr<Message>> Message::decode(
       // Payload should be empty for this message
       if (!payload.empty()) return std::nullopt;
       return std::make_unique<NotInterestedMessage>();
-    case 4: {
+    case 4:
       return HaveMessage::decode(payload);
-    }
-    case 6: {
+    case 5:
+      return BitfieldMessage::decode(torrent, payload);
+    case 6:
       return RequestMessage::decode(payload);
-    }
     default:
       // Unknown message ID
       return std::nullopt;
@@ -111,6 +111,16 @@ std::vector<uint8_t> HaveMessage::encode_payload() const {
   result.insert(result.end(), array.begin(), array.end());
 
   return result;
+}
+
+std::optional<std::unique_ptr<BitfieldMessage>> BitfieldMessage::decode(
+    const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf) {
+  return std::make_unique<BitfieldMessage>(
+      Bitfield(buf, torrent.piece_hashes.size()));
+}
+
+std::vector<uint8_t> BitfieldMessage::encode_payload() const {
+  return bitfield.get_bytes();
 }
 
 std::optional<std::unique_ptr<RequestMessage>> RequestMessage::decode(

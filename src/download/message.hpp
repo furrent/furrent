@@ -5,6 +5,11 @@
 #include <optional>
 #include <vector>
 
+#include "download/bitfield.hpp"
+#include "torrent.hpp"
+
+using namespace fur::download::bitfield;
+
 namespace fur::download::message {
 /// Virtual class for messages exchanged between BitTorrent clients.
 /// They are all shaped like:
@@ -19,9 +24,11 @@ class Message {
 
   /// Try decoding a finite sequence of bytes into a `Message`. A return value
   /// `std::nullopt` indicates failure and receding communication with the peer
-  /// is advised to avoid invalid state.
+  /// is advised to avoid invalid state. The `TorrentFile` is currently only
+  /// required because `BitfieldMessage` needs to know the piece count to
+  /// decode itself nicely.
   [[nodiscard]] static std::optional<std::unique_ptr<Message>> decode(
-      const std::vector<uint8_t>& buf);
+      const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
 
  private:
   /// Returns the ID of this message type. Used for encoding only.
@@ -108,6 +115,24 @@ class HaveMessage final : public Message {
 
  private:
   [[nodiscard]] uint8_t message_id() const override { return 4; }
+  [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
+};
+
+/// Used by the peer to inform us of the pieces it has available for sharing.
+///   <length=1+X><id=5><bitfield>
+/// where X is the length of the bitfield.
+class BitfieldMessage final : public Message {
+ public:
+  /// Bitfield representing the pieces available.
+  const Bitfield bitfield;
+
+  explicit BitfieldMessage(Bitfield bitfield) : bitfield{std::move(bitfield)} {}
+
+  [[nodiscard]] static std::optional<std::unique_ptr<BitfieldMessage>> decode(
+      const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
+
+ private:
+  [[nodiscard]] uint8_t message_id() const override { return 5; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
 };
 
