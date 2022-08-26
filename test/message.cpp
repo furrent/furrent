@@ -40,6 +40,8 @@ TEST_CASE("[Message] Decoding basic message") {
         Message::decode(torrent, std::vector<uint8_t>{0, 0, 0, 7, 5, 3, 128});
     REQUIRE(dec.has_value());
     auto m = dynamic_cast<BitfieldMessage&>(**dec);
+    // The length come from the `TorrentFile` above
+    REQUIRE(m.bitfield.len == 9);
     REQUIRE(m.bitfield.get_bytes() == std::vector<uint8_t>{3, 128});
   }
   SECTION("Request") {
