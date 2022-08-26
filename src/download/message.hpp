@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+namespace fur::download::message {
 /// Virtual class for messages exchanged between BitTorrent clients.
 /// They are all shaped like:
 ///   <length><id><payload>
@@ -82,7 +83,8 @@ class InterestedMessage final : public Message {
   }
 };
 
-/// Inform the peer that we're no longer interested in requesting pieces from it.
+/// Inform the peer that we're no longer interested in requesting pieces from
+/// it.
 ///   <length=1><id=3>
 class NotInterestedMessage final : public Message {
  private:
@@ -108,3 +110,4 @@ class HaveMessage final : public Message {
   /// Index of the newly acquired piece.
   const uint32_t index;
 };
+}  // namespace fur::download::message

@@ -2,6 +2,7 @@
 
 #include <array>
 
+namespace fur::download::message {
 /// Takes a 32 bits unsigned integer and encodes it into a 4 bytes array.
 std::array<uint8_t, 4> encode_big_endian(uint32_t n) {
   std::array<uint8_t, 4> result{};
@@ -108,3 +109,4 @@ std::vector<uint8_t> HaveMessage::encode_payload() const {
 
   return result;
 }
+}  // namespace fur::download::message
