@@ -98,6 +98,9 @@ class NotInterestedMessage final : public Message {
 ///   <length=5><id=4><piece-index>
 class HaveMessage final : public Message {
  public:
+  /// Index of the newly acquired piece.
+  const uint32_t index;
+
   explicit HaveMessage(uint32_t index) : index{index} {}
 
   [[nodiscard]] static std::optional<std::unique_ptr<HaveMessage>> decode(
@@ -106,8 +109,5 @@ class HaveMessage final : public Message {
  private:
   [[nodiscard]] uint8_t message_id() const override { return 4; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
-
-  /// Index of the newly acquired piece.
-  const uint32_t index;
 };
 }  // namespace fur::download::message
