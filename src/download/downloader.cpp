@@ -72,7 +72,7 @@ void Downloader::handshake() {
   }
 }
 
-std::optional<Result> Downloader::try_download(const Task&) {
+std::optional<Result> Downloader::try_download(const Task& task) {
   return std::nullopt;
 }
 }  // namespace fur::download::downloader

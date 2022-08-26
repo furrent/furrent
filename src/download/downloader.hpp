@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include "download/message.hpp"
 #include "download/socket.hpp"
 #include "peer.hpp"
 #include "tfriend_fw.hpp"
