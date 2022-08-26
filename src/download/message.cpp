@@ -32,7 +32,7 @@ std::vector<uint8_t> Message::encode() {
   auto len = encode_big_endian(1 + payload.size());
 
   // Length goes first
-  result.insert(result.begin(), len.begin(), len.end());
+  result.insert(result.end(), len.begin(), len.end());
   // Then message ID
   result.push_back(message_id());
   // Then payload
@@ -83,6 +83,9 @@ std::optional<std::unique_ptr<Message>> Message::decode(
     case 4: {
       return HaveMessage::decode(payload);
     }
+    case 6: {
+      return RequestMessage::decode(payload);
+    }
     default:
       // Unknown message ID
       return std::nullopt;
@@ -105,7 +108,37 @@ std::vector<uint8_t> HaveMessage::encode_payload() const {
   // Payload is just the big-endian encoded index
   std::vector<uint8_t> result;
   result.reserve(4);
-  result.insert(result.begin(), array.begin(), array.end());
+  result.insert(result.end(), array.begin(), array.end());
+
+  return result;
+}
+
+std::optional<std::unique_ptr<RequestMessage>> RequestMessage::decode(
+    const std::vector<uint8_t>& buf) {
+  // Payload should be exactly 12 bytes long: 3x unsigned 32 bits integers
+  if (buf.size() != 3 * 4) return std::nullopt;
+
+  auto index =
+      decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
+  auto begin =
+      decode_big_endian(std::array<uint8_t, 4>{buf[4], buf[5], buf[6], buf[7]});
+  auto length = decode_big_endian(
+      std::array<uint8_t, 4>{buf[8], buf[9], buf[10], buf[11]});
+  return std::make_unique<RequestMessage>(index, begin, length);
+}
+
+std::vector<uint8_t> RequestMessage::encode_payload() const {
+  auto index_encoded = encode_big_endian(index);
+  auto begin_encoded = encode_big_endian(begin);
+  auto length_encoded = encode_big_endian(length);
+
+  // Payload is just the big-endian encoded `index`, `begin` and `length` one
+  // after another.
+  std::vector<uint8_t> result;
+  result.reserve(3 * 4);
+  result.insert(result.end(), index_encoded.begin(), index_encoded.end());
+  result.insert(result.end(), begin_encoded.begin(), begin_encoded.end());
+  result.insert(result.end(), length_encoded.begin(), length_encoded.end());
 
   return result;
 }

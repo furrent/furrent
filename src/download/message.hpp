@@ -110,4 +110,32 @@ class HaveMessage final : public Message {
   [[nodiscard]] uint8_t message_id() const override { return 4; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
 };
+
+/// Ask the peer to send us a subset of the bytes in a piece.
+///   <length=13><id=6><index><begin><length>
+class RequestMessage final : public Message {
+ public:
+  /// Index of the piece.
+  const uint32_t index;
+  /// Offset from the beginning of the piece.
+  const uint32_t begin;
+  /// How many bytes we're asking. Typically 16KB.
+  const uint32_t length;
+
+  RequestMessage(uint32_t index, uint32_t begin, uint32_t length)
+      : index{index}, begin{begin}, length{length} {}
+
+  [[nodiscard]] static std::optional<std::unique_ptr<RequestMessage>> decode(
+      const std::vector<uint8_t>& buf);
+
+ private:
+  [[nodiscard]] uint8_t message_id() const override { return 6; }
+  [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
+};
+
+// WARN: BitTorrent specifies a CancelMessage with ID 8, but we don't expect to
+//  ever send or receive it
+
+// WARN: BitTorrent specifies a PortMessage with ID 9, but we don't expect to
+//  ever send or receive it
 }  // namespace fur::download::message
