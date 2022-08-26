@@ -158,6 +158,29 @@ class RequestMessage final : public Message {
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
 };
 
+/// A message containing a subset of the bytes from a piece.
+///   <length=9+X><id=7><index><begin><block>
+/// where X is the length of the block.
+class PieceMessage final : public Message {
+ public:
+  /// Index of the piece.
+  const uint32_t index;
+  /// Offset from the beginning of the piece.
+  const uint32_t begin;
+  /// The actual bytes from the piece.
+  const std::vector<uint8_t> block;
+
+  PieceMessage(uint32_t index, uint32_t begin, std::vector<uint8_t> block)
+      : index{index}, begin{begin}, block{std::move(block)} {}
+
+  [[nodiscard]] static std::optional<std::unique_ptr<PieceMessage>> decode(
+      const std::vector<uint8_t>& buf);
+
+ private:
+  [[nodiscard]] uint8_t message_id() const override { return 7; }
+  [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
+};
+
 // WARN: BitTorrent specifies a CancelMessage with ID 8, but we don't expect to
 //  ever send or receive it
 

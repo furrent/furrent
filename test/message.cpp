@@ -54,6 +54,16 @@ TEST_CASE("[Message] Decoding basic message") {
     REQUIRE(m.begin == 2);
     REQUIRE(m.length == 3);
   }
+  SECTION("Piece") {
+    auto dec = Message::decode(
+        torrent, std::vector<uint8_t>{0, 0, 0, 11, 7, 0, 0, 0, 1, 0, 0, 0, 2,
+                                      56, 71, 23});
+    REQUIRE(dec.has_value());
+    auto m = dynamic_cast<PieceMessage&>(**dec);
+    REQUIRE(m.index == 1);
+    REQUIRE(m.begin == 2);
+    REQUIRE(m.block == std::vector<uint8_t>{56, 71, 23});
+  }
 }
 
 TEST_CASE("[Message] Encode + Decode is identity function") {
@@ -118,6 +128,17 @@ TEST_CASE("[Message] Encode + Decode is identity function") {
     REQUIRE(m.index == 2167);
     REQUIRE(m.begin == 3463);
     REQUIRE(m.length == 853);
+  }
+  SECTION("Request") {
+    auto dec = Message::decode(torrent,
+                               std::make_unique<PieceMessage>(
+                                   2167, 3463, std::vector<uint8_t>{56, 71, 23})
+                                   ->encode());
+    REQUIRE(dec.has_value());
+    auto m = dynamic_cast<PieceMessage&>(**dec);
+    REQUIRE(m.index == 2167);
+    REQUIRE(m.begin == 3463);
+    REQUIRE(m.block == std::vector<uint8_t>{56, 71, 23});
   }
 }
 

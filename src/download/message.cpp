@@ -86,6 +86,8 @@ std::optional<std::unique_ptr<Message>> Message::decode(
       return BitfieldMessage::decode(torrent, payload);
     case 6:
       return RequestMessage::decode(payload);
+    case 7:
+      return PieceMessage::decode(payload);
     default:
       // Unknown message ID
       return std::nullopt;
@@ -149,6 +151,39 @@ std::vector<uint8_t> RequestMessage::encode_payload() const {
   result.insert(result.end(), index_encoded.begin(), index_encoded.end());
   result.insert(result.end(), begin_encoded.begin(), begin_encoded.end());
   result.insert(result.end(), length_encoded.begin(), length_encoded.end());
+
+  return result;
+}
+
+std::optional<std::unique_ptr<PieceMessage>> PieceMessage::decode(
+    const std::vector<uint8_t>& buf) {
+  // Payload should be at least 8 bytes long: 2x unsigned 32 bits integers
+  if (buf.size() < 8) return std::nullopt;
+
+  auto index =
+      decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
+  auto begin =
+      decode_big_endian(std::array<uint8_t, 4>{buf[4], buf[5], buf[6], buf[7]});
+
+  // All remaining bytes compose the block
+  auto block = buf;
+  // Skip the first 8 bytes
+  block.erase(block.begin(), block.begin() + 8);
+
+  return std::make_unique<PieceMessage>(index, begin, block);
+}
+
+std::vector<uint8_t> PieceMessage::encode_payload() const {
+  auto index_encoded = encode_big_endian(index);
+  auto begin_encoded = encode_big_endian(begin);
+
+  // Payload is just the big-endian encoded `index` and `begin` plus the bytes
+  // from the block
+  std::vector<uint8_t> result;
+  result.reserve(2 * 4 + block.size());
+  result.insert(result.end(), index_encoded.begin(), index_encoded.end());
+  result.insert(result.end(), begin_encoded.begin(), begin_encoded.end());
+  result.insert(result.end(), block.begin(), block.end());
 
   return result;
 }
