@@ -1,8 +1,10 @@
 #include "download/downloader.hpp"
 
 #include <array>
+#include <cstdint>
 
 #include "asio.hpp"
+#include "download/util.hpp"
 
 namespace fur::download::downloader {
 Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
@@ -15,6 +17,14 @@ void Downloader::ensure_connected() {
   socket.emplace();
   socket->connect(peer.ip, peer.port, std::chrono::milliseconds(500));
   handshake();
+
+  // Every connection starts chocked
+  choked = true;
+  bitfield = std::nullopt;
+
+  // `BitfieldMessage` is either the first message sent or the peer has no piece
+  // to share. In the latter case, we're not interested in them and can drop the
+  // connection.
 }
 
 // 1  for the length of the protocol identifier
@@ -72,7 +82,34 @@ void Downloader::handshake() {
   }
 }
 
-std::optional<Result> Downloader::try_download(const Task& task) {
+std::optional<Result> Downloader::try_download(const Task&) {
   return std::nullopt;
+}
+
+void Downloader::send_message(const Message& msg, timeout timeout) {
+  socket->write(msg.encode(), timeout);
+}
+
+std::optional<std::unique_ptr<Message>> Downloader::recv_message(
+    timeout timeout) {
+  auto before_read_len = std::chrono::steady_clock::now();
+
+  auto message_len_bytes = socket->read(4, timeout);
+  auto message_len = decode_big_endian(
+      std::array<uint8_t, 4>{message_len_bytes[0], message_len_bytes[1],
+                             message_len_bytes[2], message_len_bytes[3]});
+
+  // The time left is equal to the original timeout minus the time it took to
+  // read the message length.
+  timeout -= std::chrono::steady_clock::now() - before_read_len;
+
+  auto rest = socket->read(message_len, timeout);
+
+  std::vector<std::uint8_t> whole;
+  whole.reserve(message_len_bytes.size() + rest.size());
+  whole.insert(whole.end(), message_len_bytes.begin(), message_len_bytes.end());
+  whole.insert(whole.end(), rest.begin(), rest.end());
+
+  return Message::decode(torrent, whole);
 }
 }  // namespace fur::download::downloader

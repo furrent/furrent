@@ -1,7 +1,9 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 
+#include "download/bitfield.hpp"
 #include "download/message.hpp"
 #include "download/socket.hpp"
 #include "peer.hpp"
@@ -11,6 +13,7 @@
 using namespace fur::peer;
 using namespace fur::torrent;
 using namespace fur::download::socket;
+using namespace fur::download::message;
 
 /// The `TorrentFile` is not required because any given `Downloader` is already
 /// bound to a specific `TorrentFile` and has a reference to it.
@@ -53,11 +56,25 @@ class Downloader {
   /// `ensure_connected`.
   std::optional<Socket> socket;
 
+  /// True iff we are choked by the peer. This means that we shouldn't try to
+  /// send any `RequestMessage` before they would simply be discarded. Every
+  /// BitTorrent connection is initially chocked until proved otherwise. Because
+  /// a `Downloader` is not re-created when a connection drops but recycled,
+  /// we should take care to reset this to `true`.
+  bool choked = true;
+  /// Tracks what pieces this peer has available for sharing. Should be reset to
+  /// `std::nullopt` when a connection drops and is later recycled.
+  std::optional<Bitfield> bitfield;
+
   /// Ensures that the `socket` is present and in good health (not dropped,
   /// timed out and such). Should always call this method first, before
   /// accessing the socket.
   void ensure_connected();
+  /// Performs the BitTorrent handshake.
   void handshake();
+
+  void send_message(const Message& msg, timeout timeout);
+  std::optional<std::unique_ptr<Message>> recv_message(timeout timeout);
 
   // Befriend this class so the unit tests are able to access private members.
   friend TestingFriend;
