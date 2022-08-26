@@ -23,7 +23,7 @@ class Socket {
   /// timeout.
   void write(const std::vector<uint8_t>& buf, timeout timeout);
   /// Attempt to readn `n` bytes from the socket with the given timeout.
-  std::vector<uint8_t> read(int n, timeout timeout);
+  std::vector<uint8_t> read(uint32_t n, timeout timeout);
 
  private:
   /// Asynchronous runtime. Restarted before each operation.

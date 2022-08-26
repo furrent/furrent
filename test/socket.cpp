@@ -1,7 +1,6 @@
 #include "download/socket.hpp"
 
 #include <cstdint>
-#include <stdexcept>
 #include <vector>
 
 #include "asio.hpp"

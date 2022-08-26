@@ -58,7 +58,7 @@ void Socket::write(const std::vector<uint8_t>& buf, timeout timeout) {
   }
 }
 
-std::vector<uint8_t> Socket::read(int n, timeout timeout) {
+std::vector<uint8_t> Socket::read(uint32_t n, timeout timeout) {
   std::vector<uint8_t> buf{};
   buf.resize(n);
 
