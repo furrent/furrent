@@ -11,6 +11,18 @@
 using namespace fur::download::bitfield;
 
 namespace fur::download::message {
+enum class MessageKind {
+  KeepAlive,
+  Choke,
+  Unchoke,
+  Interested,
+  NotInterested,
+  Have,
+  Bitfield,
+  Request,
+  Piece,
+};
+
 /// Virtual class for messages exchanged between BitTorrent clients.
 /// They are all shaped like:
 ///   <length><id><payload>
@@ -36,6 +48,9 @@ class Message {
   /// Encodes the payload section of this message. Overridden by each specific
   /// message type.
   [[nodiscard]] virtual std::vector<uint8_t> encode_payload() const = 0;
+  /// Returns the kind of this message. Used before `dynamic_cast`ing when the
+  /// underlying type is not known beforehand.
+  [[nodiscard]] virtual MessageKind kind() const = 0;
 };
 
 /// Periodically sent to keep the socket alive.
@@ -57,6 +72,9 @@ class KeepAliveMessage final : public Message {
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
   }
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::KeepAlive;
+  }
 };
 
 /// Inform the peer that we're not going to accept any more requests until
@@ -68,6 +86,9 @@ class ChokeMessage final : public Message {
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
   }
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Choke;
+  }
 };
 
 /// Inform the peer that we're ready to accept more piece requests.
@@ -77,6 +98,9 @@ class UnchokeMessage final : public Message {
   [[nodiscard]] uint8_t message_id() const override { return 1; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
+  }
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Unchoke;
   }
 };
 
@@ -88,6 +112,9 @@ class InterestedMessage final : public Message {
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
   }
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Interested;
+  }
 };
 
 /// Inform the peer that we're no longer interested in requesting pieces from
@@ -98,6 +125,9 @@ class NotInterestedMessage final : public Message {
   [[nodiscard]] uint8_t message_id() const override { return 3; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
+  }
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::NotInterested;
   }
 };
 
@@ -116,6 +146,9 @@ class HaveMessage final : public Message {
  private:
   [[nodiscard]] uint8_t message_id() const override { return 4; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Have;
+  }
 };
 
 /// Used by the peer to inform us of the pieces it has available for sharing.
@@ -134,6 +167,9 @@ class BitfieldMessage final : public Message {
  private:
   [[nodiscard]] uint8_t message_id() const override { return 5; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Bitfield;
+  }
 };
 
 /// Ask the peer to send us a subset of the bytes in a piece.
@@ -156,6 +192,9 @@ class RequestMessage final : public Message {
  private:
   [[nodiscard]] uint8_t message_id() const override { return 6; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Request;
+  }
 };
 
 /// A message containing a subset of the bytes from a piece.
@@ -179,6 +218,9 @@ class PieceMessage final : public Message {
  private:
   [[nodiscard]] uint8_t message_id() const override { return 7; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Piece;
+  }
 };
 
 // WARN: BitTorrent specifies a CancelMessage with ID 8, but we don't expect to
