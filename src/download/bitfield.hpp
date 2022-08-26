@@ -24,24 +24,24 @@ namespace fur::download::bitfield {
 class Bitfield {
  public:
   /// Create a new `Bitfield` with the provided length (in bits).
-  explicit Bitfield(int len);
+  explicit Bitfield(uint32_t len);
 
   /// Create a new `Bitfield` from an existing backing storage. The length
   /// in bits must be provided because the last byte is not necessarily
   /// used till the last bit.
-  Bitfield(std::vector<uint8_t> storage, int len)
+  Bitfield(std::vector<uint8_t> storage, uint32_t len)
       : len{len}, storage{std::move(storage)} {}
 
   /// Set the bit to the provided index to either 1 or 0, depending on `value`.
-  void set(int index, bool value);
+  void set(uint32_t index, bool value);
 
   /// Set the bit to the provided index to 1
-  void set(int index) { set(index, true); }
+  void set(uint32_t index) { set(index, true); }
   /// Set the bit to the provided index to 0
-  void unset(int index) { set(index, false); }
+  void unset(uint32_t index) { set(index, false); }
 
   /// Get the value of the bit at the provided index.
-  [[nodiscard]] bool get(int index) const;
+  [[nodiscard]] bool get(uint32_t index) const;
 
   /// Get the bitfield as an array of bytes.
   [[nodiscard]] std::vector<uint8_t> get_bytes() const {
@@ -58,7 +58,7 @@ class Bitfield {
   /// bytes in `storage` because the last byte might not be used in its
   /// entirety if the number of bits is not a multiple of 8.
   /// \attention A `Bitfield` cannot be resized once created.
-  const int len;
+  const uint32_t len;
 
  private:
   /// Backing bytes array.
