@@ -25,6 +25,9 @@ class Socket {
   /// Attempt to readn `n` bytes from the socket with the given timeout.
   std::vector<uint8_t> read(uint32_t n, timeout timeout);
 
+  /// Close the socket
+  void close();
+
  private:
   /// Asynchronous runtime. Restarted before each operation.
   asio::io_context io;

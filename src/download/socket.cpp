@@ -108,4 +108,12 @@ void Socket::run(timeout timeout) {
     io.run();
   }
 }
+
+void Socket::close() {
+  // Schedule an operation that closes the socket, aborting any ongoing
+  // communication.
+  socket.close();
+  // Run all to completion to allow the socket to clean up.
+  io.run();
+}
 }  // namespace fur::download::socket
