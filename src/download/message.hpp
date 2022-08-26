@@ -42,15 +42,16 @@ class Message {
   [[nodiscard]] static std::optional<std::unique_ptr<Message>> decode(
       const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
 
+  /// Returns the kind of this message. Used before `dynamic_cast`ing when the
+  /// underlying type is not known beforehand.
+  [[nodiscard]] virtual MessageKind kind() const = 0;
+
  private:
   /// Returns the ID of this message type. Used for encoding only.
   [[nodiscard]] virtual uint8_t message_id() const = 0;
   /// Encodes the payload section of this message. Overridden by each specific
   /// message type.
   [[nodiscard]] virtual std::vector<uint8_t> encode_payload() const = 0;
-  /// Returns the kind of this message. Used before `dynamic_cast`ing when the
-  /// underlying type is not known beforehand.
-  [[nodiscard]] virtual MessageKind kind() const = 0;
 };
 
 /// Periodically sent to keep the socket alive.
@@ -61,7 +62,13 @@ class KeepAliveMessage final : public Message {
  public:
   /// This message type is encoded slightly differently than other messages
   /// (there's no ID) so we use a custom encoding function.
-  [[nodiscard]] std::vector<uint8_t> encode() const override { return {0, 0, 0, 0}; }
+  [[nodiscard]] std::vector<uint8_t> encode() const override {
+    return {0, 0, 0, 0};
+  }
+
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::KeepAlive;
+  }
 
  private:
   /// Never really called but must be implemented to make `KeepAliveMessage` a
@@ -71,9 +78,6 @@ class KeepAliveMessage final : public Message {
   /// complete type.
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
-  }
-  [[nodiscard]] MessageKind kind() const override {
-    return MessageKind::KeepAlive;
   }
 };
 
@@ -81,39 +85,43 @@ class KeepAliveMessage final : public Message {
 /// unchoked.
 ///   <length=1><id=0>
 class ChokeMessage final : public Message {
+ public:
+  [[nodiscard]] MessageKind kind() const override { return MessageKind::Choke; }
+
  private:
   [[nodiscard]] uint8_t message_id() const override { return 0; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
-  }
-  [[nodiscard]] MessageKind kind() const override {
-    return MessageKind::Choke;
   }
 };
 
 /// Inform the peer that we're ready to accept more piece requests.
 ///   <length=1><id=1>
 class UnchokeMessage final : public Message {
+ public:
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Unchoke;
+  }
+
  private:
   [[nodiscard]] uint8_t message_id() const override { return 1; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
-  }
-  [[nodiscard]] MessageKind kind() const override {
-    return MessageKind::Unchoke;
   }
 };
 
 /// Inform the peer that we're interested in requesting pieces from it.
 ///   <length=1><id=2>
 class InterestedMessage final : public Message {
+ public:
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::Interested;
+  }
+
  private:
   [[nodiscard]] uint8_t message_id() const override { return 2; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
-  }
-  [[nodiscard]] MessageKind kind() const override {
-    return MessageKind::Interested;
   }
 };
 
@@ -121,13 +129,15 @@ class InterestedMessage final : public Message {
 /// it.
 ///   <length=1><id=3>
 class NotInterestedMessage final : public Message {
+ public:
+  [[nodiscard]] MessageKind kind() const override {
+    return MessageKind::NotInterested;
+  }
+
  private:
   [[nodiscard]] uint8_t message_id() const override { return 3; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override {
     return {};
-  }
-  [[nodiscard]] MessageKind kind() const override {
-    return MessageKind::NotInterested;
   }
 };
 
@@ -143,12 +153,11 @@ class HaveMessage final : public Message {
   [[nodiscard]] static std::optional<std::unique_ptr<HaveMessage>> decode(
       const std::vector<uint8_t>& buf);
 
+  [[nodiscard]] MessageKind kind() const override { return MessageKind::Have; }
+
  private:
   [[nodiscard]] uint8_t message_id() const override { return 4; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
-  [[nodiscard]] MessageKind kind() const override {
-    return MessageKind::Have;
-  }
 };
 
 /// Used by the peer to inform us of the pieces it has available for sharing.
@@ -164,12 +173,13 @@ class BitfieldMessage final : public Message {
   [[nodiscard]] static std::optional<std::unique_ptr<BitfieldMessage>> decode(
       const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
 
- private:
-  [[nodiscard]] uint8_t message_id() const override { return 5; }
-  [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
   [[nodiscard]] MessageKind kind() const override {
     return MessageKind::Bitfield;
   }
+
+ private:
+  [[nodiscard]] uint8_t message_id() const override { return 5; }
+  [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
 };
 
 /// Ask the peer to send us a subset of the bytes in a piece.
@@ -189,12 +199,13 @@ class RequestMessage final : public Message {
   [[nodiscard]] static std::optional<std::unique_ptr<RequestMessage>> decode(
       const std::vector<uint8_t>& buf);
 
- private:
-  [[nodiscard]] uint8_t message_id() const override { return 6; }
-  [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
   [[nodiscard]] MessageKind kind() const override {
     return MessageKind::Request;
   }
+
+ private:
+  [[nodiscard]] uint8_t message_id() const override { return 6; }
+  [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
 };
 
 /// A message containing a subset of the bytes from a piece.
@@ -215,12 +226,11 @@ class PieceMessage final : public Message {
   [[nodiscard]] static std::optional<std::unique_ptr<PieceMessage>> decode(
       const std::vector<uint8_t>& buf);
 
+  [[nodiscard]] MessageKind kind() const override { return MessageKind::Piece; }
+
  private:
   [[nodiscard]] uint8_t message_id() const override { return 7; }
   [[nodiscard]] std::vector<uint8_t> encode_payload() const override;
-  [[nodiscard]] MessageKind kind() const override {
-    return MessageKind::Piece;
-  }
 };
 
 // WARN: BitTorrent specifies a CancelMessage with ID 8, but we don't expect to
