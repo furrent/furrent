@@ -43,6 +43,12 @@ class Bitfield {
   /// Get the value of the bit at the provided index.
   [[nodiscard]] bool get(int index) const;
 
+  /// Get the bitfield as an array of bytes.
+  [[nodiscard]] std::vector<uint8_t> get_bytes() const {
+    // Basically just return a copy of `storage`.
+    return storage;
+  }
+
   /// Display the `Bitfield` as a 8-column grid. Each row is a byte. Bit 0 is in
   /// the topmost left corner.
   friend std::ostream& operator<<(std::ostream& os, const Bitfield& bitfield);

@@ -1,8 +1,8 @@
 #include "download/bitfield.hpp"
 
 #include <cstdint>
-#include <vector>
 #include <sstream>
+#include <vector>
 
 #include "catch2/catch.hpp"
 #include "tfriend.hpp"
@@ -90,4 +90,9 @@ TEST_CASE("[Bitfield] Print") {
   // ......##
   // #.....#
   REQUIRE(ss.str() == "......##\n#.....#\n");
+}
+
+TEST_CASE("[Bitfield] Get bytes") {
+  std::vector<uint8_t> bytes{128, 3};
+  REQUIRE(bytes == Bitfield(bytes, 16).get_bytes());
 }
