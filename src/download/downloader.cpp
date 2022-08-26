@@ -120,8 +120,41 @@ void Downloader::handshake() {
   }
 }
 
-std::optional<Result> Downloader::try_download(const Task&) {
-  return std::nullopt;
+std::optional<Result> Downloader::try_download(const Task& task) {
+  // Ask for 16KB
+  send_message(RequestMessage(task.index, 0, 16384), std::chrono::seconds(1));
+
+  std::optional<std::vector<uint8_t>> block;
+
+  auto timeout = std::chrono::seconds(1);
+  while (!block.has_value()) {
+    auto message = recv_message(timeout);
+
+    switch (message->kind()) {
+      case MessageKind::Choke:
+        choked = true;
+        // Use a slightly longer timeout to wait to be unchoked
+        timeout = std::chrono::seconds(11);
+        break;
+      case MessageKind::Unchoke:
+        choked = false;
+        // Reset timeout to the lower one
+        timeout = std::chrono::seconds(1);
+        break;
+      case MessageKind::Have:
+        // Nice, the peer has acquired a new piece that it can share
+        bitfield->set(dynamic_cast<HaveMessage&>(*message).index);
+        break;
+      case MessageKind::Piece:
+        // There it is
+        block = dynamic_cast<PieceMessage&>(*message).block;
+        break;
+      default:;  // We can safely ignore other messages (hopefully)
+    }
+  }
+  // If we got to this line, that means we received our data so the test passes
+  // TODO Download more than just the first 16KB
+  return Result{0, std::move(block.value())};
 }
 
 void Downloader::send_message(const Message& msg, timeout timeout) {

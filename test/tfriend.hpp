@@ -20,6 +20,11 @@ struct TestingFriend {
     down.ensure_connected();
   }
 
+  static std::optional<Result> Downloader_try_download(Downloader& down,
+                                                       const Task& task) {
+    return down.try_download(task);
+  }
+
   static std::optional<Socket>& Downloader_socket(Downloader& down) {
     return down.socket;
   }

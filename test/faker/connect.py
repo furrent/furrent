@@ -1,9 +1,13 @@
 import socket
 
 
-def faker_friendly():
+# Accepts a connection from a peer then:
+#  - Handshakes
+#  - Sends bitfield
+#  - Unchokes
+def faker_connect():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('127.0.0.1', 4001))
+    sock.bind(('127.0.0.1', 4004))
     sock.listen()
 
     while True:
