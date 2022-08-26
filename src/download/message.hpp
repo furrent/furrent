@@ -32,7 +32,7 @@ class Message {
   /// Encode this message to wire format. This is virtual because
   /// `KeepAliveMessage` uses a slightly different encoding that all other
   /// messages. That's the only subclass overriding `encode`.
-  [[nodiscard]] virtual std::vector<uint8_t> encode();
+  [[nodiscard]] virtual std::vector<uint8_t> encode() const;
 
   /// Try decoding a finite sequence of bytes into a `Message`. A return value
   /// `std::nullopt` indicates failure and receding communication with the peer
@@ -61,7 +61,7 @@ class KeepAliveMessage final : public Message {
  public:
   /// This message type is encoded slightly differently than other messages
   /// (there's no ID) so we use a custom encoding function.
-  [[nodiscard]] std::vector<uint8_t> encode() override { return {0, 0, 0, 0}; }
+  [[nodiscard]] std::vector<uint8_t> encode() const override { return {0, 0, 0, 0}; }
 
  private:
   /// Never really called but must be implemented to make `KeepAliveMessage` a

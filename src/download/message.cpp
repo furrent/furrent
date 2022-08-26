@@ -2,11 +2,10 @@
 
 #include <array>
 
-namespace fur::download::message {
 #include "download/util.hpp"
 
-
-std::vector<uint8_t> Message::encode() {
+namespace fur::download::message {
+std::vector<uint8_t> Message::encode() const {
   // Collect bytes here
   std::vector<uint8_t> result;
   // We need to encode the payload first to be able to compute the message's
