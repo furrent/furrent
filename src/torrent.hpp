@@ -22,7 +22,7 @@ struct TorrentFile {
   /// The length, in bytes, of each piece
   int piece_length;
   /// The length, in bytes, of the entire shared file
-  int length;
+  long length;
   /// The name of the shared file
   std::string name;
 

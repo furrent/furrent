@@ -23,6 +23,7 @@ TorrentManager::TorrentManager(fur::torrent::TorrentFile& torrent)
       _announce_interval(0),
       _last_announce(0),
       _task_strategy(std::make_unique<UniformTaskStrategy>()),
+      priority(0),
       num_tasks((torrent.length / torrent.piece_length)),
       num_done(0),
       result(){
@@ -46,7 +47,6 @@ bool TorrentManager::should_announce() const {
 }
 
 std::optional<TaskRef> TorrentManager::pick_task() {
-  std::cout << "TorrentManager::pick_task()" << std::endl;
   return (*_task_strategy)(_tasks);
 }
 

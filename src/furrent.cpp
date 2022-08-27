@@ -26,12 +26,10 @@ class TManagerStrategy : public strategy::UniformStrategy<TorrentManagerRef, Pie
       //auto socket = manager->get_lender_pool().get();
       auto task = manager->pick_task();
       if (task.has_value()){
-        std::cout << "Manager::transform() -> piece" << std::endl;
         // TODO add socket picker from LenderPool
         return std::optional{ Piece{ task.value() }};
       }
     }
-    std::cout << "Manager::transform() -> null" << std::endl;
     return std::nullopt;
   }
 };

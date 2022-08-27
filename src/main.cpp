@@ -1,24 +1,15 @@
-#include <iostream>
-
+#include <fstream>
 #include <log/logger.hpp>
-#include <furrent.hpp>
+#include <sstream>
 
-void test_worker(fur::Piece& p) {
-  std::cout << "[Worker] "<< p.task->index << std::endl;
-}
+#include "bencode/bencode_parser.hpp"
+#include "torrent.hpp"
 
 int main() {
 
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
-  logger->info("Init programm...");
-  fur::Furrent fur{test_worker};
-  logger->info("Adding torrent");
-  fur.add_torrent("../extra/debian-11.4.0-amd64-netinst.iso.torrent");
-  logger->info("Torrent added");
-
-  // Wait for the program to finish
-  std::this_thread::sleep_for(std::chrono::seconds(10));
+  logger->info("Hello, world!");
 
   return 0;
 }
