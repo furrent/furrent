@@ -1,19 +1,20 @@
-#include <mt/queue.hpp>
+/**
+ * @file channel.inl
+ * @author Filippo Ziche
+ * @version 0.1
+ * @date 2022-08-26
+ */
+
+#include <mt/channel.hpp>
 
 namespace fur::mt {
 
 template<typename Stored, typename Served>
-StrategyQueue<Stored, Served>::StrategyQueue()
-: _serving{true} {
-    // Served type must be copyable
-    static_assert(
-        std::is_copy_constructible<Served>::value,
-        "In StrategyQueue the Served type must be copyable!"
-    );
-}
+StrategyChannel<Stored, Served>::StrategyChannel()
+: _serving{true} { }
 
 template<typename Stored, typename Served>
-void StrategyQueue<Stored, Served>::insert(Stored item) {
+void StrategyChannel<Stored, Served>::insert(Stored item) {
     {
         // Documentation suggests it's better to unlock the
         // mutex before notifing the CV
@@ -24,7 +25,7 @@ void StrategyQueue<Stored, Served>::insert(Stored item) {
 }
 
 template<typename Stored, typename Served>
-std::optional<Served> StrategyQueue<Stored, Served>::extract(Strategy* strategy) {
+std::optional<Served> StrategyChannel<Stored, Served>::extract(Strategy* strategy) {
     
     // If the work list is empty then wait
     std::unique_lock<std::mutex> lock(_work_mutex);
@@ -42,7 +43,7 @@ std::optional<Served> StrategyQueue<Stored, Served>::extract(Strategy* strategy)
 }
 
 template<typename Stored, typename Served>
-void StrategyQueue<Stored, Served>::wait_empty() {
+void StrategyChannel<Stored, Served>::wait_empty() {
     
     std::unique_lock<std::mutex> lock(_work_mutex);
     if (_work.empty()) return;
@@ -53,12 +54,12 @@ void StrategyQueue<Stored, Served>::wait_empty() {
 }
 
 template<typename Stored, typename Served>
-const std::list<Stored>& StrategyQueue<Stored, Served>::get_work_list() const {
+const std::list<Stored>& StrategyChannel<Stored, Served>::get_work_list() const {
     return _work;
 }
 
 template<typename Stored, typename Served>
-void StrategyQueue<Stored, Served>::set_serving(bool value) {
+void StrategyChannel<Stored, Served>::set_serving(bool value) {
     {
         // Documentation suggests it's better to unlock the
         // mutex before notifing the CV

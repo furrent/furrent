@@ -1,5 +1,5 @@
 /**
- * @file queue.hpp
+ * @file channel.hpp
  * @author Filippo Ziche
  * @version 0.1
  * @date 2022-08-26
@@ -30,10 +30,16 @@ template<typename Stored, typename Served>
 using IListStrategy = IStrategy<Served, typename std::list<Stored>>;
 
 /// Data structure used to transfer work to threads without
-/// racing conditions. Similar to a MPMC queue, but uses custom strategies
+/// racing conditions. Similar to a MPSC queue, but uses custom strategies
 /// to choose the work-item to serve.
 template<typename Stored, typename Served>
-class StrategyQueue {
+class StrategyChannel {
+
+    // Served type must be copyable
+    static_assert(
+        std::is_copy_constructible<Served>::value,
+        "In StrategyQueue the Served type must be copyable!"
+    );
 
     /// Compatible strategy type
     typedef IListStrategy<Stored, Served> Strategy;
@@ -52,17 +58,17 @@ private:
 
 public:
     /// Construct a new empty queue
-    StrategyQueue();
+    StrategyChannel();
     /// Frees all waiting threads
-    virtual ~StrategyQueue() = default;
+    virtual ~StrategyChannel() = default;
 
     //===========================================================================
     // This object is not copyable and not movable because of mutex and CVs
 
-    StrategyQueue(StrategyQueue&) = delete;
-    StrategyQueue& operator= (StrategyQueue&) = delete;
-    StrategyQueue(StrategyQueue&&) noexcept = delete;
-    StrategyQueue& operator= (StrategyQueue&&) noexcept = delete;
+    StrategyChannel(StrategyChannel&) = delete;
+    StrategyChannel& operator= (StrategyChannel&) = delete;
+    StrategyChannel(StrategyChannel&&) noexcept = delete;
+    StrategyChannel& operator= (StrategyChannel&&) noexcept = delete;
 
     //===========================================================================
 
@@ -86,4 +92,4 @@ public:
 
 } // namespace fur::mt
 
-#include <mt/queue.inl>
+#include <mt/channel.inl>

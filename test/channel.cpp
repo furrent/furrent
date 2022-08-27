@@ -1,5 +1,5 @@
 /**
- * @file queue.cpp
+ * @file channel.cpp
  * @author Filippo Ziche
  * @version 0.1
  * @date 2022-08-26
@@ -11,7 +11,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include <mt/queue.hpp>
+#include <mt/channel.hpp>
 
 using namespace fur::mt;
 
@@ -27,10 +27,10 @@ public:
     }
 };
 
-TEST_CASE("StrategyQueue creation") {
+TEST_CASE("StrategyChannel creation") {
 
-    StrategyQueue<Stored, Served> input{};
-    StrategyQueue<Served, Served> output{};
+    StrategyChannel<Stored, Served> input{};
+    StrategyChannel<Served, Served> output{};
     
     TestStrategy strategy;
 
