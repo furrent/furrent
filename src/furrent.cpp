@@ -5,7 +5,6 @@
 #include <sstream>
 #include <random>
 
-#include <strategies/uniform.hpp>
 #include "bencode/bencode_parser.hpp"
 #include "torrent_manager.hpp"
 
@@ -13,38 +12,71 @@ namespace fur {
 
 // Strategy to pick a task from a list of TorrentManager, every TorrentManager
 // has a local strategy to pick a task from its own list of tasks.
-class TManagerStrategy : public strategy::UniformStrategy<TorrentManagerRef, Piece> {
+class RoundRobinStrategy : public mt::IListStrategy<TorrentManagerRef, Piece> {
 
- public:
-  TManagerStrategy()
-      : UniformStrategy<TorrentManagerRef, Piece>(false) { }
+public:
+  std::optional<Piece> extract(std::list<TorrentManagerRef>& torrents) override {
 
-  std::optional<Piece> transform(TorrentManagerRef& ptr) override {
-    // Check if manager exists
-    if (auto manager = ptr.lock()) {
-      // TODO: add LenderPool
-      //auto socket = manager->get_lender_pool().get();
-      auto task = manager->pick_task();
-      if (task.has_value()){
-        // TODO add socket picker from LenderPool
-        return std::optional{ Piece{ task.value() }};
+    std::optional<Piece> result = std::nullopt;
+    while (!torrents.empty()) {
+      
+      // Get first torrent available (Round Robin)
+      TorrentManagerRef weak_torrent = torrents.front();
+      torrents.pop_front();
+    
+      // If torrent was not removed from the downloads
+      // select a new piece to download
+      if (auto torrent = weak_torrent.lock()) {
+
+        auto task = torrent->pick_task();
+        if (task.has_value()) {
+          // TODO add socket picker from LenderPool
+          result = std::optional{ Piece{ *task }};
+        }
+
+        // If the torrent has other pieces to download add it to the torrents
+        if (torrent->has_tasks())
+          torrents.push_back(weak_torrent);
       }
     }
-    return std::nullopt;
+
+    return result;
   }
 };
 
 // Create constructor
-Furrent::Furrent()
-    : _downloads{},
-      _router(std::make_shared<mt::VectorRouter<TorrentManagerRef, Piece>>(std::make_unique<TManagerStrategy>())),
-      _thread_pool{_router, [](Piece&){ }} { }
+Furrent::Furrent() {
+  _strategy = std::make_unique<RoundRobinStrategy>();
+  _workers.launch([this] (mt::Runner runner, WorkerState& state, size_t index) {
+    
+    // Custom download logic
+    while(runner.alive()) {
+      auto piece = _work_channel.extract(_strategy.get());
+      // TODO
+    }
+
+  });
+}
 
 // Constructor for the tests
-Furrent::Furrent(std::function<void(Piece&)> fn)
-    : _downloads{},
-      _router(std::make_shared<mt::VectorRouter<TorrentManagerRef, Piece>>(std::make_unique<TManagerStrategy>())),
-      _thread_pool{_router, std::move(fn)} {
+Furrent::Furrent(std::function<void(Piece&)> fn) {
+
+  _strategy = std::make_unique<RoundRobinStrategy>();
+  _workers.launch([&] (mt::Runner runner, WorkerState& state, size_t index) {
+    
+    // Custom download logic
+    while(runner.alive()) {
+      auto piece = _work_channel.extract(_strategy.get());
+      if (piece.has_value())
+        fn(*piece); // TODO downloading work
+    }
+
+  });
+}
+
+
+Furrent::~Furrent() {
+  _work_channel.set_serving(false);
 }
 
 // Add torrent to downloads
@@ -69,11 +101,11 @@ void Furrent::add_torrent(const std::string& path) {
 
   // Create new shared torrent manager from torrent file
   auto manager = std::make_shared<TorrentManager>(torrent);
-  _downloads.push_back(manager);
+  _downloads.push_front(manager);
 
   // Create weak reference to newly added torrent manager
   TorrentManagerRef weak = manager;
-  _router->insert(weak);
+  _work_channel.insert(weak);
 }
 
 void Furrent::print_status() const {

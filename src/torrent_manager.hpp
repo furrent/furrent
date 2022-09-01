@@ -4,13 +4,13 @@
 #include "vector"
 #include "list"
 #include "queue"
+#include <optional>
+
 #include "peer.hpp"
 
 #include <download/lender_pool.hpp>
-#include <mt/router.hpp>
-#include <strategies/uniform.hpp>
+#include <mt/channel.hpp>
 
-#include <optional>
 
 /// Namespace for the torrent manager. Contains the TorrentManager, every
 /// torrent file is mapped to a TorrentManager object.
@@ -42,15 +42,16 @@ struct Piece {
   //LenderPool<Socket>::Borrow socket;
 };
 
-
-
 /// Every torrent to download is mapped to a TorrentManager object
 class TorrentManager {
+
+    typedef std::unique_ptr<fur::mt::IListStrategy<TaskRef, TaskRef>> MyStrategy;
+
  private:
     /// The parsed .torrent file
     fur::torrent::TorrentFile       _torrent;
     /// List of tasks to be done for the download
-    std::vector<TaskRef>            _tasks;      // TODO: replace queue
+    std::list<TaskRef>            _tasks;      // TODO: replace queue
     /// List of peers to download the file from
     std::vector<fur::peer::Peer>    _peers;
     /// The announce interval is the time (in seconds) we're expected to
@@ -61,8 +62,7 @@ class TorrentManager {
     /// Pool of reusable sockets
     LenderPool<Socket>              _lender_pool;
     /// Define a strategy for choosing the task
-    //std::unique_ptr<mt::UniformStrategy<Task>> _task_strategy;
-    std::unique_ptr<mt::IVectorStrategy<TaskRef, TaskRef>> _task_strategy;
+    MyStrategy _strategy;
 
   public:
     /// Priority of the torrent
@@ -105,7 +105,7 @@ class TorrentManager {
     void print_status() const;
 
     /// Set the stategy used to pick a piece for the workers
-    void set_strategy(std::unique_ptr<mt::IVectorStrategy<TaskRef, TaskRef>> strategy);
+    void set_strategy(std::unique_ptr<mt::IListStrategy<TaskRef, TaskRef>> strategy);
     /// Returns the _lender_pool of the current object
     LenderPool<Socket>& get_lender_pool();
 };
