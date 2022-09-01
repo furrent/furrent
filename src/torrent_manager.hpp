@@ -10,6 +10,7 @@
 
 #include <download/lender_pool.hpp>
 #include <mt/channel.hpp>
+#include <strategy/local.hpp>
 
 
 /// Namespace for the torrent manager. Contains the TorrentManager, every
@@ -45,7 +46,7 @@ struct Piece {
 /// Every torrent to download is mapped to a TorrentManager object
 class TorrentManager {
 
-    typedef std::unique_ptr<fur::mt::IListStrategy<TaskRef, TaskRef>> MyStrategy;
+    typedef std::unique_ptr<strategy::ILocalStrategy> MyStrategy;
 
  private:
     /// The parsed .torrent file
@@ -105,7 +106,7 @@ class TorrentManager {
     void print_status() const;
 
     /// Set the stategy used to pick a piece for the workers
-    void set_strategy(std::unique_ptr<mt::IListStrategy<TaskRef, TaskRef>> strategy);
+    void set_strategy(MyStrategy strategy);
     /// Returns the _lender_pool of the current object
     LenderPool<Socket>& get_lender_pool();
 };

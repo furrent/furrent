@@ -10,43 +10,11 @@
 
 namespace fur {
 
-// Strategy to pick a task from a list of TorrentManager, every TorrentManager
-// has a local strategy to pick a task from its own list of tasks.
-class RoundRobinStrategy : public mt::IListStrategy<TorrentManagerRef, Piece> {
-
-public:
-  std::optional<Piece> extract(std::list<TorrentManagerRef>& torrents) override {
-
-    std::optional<Piece> result = std::nullopt;
-    while (!torrents.empty()) {
-      
-      // Get first torrent available (Round Robin)
-      TorrentManagerRef weak_torrent = torrents.front();
-      torrents.pop_front();
-    
-      // If torrent was not removed from the downloads
-      // select a new piece to download
-      if (auto torrent = weak_torrent.lock()) {
-
-        auto task = torrent->pick_task();
-        if (task.has_value()) {
-          // TODO add socket picker from LenderPool
-          result = std::optional{ Piece{ *task }};
-        }
-
-        // If the torrent has other pieces to download add it to the torrents
-        if (torrent->has_tasks())
-          torrents.push_back(weak_torrent);
-      }
-    }
-
-    return result;
-  }
-};
+using namespace strategy;
 
 // Create constructor
 Furrent::Furrent() {
-  _strategy = std::make_unique<RoundRobinStrategy>();
+  _strategy = make_strategy_global<GlobalStrategyType::RoundRobin>();
   _workers.launch([this] (mt::Runner runner, WorkerState& state, size_t index) {
     
     // Custom download logic
@@ -61,7 +29,7 @@ Furrent::Furrent() {
 // Constructor for the tests
 Furrent::Furrent(std::function<void(Piece&)> fn) {
 
-  _strategy = std::make_unique<RoundRobinStrategy>();
+  _strategy = make_strategy_global<GlobalStrategyType::RoundRobin>();
   _workers.launch([&] (mt::Runner runner, WorkerState& state, size_t index) {
     
     // Custom download logic

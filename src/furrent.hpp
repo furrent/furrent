@@ -3,6 +3,7 @@
 #include "torrent_manager.hpp"
 #include <mt/channel.hpp>
 #include <mt/group.hpp>
+#include <strategy/global.hpp>
 #include <download/lender_pool.hpp>
 #include <furrent.hpp>
 
@@ -10,7 +11,7 @@ namespace fur {
 
 class Furrent {
 
-    typedef std::unique_ptr<mt::IListStrategy<std::weak_ptr<TorrentManager>, Piece>> MyTorrentStrategy;
+    typedef std::unique_ptr<strategy::IGlobalStrategy> MyTorrentStrategy;
 
     /// Internal state/statistics of the workers 
     struct WorkerState { };

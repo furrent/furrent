@@ -14,6 +14,7 @@
 #include <mt/channel.hpp>
 
 using namespace fur::mt;
+using namespace fur::strategy;
 
 struct Stored { int val; };
 struct Served { int val; };
