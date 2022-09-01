@@ -15,10 +15,11 @@ TEST_CASE("Thread group creation") {
 
     {
         // Threads whould exists only inside this scope
-        ThreadGroup<ThreadState> group([&](Controller controller, ThreadState& state, size_t index) {
-            while(controller.alive()) {
-                checked[index] = true;
+        ThreadGroup<ThreadState> group{};
+        group.launch([&](Runner runner, ThreadState& state, size_t index) {
+            while(runner.alive()) {
                 state.value = 100;
+                checked[index] = true;
             }
         }, THREADS_NUM);
 

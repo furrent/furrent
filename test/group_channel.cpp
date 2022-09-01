@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include <mt/channel.hpp>
+#include <mt/group.hpp>
 
 using namespace fur::mt;
 
@@ -27,38 +28,37 @@ public:
     }
 };
 
-TEST_CASE("StrategyChannel base behaviour") {
+struct ThreadState { };
+
+TEST_CASE("Channel and Thread Group interop") {
+
+    const int SIZE = 10000;
 
     StrategyChannel<Stored, Served> input{};
     StrategyChannel<Served, Served> output{};
     
     TestStrategy strategy;
 
-    std::vector<std::thread> threads;
-    for (size_t i = 0; i < std::thread::hardware_concurrency(); i++)
-        threads.emplace_back([&]{
-            std::optional<Served> work_to_do;
-            while(work_to_do = input.extract(&strategy))
-                output.insert(*work_to_do);
+    {
+        for (int i = 0; i < SIZE; i++)
+            input.insert({ 1 });
+
+        ThreadGroup<ThreadState> group{};
+        group.launch([&](Runner runner, ThreadState& state, size_t index) {
+            while(runner.alive()) {
+                auto served = input.extract(&strategy);
+                if (served.has_value())
+                    output.insert(*served);
+            }
         });
 
-    
-    // Batch of work available after threads creation
-    const int SIZE = 10000;
-    for (int i = 0; i < SIZE; i++)
-        input.insert({ 1 });
+        input.wait_empty();
 
-    input.wait_empty();
-    
-    const auto& input_list = input.get_work_list();
-    REQUIRE(input_list.empty());
+        const auto& input_list = input.get_work_list();
+        REQUIRE(input_list.empty());
 
-    input.set_serving(false);
-    for (auto& thread : threads)
-        thread.join();
-
-    for(const auto& value : input_list)
-        std::cout << value.val << "\n";
+        input.set_serving(false);
+    }
 
     const auto& output_list = output.get_work_list();
     REQUIRE(output_list.size() == SIZE);
