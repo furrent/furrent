@@ -3,30 +3,32 @@
 namespace fur::mt {
 
 template<typename State>
-ThreadGroup<State>::ThreadGroup(ThreadFn fn, size_t max_worker_threads)
-: _thread_fn{std::move(fn)}, _should_terminate{false} {
-
-    size_t size = std::thread::hardware_concurrency();
-    if (max_worker_threads != 0) size = std::min(size, max_worker_threads);
-
-    for (size_t i = 0; i < size; i++)
-        _threads.push_back(Thread{
-            std::thread(std::bind(&ThreadGroup::thread, this, i), i, std::ref(*this)),
-            State{} // Must be default constructible
-        });
-}
+ThreadGroup<State>::ThreadGroup()
+: _should_terminate{false} { }
 
 template<typename State>
 ThreadGroup<State>::~ThreadGroup() {
     terminate();
     for (auto& thread : _threads)
-        thread.handle.join(); 
+        thread.join(); 
 }
 
 template<typename State>
-void ThreadGroup<State>::thread(size_t index) {
-    Controller control(_mutex, _should_terminate);
-    _thread_fn(control, _threads[index].state, index);
+void ThreadGroup<State>::launch(ThreadFn fn, size_t max_worker_threads) {
+
+    _thread_fn = fn;
+    size_t size = std::thread::hardware_concurrency();
+    if (max_worker_threads != 0) size = std::min(size, max_worker_threads);
+
+    _states.resize(size);
+    for (size_t i = 0; i < size; i++)
+        _threads.emplace_back(std::bind(&ThreadGroup::thread_main, this, i), i, std::ref(*this));
+}
+
+template<typename State>
+void ThreadGroup<State>::thread_main(size_t index) {
+    State& state = _states.at(index);
+    _thread_fn(Runner(_mutex, _should_terminate), state, index);
 }
 
 template<typename State>
@@ -37,7 +39,7 @@ void ThreadGroup<State>::terminate() {
 
 template<typename State>
 State& ThreadGroup<State>::get_thread_state(size_t thread) {
-    return _threads[thread].state;
+    return _states[thread];
 }
 
 } // namespace fur::mt

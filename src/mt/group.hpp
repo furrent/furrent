@@ -15,7 +15,7 @@
 namespace fur::mt {
 
 /// Used to control threads execution
-class Controller {
+class Runner {
     
     /// Protects terminate status
     std::mutex& _mutex;
@@ -23,7 +23,7 @@ class Controller {
     bool& _should_terminate;
     
 public:
-    Controller(std::mutex& mutex, bool& _should_terminate);
+    Runner(std::mutex& mutex, bool& _should_terminate);
 
     /// True if threads should continue executing
     bool alive();
@@ -34,21 +34,14 @@ template<typename State>
 class ThreadGroup {
 
     /// Functions executed by the threads, as an argument
-    /// each threads receives the controller, its own unique state ad its thread number
-    typedef std::function<void(Controller, State&, size_t)> ThreadFn;
+    /// each threads receives the runner, its own unique state ad its thread number
+    typedef std::function<void(Runner, State&, size_t)> ThreadFn;
 
-    /// Internal rappresentation of a thread
-    struct Thread 
-    {
-        /// OS handle
-        std::thread handle;
-        /// User-defined state
-        State state;
-    };
-
-    /// Contains all threads managed by the group
-    std::vector<Thread> _threads;
-    /// Function executing on all threads in a loop
+    /// Contains all threads handles managed by the group
+    std::vector<std::thread> _threads;
+    /// Contains all threads states
+    std::vector<State> _states;
+    /// Function running on workers
     ThreadFn _thread_fn;
     /// Protects terminate status
     std::mutex _mutex;
@@ -56,8 +49,8 @@ class ThreadGroup {
     bool _should_terminate;
 
 public:
-    /// Starts the group of threads
-    ThreadGroup(ThreadFn fn, size_t max_worker_threads = 0);
+    /// Create disabled thread group
+    ThreadGroup();
     /// Stops and joins all threads
     virtual ~ThreadGroup();
 
@@ -71,6 +64,9 @@ public:
 
     //===========================================================================
 
+    /// Create threads and begin execution
+    void launch(ThreadFn fn, size_t max_worker_threads = 0);
+
     /// Terminate thread execution, this operation is irrecuperable
     void terminate();
 
@@ -78,8 +74,9 @@ public:
     State& get_thread_state(size_t thread);
 
 private:
-    /// Threads main function
-    void thread(size_t index);
+    /// Workers thread main function
+    void thread_main(size_t index);
+
 };
 
 } // namespace fur::mt

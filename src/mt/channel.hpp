@@ -22,7 +22,8 @@ template<typename Served, typename Container>
 class IStrategy {
 public:
     /// Implements custom extract logic
-    virtual Served extract(Container&) = 0;
+    /// Extraction can fail, in that case returns nullopt
+    virtual std::optional<Served> extract(Container&) = 0;
 };
 
 /// Comodity type for strategy used for working on a list
@@ -42,7 +43,7 @@ class StrategyChannel {
     );
 
     /// Compatible strategy type
-    typedef IListStrategy<Stored, Served> Strategy;
+    typedef IListStrategy<Stored, Served> MyStrategy;
 
 private:
     /// Mutex protecting collection and CVs
@@ -60,7 +61,7 @@ public:
     /// Construct a new empty queue
     StrategyChannel();
     /// Frees all waiting threads
-    virtual ~StrategyChannel() = default;
+    virtual ~StrategyChannel();
 
     //===========================================================================
     // This object is not copyable and not movable because of mutex and CVs
@@ -77,11 +78,26 @@ public:
     void set_serving(bool value);
 
     /// Inserts new item inside collection
+    /// @param item item to be inserted
     void insert(Stored item);
+
     /// Extracts an element from the collection using a strategy.
     /// If the collection is empty then waits for a new item.
-    /// If the result is nullptr then we stopped serving
-    std::optional<Served> extract(Strategy* strategy);
+    /// If the result is nullopt then we stopped serving during waiting
+    /// @param stategy strategy implementation to be used
+    std::optional<Served> extract(MyStrategy* strategy);
+
+    /// Extracts an element from the collection using a strategy.
+    /// If the collection is empty or we stopped serving then 
+    /// returns a nullopt
+    /// @param stategy strategy implementation to be used
+    std::optional<Served> try_extract(MyStrategy* strategy);
+
+    /// Generic function used to mutate the internal collection
+    /// in a thread-safe matter
+    /// @param mutation function used to mutate the collection, returns
+    ///                 true if waiting threads should be wakeuped
+    void mutate(std::function<bool(std::list<Stored>&)> mutation);
 
     /// Blocks execution, without spinlock, until there is no more work to do
     void wait_empty();
