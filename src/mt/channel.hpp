@@ -44,9 +44,9 @@ class StrategyChannel {
 public:
 
     /// Compatible strategy type
-    typedef strategy::IListStrategy<T> MyStrategy;
+    typedef strategy::IListStrategy<T> Strategy;
     /// Error type used
-    typedef util::Result<T, StrategyChannelError> MyResult;
+    typedef util::Result<T, StrategyChannelError> Result;
 
 private:
     /// Mutex protecting collection and CVs
@@ -83,19 +83,19 @@ public:
     /// Inserts new item inside collection using the strategy
     /// @param item item to be inserted
     /// @param strategy strategy implementation to be used
-    void insert(T item, MyStrategy& strategy);
+    void insert(T item, Strategy* strategy);
 
     /// Extracts an element from the collection using a strategy.
     /// If the collection is empty then waits for a new item.
     /// If the result is nullopt then we stopped serving during waiting
     /// @param stategy strategy implementation to be used
-    [[nodiscard]] MyResult extract(MyStrategy& strategy);
+    [[nodiscard]] Result extract(Strategy* strategy);
 
     /// Extracts an element from the collection using a strategy.
     /// If the collection is empty or we stopped serving then 
     /// returns a nullopt
     /// @param stategy strategy implementation to be used
-    [[nodiscard]] MyResult try_extract(MyStrategy& strategy);
+    [[nodiscard]] Result try_extract(Strategy* strategy);
 
     /// Generic function used to mutate the internal collection
     /// in a thread-safe matter

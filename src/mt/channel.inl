@@ -19,21 +19,29 @@ StrategyChannel<T>::~StrategyChannel() {
 }
 
 template<typename T>
-void StrategyChannel<T>::insert(T item, MyStrategy& strategy) {
+void StrategyChannel<T>::insert(T item, Strategy* strategy) {
+
+    // No strategy was passed as an argument
+    if (!strategy) return;
+
     {
         // Documentation suggests it's better to unlock the
         // mutex before notifing the CV
 
         std::scoped_lock<std::mutex> lock(_work_mutex);
-        strategy.insert(item, _work);
+        strategy->insert(item, _work);
     }
     _work_available.notify_one();
 }
 
 template<typename T>
-auto StrategyChannel<T>::extract(MyStrategy& strategy) -> MyResult {
+auto StrategyChannel<T>::extract(Strategy* strategy) -> Result {
 
-    typedef typename MyStrategy::Result StrategyResult;
+    typedef typename Strategy::Result StrategyResult;
+
+    // No strategy was passed as an argument
+    if (!strategy)
+        return Result::error(StrategyChannelError::StrategyFailed);
 
     // If the work list is empty then wait
     std::unique_lock<std::mutex> lock(_work_mutex);
@@ -43,17 +51,17 @@ auto StrategyChannel<T>::extract(MyStrategy& strategy) -> MyResult {
 
     // We must exit because we are not serving anymore
     if (!_serving) 
-        return MyResult::error(StrategyChannelError::StoppedServing);
+        return Result::error(StrategyChannelError::StoppedServing);
         
     // Extracts a work-item
-    StrategyResult result = strategy.extract(_work);
+    StrategyResult result = strategy->extract(_work);
     if (result.has_error()) {
         switch (result.get_error())
         {
         case strategy::StrategyError::Empty:
-            return MyResult::error(StrategyChannelError::Empty);
+            return Result::error(StrategyChannelError::Empty);
         default:
-            return MyResult::error(StrategyChannelError::StrategyFailed);
+            return Result::error(StrategyChannelError::StrategyFailed);
         }
     }
 
@@ -65,31 +73,34 @@ auto StrategyChannel<T>::extract(MyStrategy& strategy) -> MyResult {
     if (notify)
         _work_finished.notify_all();
         
-    return MyResult::ok(result.get_value());
+    return Result::ok(result.get_value());
 }
 
 template<typename T>
-auto StrategyChannel<T>::try_extract(MyStrategy& strategy) -> MyResult {
+auto StrategyChannel<T>::try_extract(Strategy* strategy) -> Result {
 
-    typedef typename MyStrategy::Result StrategyResult;
+    typedef typename Strategy::Result StrategyResult;
+
+    // No strategy was passed as an argument
+    if (!strategy)
+        return Result::error(StrategyChannelError::StrategyFailed);
 
     // If the work list is empty then wait
     std::unique_lock<std::mutex> lock(_work_mutex);
     if (!_serving) 
-        return MyResult::error(StrategyChannelError::StoppedServing);
+        return Result::error(StrategyChannelError::StoppedServing);
     if (_work.empty())
-        return MyResult::error(StrategyChannelError::Empty);
+        return Result::error(StrategyChannelError::Empty);
 
     // Extracts a work-item
-    StrategyResult result = strategy.extract(_work);
+    StrategyResult result = strategy->extract(_work);
     if (result.has_error()) {
-        switch (result.get_error())
+        switch (result.get_error() )
         {
         case strategy::StrategyError::Empty:
-            return MyResult::error(StrategyChannelError::Empty);
-        default:
-            return MyResult::error(StrategyChannelError::StrategyFailed);
+            return Result::error(StrategyChannelError::Empty);
         }
+        return Result::error(StrategyChannelError::StrategyFailed);
     }
 
     bool notify = _work.empty();
@@ -100,7 +111,7 @@ auto StrategyChannel<T>::try_extract(MyStrategy& strategy) -> MyResult {
     if (notify)
         _work_finished.notify_all();
         
-    return MyResult::ok(result.get_value());
+    return Result::ok(result.get_value());
 }
 
 template<typename T>

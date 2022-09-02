@@ -21,9 +21,8 @@ Furrent::Furrent() {
 
     std::stringstream ss;
     while(runner.alive()) {
-
       // Wait for a valid torrent to work on
-      auto torrent_result = _torrent_channel.extract(*_strategy.get());
+      auto torrent_result = _torrent_channel.extract(_strategy.get());
       if (torrent_result.has_error()) {
         switch (torrent_result.get_error())
         {
@@ -46,14 +45,14 @@ Furrent::Furrent() {
           // This doesn't mean that the torrent has been downloaded, so
           // for now reinsert it in the queue and continue
           case strategy::StrategyError::Empty:
-            _torrent_channel.insert(tm, *_strategy.get());
+            _torrent_channel.insert(tm, _strategy.get());
             continue;
         }
       }
 
       // With some condition decide if we should reinsert it to the list
       if(tm.unfinished())
-        _torrent_channel.insert(tm, *_strategy.get());
+        _torrent_channel.insert(tm, _strategy.get());
 
       // Now we dont have ownership of the torrent and it can be shared elsewhere
 
@@ -96,7 +95,7 @@ void Furrent::add_torrent(const std::string& path) {
 
   // Create new shared torrent manager from torrent file
   _downloads.emplace_back(torrent);
-  _torrent_channel.insert(_downloads.back(), *_strategy.get());
+  _torrent_channel.insert(_downloads.back(), _strategy.get());
 }
 
 void Furrent::print_status() const {
