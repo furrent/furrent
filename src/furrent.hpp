@@ -19,7 +19,7 @@ class Furrent {
     /// List of torrents to download
     std::list<std::shared_ptr<TorrentManager>> _downloads;
     /// Channel used to transfer work to workers
-    mt::StrategyChannel<std::weak_ptr<TorrentManager>, Piece> _work_channel;
+    mt::channel::StrategyChannel<std::weak_ptr<TorrentManager>> _torrent_channel;
     /// Pool managing worker threads
     mt::ThreadGroup<WorkerState> _workers;
     /// Strategy used to distribute torrents to threads as pieces
@@ -29,7 +29,7 @@ class Furrent {
     /// Real constructor of Furrent
     Furrent();
     /// Constructor for the tests
-    Furrent(std::function<void(Piece&)>);
+    Furrent(std::function<void(PieceDownloader&)>);
     
     ~Furrent();
     
