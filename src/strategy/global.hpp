@@ -16,7 +16,7 @@
 namespace fur::strategy {
 
 /// Global strategies are used to distribute torrent pieces to workers
-using IGlobalStrategy = IListStrategy<TorrentManagerRef, Piece>;
+using IGlobalStrategy = IListStrategy<TorrentManagerWeakRef>;
 
 /// All hardcoded strategies used to distribute torrents pieces to workers
 enum class GlobalStrategyType {
@@ -34,14 +34,16 @@ std::unique_ptr<IGlobalStrategy> make_strategy_global();
 // has a local strategy to pick a task from its own list of tasks.
 class RoundRobinStrategy : public IGlobalStrategy {
 public:
-    std::optional<Piece> extract(std::list<TorrentManagerRef>& torrents) override;
+    std::optional<TorrentManagerWeakRef> extract(std::list<TorrentManagerWeakRef>&) override;
+    void insert(TorrentManagerWeakRef, std::list<TorrentManagerWeakRef>&) override;
 };
 
 // Strategy to pick a task from a list of TorrentManager, every TorrentManager
 // has a local strategy to pick a task from its own
 class SmallerFirstStrategy : public IGlobalStrategy {
 public:
-    std::optional<Piece> extract(std::list<TorrentManagerRef>& torrents) override;
+    std::optional<TorrentManagerWeakRef> extract(std::list<TorrentManagerWeakRef>&) override;
+    void insert(TorrentManagerWeakRef, std::list<TorrentManagerWeakRef>&) override;
 };
 
 }

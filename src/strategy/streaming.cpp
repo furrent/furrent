@@ -9,7 +9,7 @@ std::unique_ptr<ILocalStrategy> make_strategy_local<LocalStrategyType::Streaming
     return std::make_unique<StreamingStrategy>(torrent);
 }
 
-std::optional<Piece> StreamingStrategy::extract(std::list<Task>& torrents) {
+std::optional<PieceDescriptor> StreamingStrategy::extract(std::list<PieceDescriptor>& descriptors) {
     return std::nullopt; // TODO
 }
 

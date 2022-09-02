@@ -18,14 +18,14 @@ namespace fur {
     // Forward declaration
 
     class TorrentManager;
-    class Task; 
-    class Piece; 
+    class PieceDescriptor; 
+    class PieceDownloader; 
 }
 
 namespace fur::strategy {
 
 /// Local strategies are used to choose pieces
-using ILocalStrategy = IListStrategy<Task, Piece>;
+using ILocalStrategy = IListStrategy<PieceDescriptor>;
 
 /// All hardcoded strategies used to distribute torrents pieces to workers
 enum class LocalStrategyType {
@@ -41,11 +41,13 @@ std::unique_ptr<ILocalStrategy> make_strategy_local(TorrentManager&);
 
 /// Local strategy need to access the torrent manager
 class LocalStrategy : public ILocalStrategy {
-protected:
     TorrentManager& _torrent;
 public:
     LocalStrategy(TorrentManager& torrent)
         : _torrent{torrent} { }
+
+    /// Usually it is enough to insert at the end
+    void insert(PieceDescriptor, std::list<PieceDescriptor>&) override;
 };
 
 // Strategy to pick a task from a list of TorrentManager, every TorrentManager
@@ -55,11 +57,11 @@ public:
     StreamingStrategy(TorrentManager& torrent)
         : LocalStrategy(torrent) { };
 
-    std::optional<Piece> extract(std::list<Task>& torrents) override;
+    std::optional<PieceDescriptor> extract(std::list<PieceDescriptor>&) override;
 };
 
 // Strategy to pick a task from a list of TorrentManager, every TorrentManager
-// has a local strategy to pick a task from its own
+// has a local strategy to pick a task from its own 
 class RandomUniformStrategy : public LocalStrategy {
 
     std::random_device _rd;
@@ -69,7 +71,7 @@ public:
     RandomUniformStrategy(TorrentManager& torrent)
         : LocalStrategy(torrent) { };
 
-    std::optional<Piece> extract(std::list<Task>& torrents) override;
+    std::optional<PieceDescriptor> extract(std::list<PieceDescriptor>&) override;
 };
 
 }

@@ -7,88 +7,86 @@
 
 #include <mt/channel.hpp>
 
-namespace fur::mt {
+namespace fur::mt::channel {
 
-template<typename Stored, typename Served>
-StrategyChannel<Stored, Served>::StrategyChannel()
+template<typename T>
+StrategyChannel<T>::StrategyChannel()
 : _serving{true} { }
 
-template<typename Stored, typename Served>
-StrategyChannel<Stored, Served>::~StrategyChannel() {
+template<typename T>
+StrategyChannel<T>::~StrategyChannel() {
     set_serving(false);
 }
 
-template<typename Stored, typename Served>
-void StrategyChannel<Stored, Served>::insert(Stored item) {
+template<typename T>
+void StrategyChannel<T>::insert(T item, MyStrategy* strategy) {
     {
         // Documentation suggests it's better to unlock the
         // mutex before notifing the CV
 
         std::scoped_lock<std::mutex> lock(_work_mutex);
-        _work.push_front(item);
+        strategy->insert(item, _work);
     }
     _work_available.notify_one();
 }
 
-template<typename Stored, typename Served>
-std::optional<Served> StrategyChannel<Stored, Served>::extract(MyStrategy* strategy) {
-    
-    std::optional<Served> result = std::nullopt;
-    bool collection_empty;
+template<typename T>
+auto StrategyChannel<T>::extract(MyStrategy* strategy) -> MyResult {
 
-    {
-        // Documentation suggests it's better to unlock the
-        // mutex before notifing the CV
-
-        // If the work list is empty then wait
-        std::unique_lock<std::mutex> lock(_work_mutex);
-        _work_available.wait(lock, [this]{
+    // If the work list is empty then wait
+    std::unique_lock<std::mutex> lock(_work_mutex);
+    _work_available.wait(lock, [this]{
             return !_work.empty() || !_serving;
-        });
+    });
 
-        // We must exit because we are not serving anymore
-        if (!_serving) return std::nullopt;
+    // We must exit because we are not serving anymore
+    if (!_serving) 
+        return MyResult::error(StrategyChannelError::StoppedServing);
         
-        // Extracts a work-item
-        result = strategy->extract(_work);
-        collection_empty = _work.empty();
-    }
-    
-    // Notifies if there is no more work
-    if (collection_empty)
+    // Extracts a work-item
+    std::optional<T> result = strategy->extract(_work);
+    if (!result.has_value())
+        return MyResult::error(StrategyChannelError::StrategyFailed);
+
+    bool notify = _work.empty();
+
+    // Documentation suggests it's better to unlock the
+    // mutex before notifing the CV
+    lock.unlock();
+    if (notify)
         _work_finished.notify_all();
-    
-    return result;
+        
+    return MyResult::ok(*result);
 }
 
-template<typename Stored, typename Served>
-std::optional<Served> StrategyChannel<Stored, Served>::try_extract(MyStrategy* strategy) {
+template<typename T>
+auto StrategyChannel<T>::try_extract(MyStrategy* strategy) -> MyResult {
 
-    std::optional<Served> result = std::nullopt;
-    bool collection_empty;
+    // If the work list is empty then wait
+    std::unique_lock<std::mutex> lock(_work_mutex);
+    if (!_serving) 
+        return MyResult::error(StrategyChannelError::StoppedServing);
+    if (_work.empty())
+        return MyResult::error(StrategyChannelError::Empty);
 
-    {
-        // Documentation suggests it's better to unlock the
-        // mutex before notifing the CV
+    // Extracts a work-item
+    std::optional<T> result = strategy->extract(_work);
+    if (!result.has_value())
+        return MyResult::error(StrategyChannelError::StrategyFailed);
 
-        std::unique_lock<std::mutex> lock(_work_mutex);
-        if (!_serving || _work.empty()) 
-            return std::nullopt;
+    bool notify = _work.empty();
 
-        // Extracts a work-item
-        result = strategy->extract(_work);
-        collection_empty = _work.empty();
-    }
-    
-    // Notifies if there is no more work
-    if (collection_empty)
+    // Documentation suggests it's better to unlock the
+    // mutex before notifing the CV
+    lock.unlock();
+    if (notify)
         _work_finished.notify_all();
-    
-    return result;
+        
+    return MyResult::ok(*result);
 }
 
-template<typename Stored, typename Served>
-void StrategyChannel<Stored, Served>::wait_empty() {
+template<typename T>
+void StrategyChannel<T>::wait_empty() {
     
     std::unique_lock<std::mutex> lock(_work_mutex);
     if (_work.empty()) return;
@@ -98,13 +96,13 @@ void StrategyChannel<Stored, Served>::wait_empty() {
     });
 }
 
-template<typename Stored, typename Served>
-const std::list<Stored>& StrategyChannel<Stored, Served>::get_work_list() const {
+template<typename T>
+const std::list<T>& StrategyChannel<T>::get_work_list() const {
     return _work;
 }
 
-template<typename Stored, typename Served>
-void StrategyChannel<Stored, Served>::set_serving(bool value) {
+template<typename T>
+void StrategyChannel<T>::set_serving(bool value) {
     {
         // Documentation suggests it's better to unlock the
         // mutex before notifing the CV
@@ -115,8 +113,8 @@ void StrategyChannel<Stored, Served>::set_serving(bool value) {
     _work_available.notify_all();
 }
 
-template<typename Stored, typename Served>
-void StrategyChannel<Stored, Served>::mutate(std::function<bool(std::list<Stored>&)> mutation) {
+template<typename T>
+void StrategyChannel<T>::mutate(std::function<bool(std::list<T>&)> mutation) {
     bool notify;
     {
         // Documentation suggests it's better to unlock the
@@ -130,4 +128,4 @@ void StrategyChannel<Stored, Served>::mutate(std::function<bool(std::list<Stored
         _work_available.notify_all();
 }
 
-} // namespace fur::mt
+} // namespace fur::mt::channel

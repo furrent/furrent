@@ -2,7 +2,9 @@
  * @file strategy.hpp
  * @author Filippo Ziche
  * @version 0.1
- * @brief Contains types shared between al strategies
+ * @brief Contains types shared between al strategies. 
+ *        Strategies are transformers used to extract work from
+ *        StategyQueue in a thread-safe manner.
  * @date 2022-09-01
  */
 
@@ -14,23 +16,23 @@
 namespace fur::strategy {
 
 /// Allows the extraction of an element from a collection using
-/// a user-defined logic
+/// a user-defined logic in a thread-safe manner
 /// @tparam Served Type of the result of the extraction
 /// @tparam Container Type of the collection containing items
-template<typename Served, typename Container>
+template<typename T, typename Container>
 class IStrategy {
 public:
     /// Implements custom extract logic
     /// Extraction can fail, in that case returns nullopt
-    virtual std::optional<Served> extract(Container&) = 0;
+    virtual std::optional<T> extract(Container&) = 0;
+
+    /// Implements custom insert logic
+    virtual void insert(T item, Container&) = 0;
 };
 
 /// Comodity type for strategy used for working on a list
-template<typename Stored, typename Served>
-using IListStrategy = IStrategy<Served, typename std::list<Stored>>;
+template<typename T>
+using IListStrategy = IStrategy<T, typename std::list<T>>;
 
-/// Comodity type for strategy that don't transform data from Stored to Server
-template<typename Served>
-using IAutoListStrategy = IListStrategy<Served, Served>;
 
 } // namespace fur::strategy
