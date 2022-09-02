@@ -11,24 +11,22 @@ using namespace fur;
 const char* debian_torrent = "../extra/debian-11.4.0-amd64-netinst.iso.torrent";
 const char* ubuntu_torrent = "../extra/ubuntu-22.04.1-desktop-amd64.iso.torrent";
 
-/*
 TEST_CASE("[Furrent] add new torrent and count all tasks") {
 
-  std::atomic_int sum_tasks_index = 0;
-  fur::Furrent fur{[&](fur::Piece& p) {
-    // Function to count all tasks
-    sum_tasks_index += p.task->index;
-  }};
-  
-  fur.add_torrent(debian_torrent);
-  
-  // Wait for the program to finish
-  std::this_thread::sleep_for(std::chrono::seconds(3));
-  
-  // 1148370 is the sum of the numbers from 0 to 1516 (the number of tasks)
-  REQUIRE(sum_tasks_index == 1148370);
+  int pieces = 0;
+  {
+    fur::Furrent fur;
+    fur.add_torrent(debian_torrent);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    // 1148370 is the sum of the numbers from 0 to 1516 (the number of tasks)
+    while(fur.get_total_processed_pieces() != 1516);
+    pieces = fur.get_total_processed_pieces();
+  }
+
+  REQUIRE(pieces == 1516);
 }
-*/
 
 /*
  * TODO: Resolving error
