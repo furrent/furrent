@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <random>
+#include <sstream>
 
 #include "bencode/bencode_parser.hpp"
 #include "torrent_manager.hpp"
@@ -16,62 +17,58 @@ using namespace strategy;
 // Create constructor
 Furrent::Furrent() {
   _strategy = make_strategy_global<GlobalStrategyType::RoundRobin>();
-  _workers.launch([this] (mt::Runner runner, WorkerState& state, size_t index) {
-    while(runner.alive()) {
-
-      // Wait for a valid torrent to work on 
-      auto torrent_result = _torrent_channel.extract(_strategy.get());
-      if (torrent_result.has_error()) return;
-
-      // If torrent is in a valid state
-      auto torrent_ref = torrent_result.get_value();
-      if (auto torrent = torrent_ref.lock()) {
-
-        // If torrent still has work to do reinsert it inside channel
-        if (torrent->has_tasks())
-          _torrent_channel.insert(torrent_ref, _strategy.get());
-
-        // Extract piece to work on
-        auto piece_result = torrent->pick_piece();
-        if (piece_result.has_error()) return;
-
-        // TODO
-        
-      }
-    }
-  });
-}
-
-// Constructor for the tests
-Furrent::Furrent(std::function<void(PieceDownloader&)> fn) {
-
-  _strategy = make_strategy_global<GlobalStrategyType::RoundRobin>();
   _workers.launch([&] (mt::Runner runner, WorkerState& state, size_t index) {
+
+    std::stringstream ss;
     while(runner.alive()) {
 
-      // Wait for a valid torrent to work on 
-      auto torrent_result = _torrent_channel.extract(_strategy.get());
-      if (torrent_result.has_error()) return;
-
-      // If torrent is in a valid state
-      auto torrent_ref = torrent_result.get_value();
-      if (auto torrent = torrent_ref.lock()) {
-
-        // If torrent still has work to do reinsert it inside channel
-        if (torrent->has_tasks())
-          _torrent_channel.insert(torrent_ref, _strategy.get());
-
-        // Extract piece to work on
-        auto piece_result = torrent->pick_piece();
-        if (piece_result.has_error()) return;
-
-        PieceDownloader downloader{ piece_result.get_value() };
-        fn(downloader);
+      // Wait for a valid torrent to work on
+      auto torrent_result = _torrent_channel.extract(*_strategy.get());
+      if (torrent_result.has_error()) {
+        switch (torrent_result.get_error())
+        {
+          // TODO: Decide how to recover, for now skip this iteration
+          case mt::channel::StrategyChannelError::StoppedServing:
+          case mt::channel::StrategyChannelError::StrategyFailed:
+          case mt::channel::StrategyChannelError::Empty:
+            continue;
+        }
       }
-    }
-  });
-}
 
+      // From now on noone except us owns this TorrentManagerRef
+      TorrentManager& tm = torrent_result.get_value().get();
+
+      TorrentManager::Result descriptor_result = tm.pick_piece();
+      if (descriptor_result.has_error()) {
+        switch (descriptor_result.get_error())
+        {
+          // There are no more torrents pieces to distribute at the moment.
+          // This doesn't mean that the torrent has been downloaded, so
+          // for now reinsert it in the queue and continue
+          case strategy::StrategyError::Empty:
+            _torrent_channel.insert(tm, *_strategy.get());
+            continue;
+        }
+      }
+
+      // With some condition decide if we should reinsert it to the list
+      if(tm.unfinished())
+        _torrent_channel.insert(tm, *_strategy.get());
+
+      // Now we dont have ownership of the torrent and it can be shared elsewhere
+
+      PieceDescriptor descriptor = descriptor_result.get_value();
+      // HEAVY DOWNLOAD WORK
+
+      PieceResult result;
+      result.index = descriptor.index;
+
+      // Notify systems that this piece has been completed
+      state.processed_pieces += 1;
+      tm.task_done(result);
+    }
+  }, 1);
+}
 
 Furrent::~Furrent() {
   _torrent_channel.set_serving(false);
@@ -98,15 +95,21 @@ void Furrent::add_torrent(const std::string& path) {
   auto torrent = fur::torrent::TorrentFile(*b_tree);
 
   // Create new shared torrent manager from torrent file
-  auto manager = std::make_shared<TorrentManager>(torrent);
-  _downloads.push_front(manager);
-
-  // Create weak reference to newly added torrent manager
-  TorrentManagerWeakRef weak = manager;
-  _torrent_channel.insert(weak, _strategy.get());
+  _downloads.emplace_back(torrent);
+  _torrent_channel.insert(_downloads.back(), *_strategy.get());
 }
 
 void Furrent::print_status() const {
   std::cout << "Files in queue:" << std::endl;
 }
+
+int Furrent::get_total_processed_pieces() {
+  int total = 0;
+  for (size_t i = 0; i < _workers.get_worker_count(); i++) {
+    auto& state = _workers.get_thread_state(i);
+    total += state.processed_pieces;
+  }
+  return total;
+}
+
 }

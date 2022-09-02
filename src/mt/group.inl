@@ -42,4 +42,9 @@ State& ThreadGroup<State>::get_thread_state(size_t thread) {
     return _states[thread];
 }
 
+template<typename State>
+size_t ThreadGroup<State>::get_worker_count() const {
+    return _states.size();
+}
+
 } // namespace fur::mt

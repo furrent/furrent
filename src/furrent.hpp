@@ -14,12 +14,15 @@ class Furrent {
     typedef std::unique_ptr<strategy::IGlobalStrategy> MyTorrentStrategy;
 
     /// Internal state/statistics of the workers 
-    struct WorkerState { };
+    struct WorkerState {
+      /// Count the total number of processed pieces
+      int processed_pieces;
+    };
 
     /// List of torrents to download
-    std::list<std::shared_ptr<TorrentManager>> _downloads;
+    std::list<TorrentManager> _downloads;
     /// Channel used to transfer work to workers
-    mt::channel::StrategyChannel<std::weak_ptr<TorrentManager>> _torrent_channel;
+    mt::channel::StrategyChannel<TorrentManagerRef> _torrent_channel;
     /// Pool managing worker threads
     mt::ThreadGroup<WorkerState> _workers;
     /// Strategy used to distribute torrents to threads as pieces
@@ -28,9 +31,6 @@ class Furrent {
   public:
     /// Real constructor of Furrent
     Furrent();
-    /// Constructor for the tests
-    Furrent(std::function<void(PieceDownloader&)>);
-    
     ~Furrent();
     
     /// Add torrent to the list of downloads creating a TorrentManager object
@@ -38,6 +38,8 @@ class Furrent {
     void add_torrent(const std::string& path);
     /// Print the status of the downloads
     void print_status() const;
+
+    int get_total_processed_pieces();
 };
 
 }

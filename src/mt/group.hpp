@@ -73,6 +73,9 @@ public:
     /// Obtain thread state
     State& get_thread_state(size_t thread);
 
+    /// Get total number of workers
+    size_t get_worker_count() const;
+
 private:
     /// Workers thread main function
     void thread_main(size_t index);
