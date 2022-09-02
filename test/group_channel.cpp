@@ -13,18 +13,24 @@
 
 #include <mt/channel.hpp>
 #include <mt/group.hpp>
+#include <strategy/strategy.hpp>
 
 using namespace fur::mt;
+using namespace fur::mt::channel;
+using namespace fur::strategy;
 
-struct Stored { int val; };
-struct Served { int val; };
+struct Value { int val; };
 
-class TestStrategy : public IListStrategy<Stored, Served> {
+class TestStrategy : public IListStrategy<Value> {
 public:
-    std::optional<Served> extract(std::list<Stored>& list) override {
-        Served result = { list.front().val * 2 };
+    std::optional<Value> extract(std::list<Value>& list) override {
+        Value result = { list.front().val * 2 };
         list.pop_front();
         return result;
+    }
+
+    void insert(Value item, std::list<Value>& list) override {
+        list.push_back(item);
     }
 };
 
@@ -34,21 +40,32 @@ TEST_CASE("Channel and Thread Group interop") {
 
     const int SIZE = 10000;
 
-    StrategyChannel<Stored, Served> input{};
-    StrategyChannel<Served, Served> output{};
+    StrategyChannel<Value> input{};
+    StrategyChannel<Value> output{};
     
     TestStrategy strategy;
-
     {
         for (int i = 0; i < SIZE; i++)
-            input.insert({ 1 });
+            input.insert({ 1 }, &strategy);
 
         ThreadGroup<ThreadState> group{};
         group.launch([&](Runner runner, ThreadState& state, size_t index) {
-            while(runner.alive()) {
-                auto served = input.extract(&strategy);
-                if (served.has_value())
-                    output.insert(*served);
+            bool alive = true;
+            while(runner.alive() && alive) {
+
+                auto result = input.extract(&strategy);
+                if (result.has_error())
+                    switch (result.get_error())
+                    {
+                    case StrategyChannelError::StrategyFailed:
+                    case StrategyChannelError::Empty:
+                    case StrategyChannelError::StoppedServing:
+                        alive = false;
+                        continue;
+                    }
+
+                auto value = result.get_value();
+                output.insert(value, &strategy);
             }
         });
 
@@ -64,8 +81,8 @@ TEST_CASE("Channel and Thread Group interop") {
     REQUIRE(output_list.size() == SIZE);
 
     int sum = 0;
-    for (const Served& served : output_list)
-        sum += served.val;
+    for (const Value& value : output_list)
+        sum += value.val;
 
     REQUIRE(sum == SIZE * 2);
 }

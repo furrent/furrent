@@ -14,40 +14,59 @@
 #include <mt/channel.hpp>
 
 using namespace fur::mt;
+using namespace fur::mt::channel;
 using namespace fur::strategy;
 
-struct Stored { int val; };
-struct Served { int val; };
+struct Value { int val; };
 
-class TestStrategy : public IListStrategy<Stored, Served> {
+class TestStrategy : public IListStrategy<Value> {
 public:
-    std::optional<Served> extract(std::list<Stored>& list) override {
-        Served result = { list.front().val * 2 };
+    std::optional<Value> extract(std::list<Value>& list) override {
+        Value result = { list.front().val * 2 };
         list.pop_front();
         return result;
+    }
+
+    void insert(Value item, std::list<Value>& list) override {
+        list.push_back(item);
     }
 };
 
 TEST_CASE("StrategyChannel base behaviour") {
 
-    StrategyChannel<Stored, Served> input{};
-    StrategyChannel<Served, Served> output{};
+    StrategyChannel<Value> input{};
+    StrategyChannel<Value> output{};
     
     TestStrategy strategy;
 
     std::vector<std::thread> threads;
     for (size_t i = 0; i < std::thread::hardware_concurrency(); i++)
         threads.emplace_back([&]{
-            std::optional<Served> work_to_do;
-            while(work_to_do = input.extract(&strategy))
-                output.insert(*work_to_do);
+            
+            bool alive = true;
+            while(alive) {
+
+                auto result = input.extract(&strategy);
+                if (result.has_error())
+                    switch (result.get_error())
+                    {
+                    case StrategyChannelError::StrategyFailed:
+                    case StrategyChannelError::Empty:
+                    case StrategyChannelError::StoppedServing:
+                        alive = false;
+                        continue;
+                    }
+
+                auto value = result.get_value();
+                output.insert(value, &strategy);
+            }
         });
 
     
     // Batch of work available after threads creation
     const int SIZE = 10000;
     for (int i = 0; i < SIZE; i++)
-        input.insert({ 1 });
+        input.insert({ 1 }, &strategy);
 
     input.wait_empty();
     
@@ -65,8 +84,8 @@ TEST_CASE("StrategyChannel base behaviour") {
     REQUIRE(output_list.size() == SIZE);
 
     int sum = 0;
-    for (const Served& served : output_list)
-        sum += served.val;
+    for (const Value& value : output_list)
+        sum += value.val;
 
     REQUIRE(sum == SIZE * 2);
 }
