@@ -21,10 +21,10 @@ struct Value { int val; };
 
 class TestStrategy : public IListStrategy<Value> {
 public:
-    std::optional<Value> extract(std::list<Value>& list) override {
+    Result extract(std::list<Value>& list) override {
         Value result = { list.front().val * 2 };
         list.pop_front();
-        return result;
+        return Result::ok(result);
     }
 
     void insert(Value item, std::list<Value>& list) override {
@@ -46,7 +46,7 @@ TEST_CASE("StrategyChannel base behaviour") {
             bool alive = true;
             while(alive) {
 
-                auto result = input.extract(&strategy);
+                auto result = input.extract(strategy);
                 if (result.has_error())
                     switch (result.get_error())
                     {
@@ -58,7 +58,7 @@ TEST_CASE("StrategyChannel base behaviour") {
                     }
 
                 auto value = result.get_value();
-                output.insert(value, &strategy);
+                output.insert(value, strategy);
             }
         });
 
@@ -66,7 +66,7 @@ TEST_CASE("StrategyChannel base behaviour") {
     // Batch of work available after threads creation
     const int SIZE = 10000;
     for (int i = 0; i < SIZE; i++)
-        input.insert({ 1 }, &strategy);
+        input.insert({ 1 }, strategy);
 
     input.wait_empty();
     

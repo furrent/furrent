@@ -13,7 +13,15 @@
 #include <list>
 #include <optional>
 
+#include <util/result.hpp>
+
 namespace fur::strategy {
+
+/// Possible errors that can occour when using a strategy 
+enum class StrategyError {
+    /// Occurs whene there was no element to extract
+    Empty
+};
 
 /// Allows the extraction of an element from a collection using
 /// a user-defined logic in a thread-safe manner
@@ -22,9 +30,13 @@ namespace fur::strategy {
 template<typename T, typename Container>
 class IStrategy {
 public:
+
+    /// Error type for this type
+    typedef util::Result<T, StrategyError> Result;
+
     /// Implements custom extract logic
     /// Extraction can fail, in that case returns nullopt
-    virtual std::optional<T> extract(Container&) = 0;
+    virtual Result extract(Container&) = 0;
 
     /// Implements custom insert logic
     virtual void insert(T item, Container&) = 0;

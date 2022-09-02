@@ -9,8 +9,12 @@ std::unique_ptr<ILocalStrategy> make_strategy_local<LocalStrategyType::Streaming
     return std::make_unique<StreamingStrategy>(torrent);
 }
 
-std::optional<PieceDescriptor> StreamingStrategy::extract(std::list<PieceDescriptor>& descriptors) {
-    return std::nullopt; // TODO
+auto StreamingStrategy::extract(std::list<PieceDescriptor>& descriptors) -> Result {
+    if (descriptors.empty()) return Result::error(StrategyError::Empty);
+
+    PieceDescriptor descriptor = descriptors.front();
+    descriptors.pop_front();
+    return Result::ok(descriptor);
 }
 
 } // namespace fur::strategy

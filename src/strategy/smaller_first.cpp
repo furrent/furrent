@@ -7,11 +7,12 @@ std::unique_ptr<IGlobalStrategy> make_strategy_global<GlobalStrategyType::Smalle
     return std::make_unique<SmallerFirstStrategy>();
 }
 
-std::optional<TorrentManagerWeakRef> SmallerFirstStrategy::extract(std::list<TorrentManagerWeakRef>& torrents) {
-    return std::nullopt; // TODO
+auto SmallerFirstStrategy::extract(std::list<TorrentManagerRef>& torrents) -> Result {
+    if (torrents.empty()) return Result::error(StrategyError::Empty);
+    return Result::error(StrategyError::Empty); // TODO
 }
 
-void SmallerFirstStrategy::insert(TorrentManagerWeakRef torrent, std::list<TorrentManagerWeakRef>& torrents) {
+void SmallerFirstStrategy::insert(TorrentManagerRef torrent, std::list<TorrentManagerRef>& torrents) {
     torrents.push_front(torrent);
 }
 

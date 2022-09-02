@@ -57,7 +57,7 @@ public:
     StreamingStrategy(TorrentManager& torrent)
         : LocalStrategy(torrent) { };
 
-    std::optional<PieceDescriptor> extract(std::list<PieceDescriptor>&) override;
+    Result extract(std::list<PieceDescriptor>&) override;
 };
 
 // Strategy to pick a task from a list of TorrentManager, every TorrentManager
@@ -71,7 +71,7 @@ public:
     RandomUniformStrategy(TorrentManager& torrent)
         : LocalStrategy(torrent) { };
 
-    std::optional<PieceDescriptor> extract(std::list<PieceDescriptor>&) override;
+    Result extract(std::list<PieceDescriptor>&) override;
 };
 
 }

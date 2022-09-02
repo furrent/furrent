@@ -7,13 +7,15 @@ std::unique_ptr<IGlobalStrategy> make_strategy_global<GlobalStrategyType::RoundR
     return std::make_unique<RoundRobinStrategy>();
 }
 
-std::optional<TorrentManagerWeakRef> RoundRobinStrategy::extract(std::list<TorrentManagerWeakRef>& torrents) {
-    TorrentManagerWeakRef torrent_ref = torrents.front();
+auto RoundRobinStrategy::extract(std::list<TorrentManagerRef>& torrents) -> Result {
+    if (torrents.empty()) return Result::error(StrategyError::Empty);
+
+    TorrentManagerRef torrent_ref = torrents.front();
     torrents.pop_front();
-    return { torrent_ref };
+    return Result::ok(torrent_ref);
 }
 
-void RoundRobinStrategy::insert(TorrentManagerWeakRef torrent, std::list<TorrentManagerWeakRef>& torrents) {
+void RoundRobinStrategy::insert(TorrentManagerRef torrent, std::list<TorrentManagerRef>& torrents) {
     torrents.push_back(torrent);
 }
 
