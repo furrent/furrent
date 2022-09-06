@@ -1,5 +1,5 @@
 /**
- * @file mtts.hpp
+ * @file sharind_queue.hpp
  * @author Filippo Ziche (filippo.ziche@gmail.com)
  * @brief Sharing queues allow the propagation of Tasks in order to
  *        maintain high utilization of threads
