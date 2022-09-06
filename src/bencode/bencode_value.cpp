@@ -9,7 +9,7 @@ using namespace fur::bencode;
 // ================
 // BencodeInt
 // ================
-BencodeInt::BencodeInt(int data) { _val = data; }
+BencodeInt::BencodeInt(long data) { _val = data; }
 
 std::string BencodeInt::to_string() const {
   // Return the encoded string of the BencodeInt i + val + e
@@ -18,7 +18,7 @@ std::string BencodeInt::to_string() const {
 
 BencodeType BencodeInt::get_type() const { return BencodeType::Integer; }
 
-int BencodeInt::value() const { return _val; }
+long BencodeInt::value() const { return _val; }
 
 // ================
 // BencodeString
