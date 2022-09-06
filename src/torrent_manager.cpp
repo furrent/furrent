@@ -73,7 +73,7 @@ bool TorrentManager::has_tasks() const {
   return num_done == num_tasks;
 }
 
-LenderPool<Socket>& TorrentManager::get_lender_pool() {
+download::lender_pool::LenderPool<Socket>& TorrentManager::get_lender_pool() {
   return _lender_pool;
 }
 

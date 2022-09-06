@@ -75,7 +75,7 @@ public:
     /// Last time we announced ourselves to the tracker
     time_t                          _last_announce;
     /// Pool of reusable sockets
-    LenderPool<Socket>              _lender_pool;
+    download::lender_pool::LenderPool<Socket>              _lender_pool;
 
   public:
     /// Priority of the torrent
@@ -123,7 +123,7 @@ public:
     /// Set the stategy used to pick a piece for the workers
     void set_strategy(Strategy strategy);
     /// Returns the _lender_pool of the current object
-    LenderPool<Socket>& get_lender_pool();
+    download::lender_pool::LenderPool<Socket>& get_lender_pool();
 
     /// @return True if not all pieces have been downloaded
     bool unfinished();
