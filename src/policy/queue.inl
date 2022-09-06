@@ -11,11 +11,11 @@ template<typename T>
 auto Queue<T>::extract(const IPolicy<T>& policy) -> Result {
 
     if (_items.empty()) 
-        return Result::ERROR(Error::Empty);
+        return Result::ERROR(util::Error::PolicyEmpty);
     
     auto it = policy.extract(_items.begin(), _items.end());
     if (it == _items.end()) 
-        return Result::ERROR(Error::PolicyFailure);
+        return Result::ERROR(util::Error::PolicyFailure);
 
     auto result = std::move(*it);
     _items.erase(it);

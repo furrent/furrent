@@ -43,5 +43,5 @@ TEST_CASE("Queue") {
     REQUIRE(present->value == 5);
 
     REQUIRE(!nothing);
-    REQUIRE(nothing.error() == Queue<Movable>::Error::Empty);
+    REQUIRE(nothing.error() == fur::util::Error::PolicyEmpty);
 }

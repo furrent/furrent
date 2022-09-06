@@ -38,7 +38,7 @@ public:
 
     /// Error are the same of the queue
     typedef typename policy::Queue<Work>::Error Error;
-    typedef util::Result<Work, Error> Result;
+    typedef util::Result<Work> Result;
 
 public:
     SharingQueue();

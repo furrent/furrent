@@ -57,9 +57,9 @@ TEST_CASE("Channel and Thread Group interop") {
                 if (!result)
                     switch (result.error())
                     {
-                    case StrategyChannelError::StrategyFailed:
-                    case StrategyChannelError::Empty:
-                    case StrategyChannelError::StoppedServing:
+                    case fur::util::Error::ChannelStrategyFailed:
+                    case fur::util::Error::ChannelEmpty:
+                    case fur::util::Error::ChannelStoppedServing:
                         alive = false;
                         continue;
                     }

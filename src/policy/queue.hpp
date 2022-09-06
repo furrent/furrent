@@ -26,16 +26,8 @@ class Queue {
     std::list<T> _items;
 
 public:
-    /// All possible error that can occur
-    enum class Error {
-        /// There are no more elements
-        Empty,
-        /// Policy returned no element
-        PolicyFailure
-    };
-
     /// Custom queue result type
-    typedef util::Result<T, Error> Result;
+    typedef util::Result<T> Result;
 
 public:
     /// Insert a new element

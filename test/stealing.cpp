@@ -10,6 +10,7 @@
 using namespace fur::policy;
 using namespace fur::mt;
 
+/*
 TEST_CASE("[mt] Stealing simple") {
 
     // Queue owner can push work
@@ -23,8 +24,8 @@ TEST_CASE("[mt] Stealing simple") {
     std::thread thief([&] {
         for(;;) {
             auto result = owner_queue.steal();
-            if (!result && result.error() == SharingQueue<int>::Error::Empty)
-                return;
+            //if (!result && result.error() == SharingQueue<int>::Error::Empty)
+            //    return;
 
             result_value = *result;
         }
@@ -117,4 +118,4 @@ TEST_CASE("[mt] Stealing hierarchical") {
     global_queue.begin_skip_waiting();
     for(auto& worker : workers)
         worker.join();
-}
+}*/

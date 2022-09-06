@@ -14,19 +14,14 @@ namespace fur::util {
 
 /// Possible errors that can occur during
 enum class Error {
-  // ----------
-  // Peer
-  // ----------
+  // --- Peer
   PeerAnnounceTracker,
-  // ----------
-  // Strategy
-  // ----------
+
+  // --- Strategy
   /// Occurs when there was no element to extract in a strategy
   StrategyEmpty,
 
-  // ----------
-  // Channel
-  // ----------
+  // --- Channel
   /// Occurs when worker was waiting for an item but the Channel
   /// stopped serving
   ChannelStoppedServing,
@@ -35,9 +30,7 @@ enum class Error {
   /// Occurs when we try to extract an item but the Channel was empty
   ChannelEmpty,
 
-  // ----------
-  // Bencode
-  // ----------
+  // --- Bencode
   /// The bencoded string is not valid
   DecodeInvalidString,
   /// A integer was not in the form ['i', 'number', 'e']
@@ -56,6 +49,12 @@ enum class Error {
   DecodeDictKey,
   /// The keys of the dictionary were not in lexicographical order
   DecodeDictKeyOrder,
+
+  // --- Policy
+  /// There are no more elements
+  PolicyEmpty,
+  /// Policy returned no element
+  PolicyFailure
 };
 
 /// @brief Used to handle errors without using exceptions
