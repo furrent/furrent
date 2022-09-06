@@ -23,8 +23,8 @@ Furrent::Furrent() {
     while(runner.alive()) {
       // Wait for a valid torrent to work on
       auto torrent_result = _torrent_channel.extract(_strategy.get());
-      if (torrent_result.has_error()) {
-        switch (torrent_result.get_error())
+      if (!torrent_result) {
+        switch (torrent_result.error())
         {
           // TODO: Decide how to recover, for now skip this iteration
           case mt::channel::StrategyChannelError::StoppedServing:
@@ -35,11 +35,11 @@ Furrent::Furrent() {
       }
 
       // From now on noone except us owns this TorrentManagerRef
-      TorrentManager& tm = torrent_result.get_value().get();
+      TorrentManager& tm = (*torrent_result).get();
 
       TorrentManager::Result descriptor_result = tm.pick_piece();
-      if (descriptor_result.has_error()) {
-        switch (descriptor_result.get_error())
+      if (!descriptor_result) {
+        switch (descriptor_result.error())
         {
           // There are no more torrents pieces to distribute at the moment.
           // This doesn't mean that the torrent has been downloaded, so
@@ -56,7 +56,7 @@ Furrent::Furrent() {
 
       // Now we dont have ownership of the torrent and it can be shared elsewhere
 
-      PieceDescriptor descriptor = descriptor_result.get_value();
+      PieceDescriptor descriptor = *descriptor_result;
       // HEAVY DOWNLOAD WORK
 
       PieceResult result;

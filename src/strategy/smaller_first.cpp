@@ -8,8 +8,8 @@ std::unique_ptr<IGlobalStrategy> make_strategy_global<GlobalStrategyType::Smalle
 }
 
 auto SmallerFirstStrategy::extract(std::list<TorrentManagerRef>& torrents) -> Result {
-    if (torrents.empty()) return Result::error(StrategyError::Empty);
-    return Result::error(StrategyError::Empty); // TODO
+    if (torrents.empty()) return Result::ERROR(StrategyError::Empty);
+    return Result::ERROR(StrategyError::Empty); // TODO
 }
 
 void SmallerFirstStrategy::insert(TorrentManagerRef torrent, std::list<TorrentManagerRef>& torrents) {

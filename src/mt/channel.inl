@@ -41,7 +41,7 @@ auto StrategyChannel<T>::extract(Strategy* strategy) -> Result {
 
     // No strategy was passed as an argument
     if (!strategy)
-        return Result::error(StrategyChannelError::StrategyFailed);
+        return Result::ERROR(StrategyChannelError::StrategyFailed);
 
     // If the work list is empty then wait
     std::unique_lock<std::mutex> lock(_work_mutex);
@@ -51,17 +51,17 @@ auto StrategyChannel<T>::extract(Strategy* strategy) -> Result {
 
     // We must exit because we are not serving anymore
     if (!_serving) 
-        return Result::error(StrategyChannelError::StoppedServing);
+        return Result::ERROR(StrategyChannelError::StoppedServing);
         
     // Extracts a work-item
     StrategyResult result = strategy->extract(_work);
-    if (result.has_error()) {
-        switch (result.get_error())
+    if (!result) {
+        switch (result.error())
         {
         case strategy::StrategyError::Empty:
-            return Result::error(StrategyChannelError::Empty);
+            return Result::ERROR(StrategyChannelError::Empty);
         default:
-            return Result::error(StrategyChannelError::StrategyFailed);
+            return Result::ERROR(StrategyChannelError::StrategyFailed);
         }
     }
 
@@ -73,7 +73,7 @@ auto StrategyChannel<T>::extract(Strategy* strategy) -> Result {
     if (notify)
         _work_finished.notify_all();
         
-    return Result::ok(result.get_value());
+    return Result::OK(std::move(*result));
 }
 
 template<typename T>
@@ -83,24 +83,24 @@ auto StrategyChannel<T>::try_extract(Strategy* strategy) -> Result {
 
     // No strategy was passed as an argument
     if (!strategy)
-        return Result::error(StrategyChannelError::StrategyFailed);
+        return Result::ERROR(StrategyChannelError::StrategyFailed);
 
     // If the work list is empty then wait
     std::unique_lock<std::mutex> lock(_work_mutex);
     if (!_serving) 
-        return Result::error(StrategyChannelError::StoppedServing);
+        return Result::ERROR(StrategyChannelError::StoppedServing);
     if (_work.empty())
-        return Result::error(StrategyChannelError::Empty);
+        return Result::ERROR(StrategyChannelError::Empty);
 
     // Extracts a work-item
     StrategyResult result = strategy->extract(_work);
-    if (result.has_error()) {
-        switch (result.get_error() )
+    if (!result) {
+        switch (result.error() )
         {
         case strategy::StrategyError::Empty:
-            return Result::error(StrategyChannelError::Empty);
+            return Result::ERROR(StrategyChannelError::Empty);
         }
-        return Result::error(StrategyChannelError::StrategyFailed);
+        return Result::ERROR(StrategyChannelError::StrategyFailed);
     }
 
     bool notify = _work.empty();
@@ -111,7 +111,7 @@ auto StrategyChannel<T>::try_extract(Strategy* strategy) -> Result {
     if (notify)
         _work_finished.notify_all();
         
-    return Result::ok(result.get_value());
+    return Result::OK(*result);
 }
 
 template<typename T>

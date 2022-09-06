@@ -13,7 +13,7 @@ auto RandomUniformStrategy::extract(std::list<PieceDescriptor>& descriptors) -> 
     std::uniform_int_distribution<> distr(0, std::distance(descriptors.begin(), descriptors.end()) - 1);
     auto begin = descriptors.begin();
     std::advance(begin, distr(_rng));
-    return Result::ok(*begin);
+    return Result::OK(std::move(*begin));
 }
 
 } // namespace fur::strategy

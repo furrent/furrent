@@ -11,31 +11,40 @@
 
 namespace fur::util {
 
-/// @brief Rappresent a result of a function, and an error if the result is unavailable
-/// @tparam R Type of the result
-/// @tparam E Type of the error
+/// @brief Used to handle errors without using exceptions
+/// @tparam R type of the result
+/// @tparam E type of the error
 template<typename R, typename E>
 class Result {
 
-    std::variant<R, E> _variant;
+    std::variant<R, E> _inner;
 
-    /// @brief Create a new result from a variant
-    Result(std::variant<R, E> variant);
-
-public:
-    /// @return True if there was an error 
-    bool has_error() const;
-
-    /// @return Result of the operation
-    R get_value();
-
-    /// @return Error occured during operation
-    E get_error();
+    Result(R&& result);
+    Result(E&& error);
 
 public:
-    static Result ok(R result);
-    static Result error(E error);
 
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
+    
+    Result(Result&&) noexcept;
+    Result& operator=(Result&&) noexcept;
+
+    /// @return True if there is no error. 
+    operator bool() const;
+    /// @return Result if it is present, undefined behaviour otherwise
+    R& operator *();
+
+    /// @return Result if it is present, undefined behaviour otherwise
+    R* operator ->();
+    /// @return error that occurred 
+    const E& error() const;
+
+public:
+    /// Creates an ok result
+    static Result OK(R&& result);
+    /// Creates an error result 
+    static Result ERROR(E&& error);
 };
 
 } // namespace fur::util

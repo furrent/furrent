@@ -26,7 +26,7 @@ public:
     Result extract(std::list<Value>& list) override {
         Value result = { list.front().val * 2 };
         list.pop_front();
-        return Result::ok(result);
+        return Result::OK(std::move(result));
     }
 
     void insert(Value item, std::list<Value>& list) override {
@@ -54,8 +54,8 @@ TEST_CASE("Channel and Thread Group interop") {
             while(runner.alive() && alive) {
 
                 auto result = input.extract(&strategy);
-                if (result.has_error())
-                    switch (result.get_error())
+                if (!result)
+                    switch (result.error())
                     {
                     case StrategyChannelError::StrategyFailed:
                     case StrategyChannelError::Empty:
@@ -64,7 +64,7 @@ TEST_CASE("Channel and Thread Group interop") {
                         continue;
                     }
 
-                auto value = result.get_value();
+                auto value = *result;
                 output.insert(value, &strategy);
             }
         });
