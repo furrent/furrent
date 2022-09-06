@@ -39,9 +39,9 @@ TEST_CASE("Queue") {
     auto nothing = queue.extract(policy);
     REQUIRE(queue.size() == 0);
     
-    REQUIRE(present);
+    REQUIRE(present.valid());
     REQUIRE(present->value == 5);
 
-    REQUIRE(!nothing);
+    REQUIRE(!nothing.valid());
     REQUIRE(nothing.error() == Queue<Movable>::Error::Empty);
 }

@@ -31,7 +31,7 @@ public:
     Result& operator=(Result&&) noexcept;
 
     /// @return True if there is no error. 
-    operator bool() const;
+    bool valid() const;
     /// @return Result if it is present, undefined behaviour otherwise
     R& operator *();
 

@@ -55,7 +55,7 @@ auto StrategyChannel<T>::extract(Strategy* strategy) -> Result {
         
     // Extracts a work-item
     StrategyResult result = strategy->extract(_work);
-    if (!result) {
+    if (!result.valid()) {
         switch (result.error())
         {
         case strategy::StrategyError::Empty:
@@ -94,7 +94,7 @@ auto StrategyChannel<T>::try_extract(Strategy* strategy) -> Result {
 
     // Extracts a work-item
     StrategyResult result = strategy->extract(_work);
-    if (!result) {
+    if (!result.valid()) {
         switch (result.error() )
         {
         case strategy::StrategyError::Empty:

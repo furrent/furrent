@@ -35,7 +35,8 @@ void SharingQueue<Work>::insert(Work&& work) {
 
 template<typename Work>
 auto SharingQueue<Work>::steal() -> Result {
-    return try_extract(policy::FIFOPolicy<Work>{});
+    policy::FIFOPolicy<Work> policy;
+    return try_extract(policy);
 }
 
 template<typename Work>

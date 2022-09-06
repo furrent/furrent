@@ -47,7 +47,7 @@ TEST_CASE("StrategyChannel base behaviour") {
             while(alive) {
 
                 auto result = input.extract(&strategy);
-                if (!result)
+                if (!result.valid())
                     switch (result.error())
                     {
                     case StrategyChannelError::StrategyFailed:

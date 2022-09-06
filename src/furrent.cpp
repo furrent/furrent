@@ -14,6 +14,7 @@ namespace fur {
 
 using namespace strategy;
 
+#if 0
 // Create constructor
 Furrent::Furrent() {
   _strategy = make_strategy_global<GlobalStrategyType::RoundRobin>();
@@ -110,5 +111,6 @@ int Furrent::get_total_processed_pieces() {
   }
   return total;
 }
+#endif
 
 }

@@ -9,6 +9,7 @@
 
 namespace fur {
 
+#if 0
 class Furrent {
 
     typedef std::unique_ptr<strategy::IGlobalStrategy> MyTorrentStrategy;
@@ -41,5 +42,6 @@ class Furrent {
 
     int get_total_processed_pieces();
 };
+#endif
 
 }

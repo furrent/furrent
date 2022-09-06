@@ -20,11 +20,11 @@ namespace fur::mt {
 class ITask {
 public:
     /// Standard wrapper type of the tasks
-    typedef std::unique_ptr<ITask> TaskWrapper;
+    typedef std::unique_ptr<ITask> Wrapper;
 
     /// Implements task custom logic
     /// @param queue queue where the task can append generated tasks
-    virtual void operator()(SharingQueue<TaskWrapper>& queue) = 0;
+    virtual void execute(SharingQueue<Wrapper>& queue) = 0;
 };
 
 } // namespace fur::mt

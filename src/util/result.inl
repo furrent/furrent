@@ -39,7 +39,7 @@ auto Result<R, E>::ERROR(E&& error) -> Result {
 }
 
 template<typename R, typename E>
-Result<R, E>::operator bool() const {
+bool Result<R, E>::valid() const {
     return std::holds_alternative<R>(_inner);
 }
 
