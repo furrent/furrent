@@ -20,18 +20,24 @@ TEST_CASE("[BencodeParser::decode()] Correct decode of a integer"){
   REQUIRE(b_2.get_type() == BencodeType::Integer);
   REQUIRE(b_2.value() == -42);
 }
-/*
+
 TEST_CASE("[BencodeParser::decode()] Wrong decode of a integer"){
   BencodeParser parser{};
-  REQUIRE_THROWS_AS(parser.decode("42"), std::invalid_argument);
-  REQUIRE_THROWS_AS(parser.decode("i-0e"), std::invalid_argument);
-  REQUIRE_THROWS_AS(parser.decode("i42"), std::invalid_argument);
-  REQUIRE_THROWS_AS(parser.decode("42e"), std::invalid_argument);
+  // Missing 'e'
+  auto r_1 = parser.decode("i42");
+  REQUIRE(!r_1);
+  REQUIRE(r_1.error() == fur::util::Error::DecodeIntFormat);
+  // Negative zero is not allowed
+  auto r_2 = parser.decode("i-0e");
+  REQUIRE(!r_2);
+  REQUIRE(r_2.error() == fur::util::Error::DecodeIntValue);
 }
 
 TEST_CASE("[BencodeParser::decode()] Correct decode of a string") {
   BencodeParser parser{};
-  auto b_1 = dynamic_cast<BencodeString&>(*parser.decode("4:spam"));
+  auto r_1 = parser.decode("4:spam");
+  REQUIRE(r_1);
+  auto b_1 = dynamic_cast<BencodeString&>(*(*r_1));
   REQUIRE(b_1.to_string() == "4:spam");
   REQUIRE(b_1.get_type() == BencodeType::String);
   REQUIRE(b_1.value() == "spam");
@@ -40,13 +46,17 @@ TEST_CASE("[BencodeParser::decode()] Correct decode of a string") {
 TEST_CASE("[BencodeParser::decode()] Wrong decode of a string") {
   BencodeParser parser{};
   // Wrong length
-  REQUIRE_THROWS_AS(parser.decode("3:spam"), std::invalid_argument);
+  auto r_1 = parser.decode("10:spam");
+  REQUIRE(!r_1);
+  REQUIRE(r_1.error() == fur::util::Error::DecodeStringLength);
   // Negative length
-  REQUIRE_THROWS_AS(parser.decode("-4:spam"), std::invalid_argument);
+  auto r_2 = parser.decode("-4:spam");
+  REQUIRE(!r_2);
+  REQUIRE(r_2.error() == fur::util::Error::DecodeStringLength);
   // No colon
-  REQUIRE_THROWS_AS(parser.decode("4spam"), std::invalid_argument);
+  //REQUIRE_THROWS_AS(parser.decode("4spam"), std::invalid_argument);
 }
-
+/*
 TEST_CASE("[BencodeParser::decode()] Correct decode of a list"){
   BencodeParser parser{};
   auto list = parser.decode("l4:spami42ee");

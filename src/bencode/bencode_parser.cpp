@@ -12,8 +12,8 @@ auto BencodeParser::decode(const std::string& decoded) -> ParserResult{
   _tokens = decoded;
   _index = 0;  // Reset the index
   auto r = decode();
-  if(_index != _tokens.size()) {
-    // The string was not fully parsed
+  if(r && _index != _tokens.size()) {
+    // If the result is not an error and the string was not fully parsed
     return ParserResult::ERROR(util::Error::DecodeInvalidString);
   }
   return r;
