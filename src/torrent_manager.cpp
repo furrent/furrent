@@ -32,14 +32,18 @@ TorrentManager::TorrentManager(fur::torrent::TorrentFile& torrent)
       _pieces.push_back({ i, 0, 0, torrent });
 
   // Update the peer list and the announcement interval
-  this->update_peers();
+  this->update_peers(); // TODO: how to handle errors !?
 }
 
-void TorrentManager::update_peers() {
+auto TorrentManager::update_peers() -> util::Result<bool> {
   auto r = fur::peer::announce(_torrent);
-  _peers = r.peers;
-  _announce_interval = r.interval;
+  if(!r){
+    return util::Result<bool>::ERROR(const_cast<util::Error&&>(r.error()));
+  }
+  _peers = (*r).peers;
+  _announce_interval = (*r).interval;
   _last_announce = time(nullptr);
+  return util::Result<bool>::OK(true);
 }
 
 bool TorrentManager::should_announce() const {

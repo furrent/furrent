@@ -35,9 +35,9 @@ Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
 }
 
 // Forward declare
-AnnounceResult parse_tracker_response(const std::string& text);
+PeerResult parse_tracker_response(const std::string& text);
 
-AnnounceResult announce(const torrent::TorrentFile& torrent_f) {
+PeerResult announce(const torrent::TorrentFile& torrent_f) {
   auto res = cpr::Get(cpr::Url{torrent_f.announce_url},
                       cpr::Parameters{
                           {"info_hash", hash::hash_to_str(torrent_f.info_hash)},
@@ -50,18 +50,22 @@ AnnounceResult announce(const torrent::TorrentFile& torrent_f) {
                       });
 
   if (res.status_code == 0 || res.status_code >= 400) {
-    throw std::runtime_error("could not announce to tracker");
+    //throw std::runtime_error("could not announce to tracker");
+    return PeerResult::ERROR(util::Error::PeerAnnounceTracker);
   }
-
   return parse_tracker_response(res.text);
 }
 
-AnnounceResult parse_tracker_response(const std::string& text) {
+PeerResult parse_tracker_response(const std::string& text) {
   AnnounceResult result;
 
   bencode::BencodeParser parser;
-  std::unique_ptr<bencode::BencodeValue> tree = parser.decode(text);
-  auto& dict = dynamic_cast<bencode::BencodeDict&>(*tree).value();
+  auto tree = parser.decode(text);
+  if(!tree){
+    // Do something
+    return PeerResult::ERROR(const_cast<util::Error&&>(tree.error()));
+  }
+  auto& dict = dynamic_cast<bencode::BencodeDict&>(*(*tree)).value();
 
   auto& interval = dynamic_cast<bencode::BencodeInt&>(*dict.at("interval"));
   result.interval = interval.value();
@@ -83,6 +87,6 @@ AnnounceResult parse_tracker_response(const std::string& text) {
     result.peers.push_back(Peer{ip, port});
   }
 
-  return result;
+  return PeerResult::OK(std::move(result));
 }
 }  // namespace fur::peer

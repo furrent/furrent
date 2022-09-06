@@ -8,19 +8,19 @@ std::string BencodeParser::encode(const BencodeValue& value) {
   return value.to_string();
 }
 
-auto BencodeParser::decode(const std::string& decoded) -> Result{
+auto BencodeParser::decode(const std::string& decoded) -> ParserResult{
   _tokens = decoded;
   _index = 0;  // Reset the index
   auto r = decode();
   if(_index != _tokens.size()) {
     // The string was not fully parsed
-    return Result::ERROR(BencodeParserError::InvalidString);
+    return ParserResult::ERROR(util::Error::DecodeInvalidString);
   }
   return r;
 }
 
 // Given a vector of tokens, returns a BencodeValue object
-auto BencodeParser::decode() -> Result{
+auto BencodeParser::decode() -> ParserResult{
   if (!_tokens.empty()) {
     auto token = _tokens[_index];
     if (token == 'i') {
@@ -33,13 +33,13 @@ auto BencodeParser::decode() -> Result{
       return BencodeParser::decode_dict();
     }
   }
-  return Result::ERROR(BencodeParserError::InvalidString);
+  return ParserResult::ERROR(util::Error::DecodeInvalidString);
 }
 
-auto BencodeParser::decode_int() -> Result{
+auto BencodeParser::decode_int() -> ParserResult{
   // The token must be in the form ['i', 'number', 'e']
   if (_tokens.size() - _index < 3) {
-    return Result::ERROR(BencodeParserError::IntFormat);
+    return ParserResult::ERROR(util::Error::DecodeIntFormat);
   }
   // Skip the 'i' token already checked before entering this function
   _index++;
@@ -51,28 +51,28 @@ auto BencodeParser::decode_int() -> Result{
   }
   if (_index == _tokens.size()) {
     // No space for the 'e' token
-    return Result::ERROR(BencodeParserError::IntFormat);
+    return ParserResult::ERROR(util::Error::DecodeIntFormat);
   }else if(_tokens[_index]!='e'){
     // Missing 'e' at the end of the integer
-    return Result::ERROR(BencodeParserError::IntFormat);
+    return ParserResult::ERROR(util::Error::DecodeIntFormat);
   }else if (integer == "-0") {
     // The "-0" is not a valid integer
-    return Result::ERROR(BencodeParserError::IntValue);
+    return ParserResult::ERROR(util::Error::DecodeIntValue);
   }else if (!std::regex_match(integer, std::regex ("^-?\\d+$"))){
     // Check if the integer is a string of digits with sign
-    return Result::ERROR(BencodeParserError::IntValue);
+    return ParserResult::ERROR(util::Error::DecodeIntValue);
   }
   // Skip 'e' at the end
   _index++;
-  return Result::OK(
+  return ParserResult::OK(
       std::make_unique<BencodeInt>(std::stol(integer))
   );
 }
 
-auto BencodeParser::decode_string() -> Result {
+auto BencodeParser::decode_string() -> ParserResult {
   // The token must be in the form ['length', ':', 'string']
   if (_tokens.size() - _index < 3) {
-    return Result::ERROR(BencodeParserError::StringFormat);
+    return ParserResult::ERROR(util::Error::DecodeStringFormat);
   }
   // Calculate the string length until the ':' token
   std::string len{};
@@ -82,10 +82,10 @@ auto BencodeParser::decode_string() -> Result {
   }
   if(len=="-0"){
     // The "-0" is not a valid integer
-    return Result::ERROR(BencodeParserError::StringFormat);
+    return ParserResult::ERROR(util::Error::DecodeStringFormat);
   }else if(!std::regex_match(len, std::regex("^\\d+$"))) {
     // Check if the length is a positive integer
-    return Result::ERROR(BencodeParserError::StringLength);
+    return ParserResult::ERROR(util::Error::DecodeStringLength);
   }
   // Skip the ':' token
   _index++;
@@ -98,15 +98,15 @@ auto BencodeParser::decode_string() -> Result {
   }
   if(str.size() != static_cast<unsigned int>(length_str)) {
     // Exit because the string is not the same length as the given length
-    return Result::ERROR(BencodeParserError::StringLength);
+    return ParserResult::ERROR(util::Error::DecodeStringLength);
   }
-  return Result::OK(std::make_unique<BencodeString>(str));
+  return ParserResult::OK(std::make_unique<BencodeString>(str));
 }
 
-auto BencodeParser::decode_list() -> Result {
+auto BencodeParser::decode_list() -> ParserResult {
   // The token must be in the form ['l',...,'e']
   if (_tokens.size() - _index < 2) {
-    return Result::ERROR(BencodeParserError::ListFormat);
+    return ParserResult::ERROR(util::Error::DecodeListFormat);
   }
   auto ptr = std::vector<std::unique_ptr<BencodeValue>>();
   // Increment index to skip the first 'l' already checked before enter the
@@ -122,21 +122,21 @@ auto BencodeParser::decode_list() -> Result {
   }
   // Push all items but not space for 'e'
   if (_index >= _tokens.size()) {
-    return Result::ERROR(BencodeParserError::ListFormat);
+    return ParserResult::ERROR(util::Error::DecodeListFormat);
   }
   // Check if the list is closed with 'e'
   if (_tokens[_index] != 'e') {
-    return Result::ERROR(BencodeParserError::ListFormat);
+    return ParserResult::ERROR(util::Error::DecodeListFormat);
   }
   // Increment index to skip the last 'e'
   _index += 1;
-  return Result::OK(std::make_unique<BencodeList>(std::move(ptr)));
+  return ParserResult::OK(std::make_unique<BencodeList>(std::move(ptr)));
 }
 
-auto BencodeParser::decode_dict() -> Result{
+auto BencodeParser::decode_dict() -> ParserResult{
   // The token must be in the form ['d',...,'e']
   if (_tokens.size() - _index < 2) {
-    return Result::ERROR(BencodeParserError::DictFormat);
+    return ParserResult::ERROR(util::Error::DecodeDictFormat);
   }
   // Increment index to skip the first 'd' already checked before enter the
   // function
@@ -152,7 +152,7 @@ auto BencodeParser::decode_dict() -> Result{
     auto key = std::move(*r_key);
     // The key must be a string
     if (key->get_type() != BencodeType::String) {
-      return Result::ERROR(BencodeParserError::DictKey);
+      return ParserResult::ERROR(util::Error::DecodeDictKey);
     }
     // Cast the key to a BencodeString
     auto r_value = BencodeParser::decode();
@@ -166,19 +166,19 @@ auto BencodeParser::decode_dict() -> Result{
   }
   // Push all items but not space for 'e'
   if (_index >= _tokens.size()) {
-    return Result::ERROR(BencodeParserError::DictFormat);
+    return ParserResult::ERROR(util::Error::DecodeDictFormat);
   }
   // Check if the list is closed with 'e'
   if (_tokens[_index] != 'e') {
-    return Result::ERROR(BencodeParserError::DictFormat);
+    return ParserResult::ERROR(util::Error::DecodeDictFormat);
   }
   // Check if the keys array is sorted by lexicographical order
   for (unsigned long i = 0; i < keys.size() - 1; i++) {
     if (keys[i] > keys[i + 1]) {
-      return Result::ERROR(BencodeParserError::DictKeyOrder);
+      return ParserResult::ERROR(util::Error::DecodeDictKeyOrder);
     }
   }
   // increment index to skip the last 'e'
   _index += 1;
-  return Result::OK(std::make_unique<BencodeDict>(std::move(ptr)));
+  return ParserResult::OK(std::make_unique<BencodeDict>(std::move(ptr)));
 }

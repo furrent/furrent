@@ -8,7 +8,7 @@ std::unique_ptr<IGlobalStrategy> make_strategy_global<GlobalStrategyType::RoundR
 }
 
 auto RoundRobinStrategy::extract(std::list<TorrentManagerRef>& torrents) -> Result {
-    if (torrents.empty()) return Result::ERROR(StrategyError::Empty);
+    if (torrents.empty()) return Result::ERROR(util::Error::StrategyEmpty);
 
     TorrentManagerRef torrent_ref = torrents.front();
     torrents.pop_front();

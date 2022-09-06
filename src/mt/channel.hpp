@@ -16,19 +16,6 @@
 #include <strategy/strategy.hpp>
 
 namespace fur::mt::channel {
-
-/// Possible error types
-enum class StrategyChannelError 
-{
-    /// Occurs when worker was waiting for an item but the Channel
-    /// stopped serving
-    StoppedServing,
-    /// Occurs when the strategy used returned nothing
-    StrategyFailed,
-    /// Occurs when we try to extract an item but the Channel was empty
-    Empty
-};
-
 /// Data structure used to transfer work to threads without
 /// racing conditions. Similar to a MPSC queue, but uses custom strategies
 /// to choose the work-item to serve.
@@ -46,7 +33,7 @@ public:
     /// Compatible strategy type
     typedef strategy::IListStrategy<T> Strategy;
     /// Error type used
-    typedef util::Result<T, StrategyChannelError> Result;
+    typedef util::Result<T> Result;
 
 private:
     /// Mutex protecting collection and CVs

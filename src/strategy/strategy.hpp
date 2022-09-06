@@ -32,7 +32,7 @@ class IStrategy {
 public:
 
     /// Error type for this type
-    typedef util::Result<T, StrategyError> Result;
+    typedef util::Result<T> Result;
 
     /// Implements custom extract logic
     /// Extraction can fail, in that case returns nullopt

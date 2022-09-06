@@ -10,7 +10,7 @@ std::unique_ptr<ILocalStrategy> make_strategy_local<LocalStrategyType::Streaming
 }
 
 auto StreamingStrategy::extract(std::list<PieceDescriptor>& descriptors) -> Result {
-    if (descriptors.empty()) return Result::ERROR(StrategyError::Empty);
+    if (descriptors.empty()) return Result::ERROR(util::Error::StrategyEmpty);
 
     PieceDescriptor descriptor = descriptors.front();
     descriptors.pop_front();

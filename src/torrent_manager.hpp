@@ -114,7 +114,7 @@ public:
     /// Function to call when a task is failed, it put back the task in the list
     void task_failed(const PieceDescriptor& t);
     /// Update the list of peers to download the file from
-    void update_peers();
+    util::Result<bool> update_peers();
     /// Function that put the state of the current object to Refresh if the time
     /// has passed the announce interval
     [[nodiscard]] bool should_announce() const;

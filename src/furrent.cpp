@@ -27,9 +27,9 @@ Furrent::Furrent() {
         switch (torrent_result.error())
         {
           // TODO: Decide how to recover, for now skip this iteration
-          case mt::channel::StrategyChannelError::StoppedServing:
-          case mt::channel::StrategyChannelError::StrategyFailed:
-          case mt::channel::StrategyChannelError::Empty:
+          case util::Error::ChannelStoppedServing:
+          case util::Error::ChannelStrategyFailed:
+          case util::Error::ChannelEmpty:
             continue;
         }
       }
@@ -44,7 +44,7 @@ Furrent::Furrent() {
           // There are no more torrents pieces to distribute at the moment.
           // This doesn't mean that the torrent has been downloaded, so
           // for now reinsert it in the queue and continue
-          case strategy::StrategyError::Empty:
+          case util::Error::StrategyEmpty:
             _torrent_channel.insert(tm, _strategy.get());
             continue;
         }
@@ -54,7 +54,7 @@ Furrent::Furrent() {
       if(tm.unfinished())
         _torrent_channel.insert(tm, _strategy.get());
 
-      // Now we dont have ownership of the torrent and it can be shared elsewhere
+      // Now we don't have ownership of the torrent and it can be shared elsewhere
 
       PieceDescriptor descriptor = *descriptor_result;
       // HEAVY DOWNLOAD WORK
@@ -74,7 +74,8 @@ Furrent::~Furrent() {
 }
 
 // Add torrent to downloads
-void Furrent::add_torrent(const std::string& path) {
+auto Furrent::add_torrent(const std::string& path) -> bencode::ParserResult
+{
   // Read all file data located in the path
   std::ifstream file(path);
   std::string content;
@@ -91,11 +92,16 @@ void Furrent::add_torrent(const std::string& path) {
   // Create torrent_manager for the file
   auto parser = fur::bencode::BencodeParser();
   auto b_tree = parser.decode(content);
-  auto torrent = fur::torrent::TorrentFile(*b_tree);
+  if(!b_tree) {
+    // Error during the parsing
+    return b_tree;
+  }
+  auto torrent = fur::torrent::TorrentFile(*(*b_tree));
 
   // Create new shared torrent manager from torrent file
   _downloads.emplace_back(torrent);
   _torrent_channel.insert(_downloads.back(), _strategy.get());
+  return b_tree;
 }
 
 void Furrent::print_status() const {

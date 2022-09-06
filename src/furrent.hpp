@@ -1,11 +1,13 @@
 #pragma once
 
-#include "torrent_manager.hpp"
+#include <download/lender_pool.hpp>
+#include <furrent.hpp>
 #include <mt/channel.hpp>
 #include <mt/group.hpp>
 #include <strategy/global.hpp>
-#include <download/lender_pool.hpp>
-#include <furrent.hpp>
+
+#include "bencode/bencode_parser.hpp"
+#include "torrent_manager.hpp"
 
 namespace fur {
 
@@ -35,7 +37,7 @@ class Furrent {
     
     /// Add torrent to the list of downloads creating a TorrentManager object
     /// for it
-    void add_torrent(const std::string& path);
+    bencode::ParserResult add_torrent(const std::string& path);
     /// Print the status of the downloads
     void print_status() const;
 

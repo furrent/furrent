@@ -41,7 +41,7 @@ auto StrategyChannel<T>::extract(Strategy* strategy) -> Result {
 
     // No strategy was passed as an argument
     if (!strategy)
-        return Result::ERROR(StrategyChannelError::StrategyFailed);
+        return Result::ERROR(util::Error::ChannelStrategyFailed);
 
     // If the work list is empty then wait
     std::unique_lock<std::mutex> lock(_work_mutex);
@@ -51,17 +51,17 @@ auto StrategyChannel<T>::extract(Strategy* strategy) -> Result {
 
     // We must exit because we are not serving anymore
     if (!_serving) 
-        return Result::ERROR(StrategyChannelError::StoppedServing);
+        return Result::ERROR(util::Error::ChannelStoppedServing);
         
     // Extracts a work-item
     StrategyResult result = strategy->extract(_work);
     if (!result) {
         switch (result.error())
         {
-        case strategy::StrategyError::Empty:
-            return Result::ERROR(StrategyChannelError::Empty);
+        case util::Error::StrategyEmpty:
+            return Result::ERROR(util::Error::ChannelEmpty);
         default:
-            return Result::ERROR(StrategyChannelError::StrategyFailed);
+            return Result::ERROR(util::Error::ChannelStrategyFailed);
         }
     }
 
@@ -83,14 +83,14 @@ auto StrategyChannel<T>::try_extract(Strategy* strategy) -> Result {
 
     // No strategy was passed as an argument
     if (!strategy)
-        return Result::ERROR(StrategyChannelError::StrategyFailed);
+        return Result::ERROR(util::Error::ChannelStrategyFailed);
 
     // If the work list is empty then wait
     std::unique_lock<std::mutex> lock(_work_mutex);
     if (!_serving) 
-        return Result::ERROR(StrategyChannelError::StoppedServing);
+        return Result::ERROR(util::Error::ChannelStoppedServing);
     if (_work.empty())
-        return Result::ERROR(StrategyChannelError::Empty);
+        return Result::ERROR(util::Error::ChannelEmpty);
 
     // Extracts a work-item
     StrategyResult result = strategy->extract(_work);
@@ -98,9 +98,9 @@ auto StrategyChannel<T>::try_extract(Strategy* strategy) -> Result {
         switch (result.error() )
         {
         case strategy::StrategyError::Empty:
-            return Result::ERROR(StrategyChannelError::Empty);
+            return Result::ERROR(util::Error::ChannelEmpty);
         }
-        return Result::ERROR(StrategyChannelError::StrategyFailed);
+        return Result::ERROR(util::Error::ChannelStrategyFailed);
     }
 
     bool notify = _work.empty();
