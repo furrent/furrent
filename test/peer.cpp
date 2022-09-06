@@ -4,14 +4,23 @@
 
 using namespace fur::peer;
 
-TEST_CASE("[Peer] Address formatting") {
-  Peer peer{1 << 24 | 2 << 16 | 3 << 8 | 4, 6565};
-  REQUIRE(peer.address() == "1.2.3.4:6565");
+TEST_CASE("[Peer] Build raw") {
+  REQUIRE(Peer(2130706433, 4242).address() == "127.0.0.1:4242");
+  REQUIRE(Peer(0, 0).address() == "0.0.0.0:0");
+  REQUIRE(Peer(4294967295, 65535).address() == "255.255.255.255:65535");
 }
 
-TEST_CASE("[Peer] Peer's address formatting") {
-  Peer peer{1 << 24 | 2 << 16 | 3 << 8 | 4, 6565};
-  REQUIRE(peer.address() == "1.2.3.4:6565");
+TEST_CASE("[Peer] Build from IP string") {
+  REQUIRE(Peer("1.2.3.4", 1234).address() == "1.2.3.4:1234");
+  REQUIRE(Peer("127.0.0.1", 4242).address() == "127.0.0.1:4242");
+  REQUIRE(Peer("0.0.0.0", 0).address() == "0.0.0.0:0");
+  REQUIRE(Peer("255.255.255.255", 65535).address() == "255.255.255.255:65535");
+}
+
+TEST_CASE("[Peer] Build from invalid IP string") {
+  REQUIRE_THROWS(Peer("1.2.3", 4242));
+  REQUIRE_THROWS(Peer("-1.2.3.4", 4242));
+  REQUIRE_THROWS(Peer("1.X.3.4", 4242));
 }
 
 // Not publicly declared in "src/peer.hpp" because not really part of the public

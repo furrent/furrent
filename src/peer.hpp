@@ -14,6 +14,12 @@ struct Peer {
   uint32_t ip;
   uint16_t port;
 
+  /// Constructs a `Peer` given an IP and a port
+  Peer(uint32_t ip, uint16_t port);
+
+  /// Constructs a `Peer` given an IP string and a port
+  Peer(const std::string& ip, uint16_t port);
+
   /// Combines the ip and port of the peer into a X.Y.Z.W:PORT string
   /// \return The combined string
   [[nodiscard]] std::string address() const;
