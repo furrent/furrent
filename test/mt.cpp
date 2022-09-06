@@ -83,7 +83,7 @@ TEST_CASE("[mt] Worker Thread Pool") {
     SECTION("Busy behaviour")
     {
         // Lots of data to be worked on
-        for(int i = 0; i < 1000; i++)
+        for(int i = 0; i < 10; i++)
             router->insert({ 1 });
 
         WorkerThreadPool pool(router, [&](To&) { 
