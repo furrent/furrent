@@ -29,8 +29,7 @@ void TorrentFileLoadTask::execute(
 
   } else {
     logger->error("Error loading torrent from {}", _descriptor.filename);
-
-    // TODO: manage the exception
+    // TODO: is needed to throw an exception ? The return seems to be enough
     /*
     throw std::invalid_argument(
         "fur::Furrent::add_torrent: invalid path or "
@@ -44,7 +43,7 @@ void TorrentFileLoadTask::execute(
   auto parser = fur::bencode::BencodeParser();
   auto b_tree = parser.decode(content);
   if(!b_tree.valid()){
-    // TODO add log
+    logger->error("Parser error {}", static_cast<int>(b_tree.error()));
     return;
   }
 
@@ -73,8 +72,8 @@ void DownloadPieceTask::execute(
     mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
   // Default global logger
   auto logger = spdlog::get("custom");
-  // logger->info("Downloading piece {} of {} for torrent {}",
-  //     _index, _descriptor.torrent->piece_length, _descriptor.filename);
+  logger->info("Downloading piece {} of {} for torrent {}",
+       _index, _descriptor.torrent->piece_length, _descriptor.filename);
 }
 
 Furrent::Furrent() {

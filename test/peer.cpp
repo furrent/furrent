@@ -19,8 +19,9 @@ TEST_CASE("[Peer] Build from IP string") {
 }
 
 TEST_CASE("[Peer] Build from invalid IP string") {
+  // When the exception is thrown is needed the logger must be initialized
   fur::log::initialize_custom_logger();
-  // In this case we log on the logger the error without throwing an exception
+
   REQUIRE_THROWS(Peer("1.2.3", 4242));
   REQUIRE_THROWS(Peer("-1.2.3.4", 4242));
   REQUIRE_THROWS(Peer("1.X.3.4", 4242));
