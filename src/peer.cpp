@@ -51,7 +51,7 @@ PeerResult announce(const torrent::TorrentFile& torrent_f) {
 
   if (res.status_code == 0 || res.status_code >= 400) {
     //throw std::runtime_error("could not announce to tracker");
-    return PeerResult::ERROR(util::Error::PeerAnnounceTracker);
+    return PeerResult::ERROR(PeerError::AnnounceError);
   }
   return parse_tracker_response(res.text);
 }
@@ -61,9 +61,10 @@ PeerResult parse_tracker_response(const std::string& text) {
 
   bencode::BencodeParser parser;
   auto tree = parser.decode(text);
-  if(!tree){
+  if(!tree.valid()){
     // Do something
-    return PeerResult::ERROR(const_cast<util::Error&&>(tree.error()));
+    // TODO: log the parser error
+    return PeerResult::ERROR(PeerError::ParserError);
   }
   auto& dict = dynamic_cast<bencode::BencodeDict&>(*(*tree)).value();
 
@@ -84,7 +85,7 @@ PeerResult parse_tracker_response(const std::string& text) {
     port |= *(it++) << 8;
     port |= *(it++);
 
-    result.peers.push_back(Peer{ip, port});
+    result.peers.emplace_back(ip, port);
   }
 
   return PeerResult::OK(std::move(result));
