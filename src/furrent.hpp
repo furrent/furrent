@@ -1,47 +1,79 @@
 #pragma once
 
-#include "torrent_manager.hpp"
-#include <mt/channel.hpp>
+#include <torrent_manager.hpp>
+#include <torrent.hpp>
+#include <mt/sharing_queue.hpp>
 #include <mt/group.hpp>
-#include <strategy/global.hpp>
-#include <download/lender_pool.hpp>
-#include <furrent.hpp>
+#include <mt/task.hpp>
 
 namespace fur {
 
-#if 0
+struct TorrentDescriptor {
+    /// Name of the file where the torrent can be found
+    std::string filename;
+    /// Parsed torrent file
+    std::optional<torrent::TorrentFile> torrent;
+};
+
+/// Load torrent from file and spawn all piece download tasks
+class TorrentFileLoadTask : public mt::ITask {
+
+    /// Reference to preallocated torrent descriptor in furrent
+    TorrentDescriptor& _descriptor;
+
+public:
+    TorrentFileLoadTask(TorrentDescriptor& descriptor);
+    void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
+};
+
+/// Download a piece of a torrent
+class DownloadPieceTask : public mt::ITask {
+
+    /// Reference to preallocated torrent descriptor in furrent
+    TorrentDescriptor& _descriptor;
+
+    size_t _index;
+    size_t _offset;
+    size_t _bytes;
+
+public:
+    DownloadPieceTask(TorrentDescriptor& descr, size_t index, size_t offset, size_t bytes);
+    void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
+};
+
+/// Main state of the program  
 class Furrent {
 
-    typedef std::unique_ptr<strategy::IGlobalStrategy> MyTorrentStrategy;
+    typedef mt::SharingQueue<mt::ITask::Wrapper> TaskSharingQueue;
 
-    /// Internal state/statistics of the workers 
-    struct WorkerState {
-      /// Count the total number of processed pieces
-      int processed_pieces;
-    };
+    /// State of the worker threads
+    struct WorkerState { };
 
     /// List of torrents to download
-    std::list<TorrentManager> _downloads;
-    /// Channel used to transfer work to workers
-    mt::channel::StrategyChannel<TorrentManagerRef> _torrent_channel;
+    std::list<TorrentDescriptor> _descriptors;
+    /// Global work queue
+    TaskSharingQueue _global_queue;
+    /// Local work queues array, this is a dynamic array
+    /// becaus it is easier to manager allocation of noncopyable types
+    /// and random access
+    TaskSharingQueue* _local_queues;
     /// Pool managing worker threads
     mt::ThreadGroup<WorkerState> _workers;
-    /// Strategy used to distribute torrents to threads as pieces
-    MyTorrentStrategy _strategy;
 
-  public:
-    /// Real constructor of Furrent
+public:
+
     Furrent();
-    ~Furrent();
-    
-    /// Add torrent to the list of downloads creating a TorrentManager object
-    /// for it
-    void add_torrent(const std::string& path);
-    /// Print the status of the downloads
-    void print_status() const;
+    virtual ~Furrent();
 
-    int get_total_processed_pieces();
+    /// Begin downloading a torrent 
+    void add_torrent(const std::string& filename);
+
+    /// @return all loaded descriptors 
+    const std::list<TorrentDescriptor>& get_descriptors() const;
+
+private:
+    /// Main function of all workers
+    void thread_main(mt::Runner runner, WorkerState& state, size_t index);
 };
-#endif
 
-}
+} // namespace fur

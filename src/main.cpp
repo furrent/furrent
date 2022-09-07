@@ -2,7 +2,7 @@
 #include <log/logger.hpp>
 #include <sstream>
 
-#include <furrent2.hpp>
+#include <furrent.hpp>
 
 const char* TORRENT_1 = "../extra/debian-11.4.0-amd64-netinst.iso.torrent";
 const char* TORRENT_2 = "../extra/ubuntu-22.04.1-desktop-amd64.iso.torrent";
@@ -15,7 +15,7 @@ int main() {
   // TODO enable only in debug mode
   logger->set_level(spdlog::level::debug);
 
-  fur::Furrent2 furrent;
+  fur::Furrent furrent;
   furrent.add_torrent(TORRENT_1);
   furrent.add_torrent(TORRENT_2);
 

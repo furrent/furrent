@@ -7,12 +7,12 @@
 
 #include <peer.hpp>
 #include <download/lender_pool.hpp>
-#include <mt/channel.hpp>
-#include <strategy/local.hpp>
 
 /// Namespace for the torrent manager. Contains the TorrentManager, every
 /// torrent file is mapped to a TorrentManager object.
 namespace fur {
+
+#if 0
 
 /// Used to store every sub-data of a torrent file because is divided into many
 /// Result, after the entire download there are to combine all the Results into
@@ -131,5 +131,7 @@ public:
 
 /// Type used to reference a Torrent Manager without owning it or moving it
 using TorrentManagerRef = std::reference_wrapper<TorrentManager>;
+
+#endif
 
 } // namespace fur

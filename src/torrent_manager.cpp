@@ -4,6 +4,8 @@
 
 namespace fur {
 
+#if 0
+
 TorrentManager::TorrentManager(fur::torrent::TorrentFile& torrent)
     : _torrent(torrent),
       _pieces(),
@@ -81,10 +83,6 @@ bool TorrentManager::unfinished() {
   return !_pieces.empty() && num_done != num_tasks;
 }
 
-/*
-void TorrentManager::set_strategy(std::unique_ptr<mt::IVectorStrategy<TaskRef, TaskRef>> strategy) {
-  _task_strategy = std::move(strategy);
-}
-*/
+#endif
 
 }
