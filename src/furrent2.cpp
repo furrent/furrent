@@ -112,6 +112,11 @@ void Furrent2::thread_main(mt::Runner runner, WorkerState& state, size_t index) 
     // Default global logger
     auto logger = spdlog::get("custom");
 
+    // How many times we have to fail stealing to go to sleep
+    const int STEALING_LIMIT = 5000;
+    // How many times the thread tried to steal without success
+    int failed_stealing_count = 0;
+
     auto& local_queue = _local_queues[index];
     while(runner.alive()) {
 
@@ -133,26 +138,27 @@ void Furrent2::thread_main(mt::Runner runner, WorkerState& state, size_t index) 
             }
             else {
 
-                // If there is nothing then we steal from a random worker
-                size_t steal_idx = rand() % concurrency;
-                if (steal_idx == index) steal_idx = (steal_idx + 1) % concurrency;
+                // If we tried to steal too many times then wait for work in global queue
+                if (failed_stealing_count >= STEALING_LIMIT) {
 
-                auto steal_work = _local_queues[steal_idx].steal(); 
-                if (steal_work.valid()) {
-
-                    logger->debug("thread {:02d} is executing stolen work from {:02d}", index, steal_idx);
-                    (*steal_work)->execute(local_queue);
-
+                    logger->debug("thread {:02d} is waiting for work on global queue", index);
+                    _global_queue.wait_for_work();
+                    failed_stealing_count = 0;
                 }
+                // If there is nothing then we steal from a random worker
                 else {
+                    size_t steal_idx = rand() % concurrency;
+                    if (steal_idx == index) steal_idx = (steal_idx + 1) % concurrency;
 
-                    // TODO: We need a smarter solution for the waiting, the global queue could be empty but
-                    // the queue of another thread could be full, a solution is to iterate for some time in
-                    // a polling matter on every thread and only after some time wait on global.
+                    auto steal_work = _local_queues[steal_idx].steal();
+                    if (steal_work.valid()) {
 
-                    // Otherwise we sleep on the global queue
-                    //logger->debug("thread {:02d} is waiting for work on global queue", index);
-                    //_global_queue.wait_for_work();
+                        logger->debug("thread {:02d} is executing stolen work from {:02d}", index, steal_idx);
+                        (*steal_work)->execute(local_queue);
+                    }
+                    else {
+                        failed_stealing_count += 1;
+                    }
                 }
             }
         }
