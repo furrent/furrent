@@ -1,4 +1,4 @@
-#include "bencode_value.hpp"
+#include "bencode/bencode_value.hpp"
 
 #include "catch2/catch.hpp"
 using namespace fur::bencode;

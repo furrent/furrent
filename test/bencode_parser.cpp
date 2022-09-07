@@ -1,4 +1,4 @@
-#include "bencode_parser.hpp"
+#include "bencode/bencode_parser.hpp"
 
 #include "catch2/catch.hpp"
 using namespace fur::bencode;

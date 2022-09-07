@@ -72,7 +72,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_int() {
   }
   // Skip 'e' at the end
   _index++;
-  return std::make_unique<BencodeInt>(std::stoi(integer));
+  return std::make_unique<BencodeInt>(std::stol(integer));
 }
 std::unique_ptr<BencodeValue> BencodeParser::decode_string() {
   // The token must be in the form ['length', ':', 'string']
@@ -98,7 +98,7 @@ std::unique_ptr<BencodeValue> BencodeParser::decode_string() {
   // Skip the ':' token
   _index++;
   // Calculate the string using the length previously calculated
-  auto length_str = std::stoi(len);
+  auto length_str = std::stol(len);
   std::string str{};
   for(int i = 0; i<length_str && _index < _tokens.size(); i++){
     str += _tokens[_index];
