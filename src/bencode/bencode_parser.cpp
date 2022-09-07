@@ -85,7 +85,7 @@ auto BencodeParser::decode_string() -> BencodeResult {
     return BencodeResult::ERROR(BencodeParserError::StringFormat);
   }else if(!std::regex_match(len, std::regex("^\\d+$"))) {
     // Check if the length is a positive integer
-    return BencodeResult::ERROR(BencodeParserError::StringLength);
+    return BencodeResult::ERROR(BencodeParserError::InvalidString);
   }
   // Skip the ':' token
   _index++;
@@ -98,7 +98,7 @@ auto BencodeParser::decode_string() -> BencodeResult {
   }
   if(str.size() != static_cast<unsigned int>(length_str)) {
     // Exit because the string is not the same length as the given length
-    return BencodeResult::ERROR(BencodeParserError::StringLength);
+    return BencodeResult::ERROR(BencodeParserError::InvalidString);
   }
   return BencodeResult::OK(std::make_unique<BencodeString>(str));
 }

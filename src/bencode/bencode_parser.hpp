@@ -9,7 +9,8 @@
 namespace fur::bencode {
 
 enum class BencodeParserError{
-  /// The bencoded string is not valid
+  /// The bencoded string is not valid, the most general error that can occur
+  /// typically where the string is not well formed
   InvalidString,
   /// A integer was not in the form ['i', 'number', 'e']
   IntFormat,
@@ -17,8 +18,6 @@ enum class BencodeParserError{
   IntValue,
   /// A string was not in the form ['length', ':', 'string']
   StringFormat,
-  /// A string has a length that is not a valid integer
-  StringLength,
   /// A list was not in the form ['l', 'bencode_value', ... , 'e']
   ListFormat,
   /// A dictionary was not in the form ['d', 'bencode_value', ... , 'e']
