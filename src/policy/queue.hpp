@@ -44,11 +44,10 @@ public:
 
     /// Tries to extract an element using a policy
     /// @param policy custom logic used to select the element
-    /// @return nullopt it he policy failed, T otherwise
     [[nodiscard]] Result extract(const IPolicy<T>& policy);
 
     /// @return Number of items present
-    size_t size() const;
+    [[nodiscard]] size_t size() const;
 };
 
 } // namespace fur::policy

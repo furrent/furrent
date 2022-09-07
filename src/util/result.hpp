@@ -19,8 +19,8 @@ class Result {
 
     std::variant<R, E> _inner;
 
-    Result(R&& result);
-    Result(E&& error);
+    explicit Result(R&& result);
+    explicit Result(E&& error);
 
 public:
 
@@ -31,7 +31,7 @@ public:
     Result& operator=(Result&&) noexcept;
 
     /// @return True if there is no error. 
-    bool valid() const;
+    [[nodiscard]] bool valid() const;
     /// @return Result if it is present, undefined behaviour otherwise
     R& operator *();
 

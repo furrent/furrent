@@ -4,7 +4,6 @@
 #include <iostream>
 #include <sstream>
 #include <random>
-#include <sstream>
 
 #include <bencode/bencode_parser.hpp>
 #include <policy/policy.hpp>
@@ -12,8 +11,8 @@
 
 namespace fur {
     
-TorrentFileLoadTask::TorrentFileLoadTask(TorrentDescriptor& descr)
-: _descriptor(descr) { }
+TorrentFileLoadTask::TorrentFileLoadTask(TorrentDescriptor& desc)
+: _descriptor(desc) { }
 
 void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
 
@@ -52,22 +51,22 @@ void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_qu
     // From now on the descriptor is available to all
     _descriptor.torrent = std::make_optional<fur::torrent::TorrentFile>(*b_tree);
 
-    const size_t piece_lenght = _descriptor.torrent->piece_length;
-    const size_t pieces_count = _descriptor.torrent->length / piece_lenght;
+    const size_t piece_length = _descriptor.torrent->piece_length;
+    const size_t pieces_count = _descriptor.torrent->length / piece_length;
 
 
     // Generate all downloading tasks
     logger->info("Generating {} pieces torrent file {}", pieces_count, _descriptor.filename);
     for(size_t piece = 0; piece < pieces_count; piece++) {
 
-        size_t offset = piece * piece_lenght;
+        size_t offset = piece * piece_length;
         local_queue.insert(std::make_unique<DownloadPieceTask>(
-            _descriptor, piece, offset, piece_lenght));
+            _descriptor, piece, offset, piece_length));
     }
 }
 
-DownloadPieceTask::DownloadPieceTask(TorrentDescriptor& descr, size_t index, size_t offset, size_t bytes) 
-: _descriptor{descr}, _index{index}, _offset{offset}, _bytes{bytes} { }
+DownloadPieceTask::DownloadPieceTask(TorrentDescriptor& desc, size_t index, size_t offset, size_t bytes)
+: _descriptor{desc}, _index{index}, _offset{offset}, _bytes{bytes} { }
 
 void DownloadPieceTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
 

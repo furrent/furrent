@@ -22,7 +22,7 @@ class TorrentFileLoadTask : public mt::ITask {
     TorrentDescriptor& _descriptor;
 
 public:
-    TorrentFileLoadTask(TorrentDescriptor& descriptor);
+    explicit TorrentFileLoadTask(TorrentDescriptor& descriptor);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 };
 
