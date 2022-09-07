@@ -38,8 +38,8 @@ auto Result<R>::ERROR(Error&& error) -> Result {
     return Result(std::forward<Error>(error));
 }
 
-template<typename R>
-Result<R>::operator bool() const {
+template<typename R, typename E>
+bool Result<R, E>::valid() const {
     return std::holds_alternative<R>(_inner);
 }
 

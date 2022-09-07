@@ -8,9 +8,8 @@ ThreadGroup<State>::ThreadGroup()
 
 template<typename State>
 ThreadGroup<State>::~ThreadGroup() {
-    terminate();
-    for (auto& thread : _threads)
-        thread.join(); 
+    if (!_should_terminate)
+        terminate();
 }
 
 template<typename State>
@@ -33,8 +32,13 @@ void ThreadGroup<State>::thread_main(size_t index) {
 
 template<typename State>
 void ThreadGroup<State>::terminate() {
-    std::scoped_lock<std::mutex> lock(_mutex);
+
+    _mutex.lock();
     _should_terminate = true;
+    _mutex.unlock();
+
+    for (auto& thread : _threads)
+        thread.join(); 
 }
 
 template<typename State>
