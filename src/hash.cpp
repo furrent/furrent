@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "smallsha1/sha1.hpp"
+#include "spdlog/spdlog.h"
 
 namespace fur::hash {
 std::string hash_to_str(const hash_t& hash) {
@@ -25,9 +26,9 @@ hash_t compute_info_hash(const std::string& bencoded_info_dict) {
   return buffer;
 }
 
-std::vector<hash_t> split_piece_hashes(const std::string& piece_hashes_str) {
+auto split_piece_hashes(const std::string& piece_hashes_str) -> HashResult {
   if (piece_hashes_str.length() % 20 > 0) {
-    throw std::invalid_argument("malformed piece hashes string");
+    return HashResult::ERROR(HashError::MalformedPieceHashesString);
   }
 
   std::vector<hash_t> result;
@@ -48,6 +49,6 @@ std::vector<hash_t> split_piece_hashes(const std::string& piece_hashes_str) {
         i);
     result.push_back(this_hash);
   }
-  return result;
+  return HashResult::OK(std::move(result));
 }
 }  // namespace fur::hash

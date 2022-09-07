@@ -53,7 +53,6 @@ PeerResult announce(const torrent::TorrentFile& torrent_f) {
                       });
 
   if (res.status_code == 0 || res.status_code >= 400) {
-    //throw std::runtime_error("could not announce to tracker");
     auto logger = spdlog::get("custom");
     logger->error("Could not announce to tracker");
     return PeerResult::ERROR(PeerError::AnnounceError);

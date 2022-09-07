@@ -3,6 +3,7 @@
 #include "bencode/bencode_parser.hpp"
 #include "bencode/bencode_value.hpp"
 #include "hash.hpp"
+#include "spdlog/spdlog.h"
 
 using namespace fur::bencode;
 
@@ -40,6 +41,15 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
 
   auto pieces =
       dynamic_cast<BencodeString&>(*info_dict.at("pieces")).value();
-  this->piece_hashes = hash::split_piece_hashes(pieces);
+
+  auto r_hashes = hash::split_piece_hashes(pieces);
+
+  if(!r_hashes.valid()){
+      auto logger = spdlog::get("custom");
+      logger->error("Could not split piece hashes {}",
+          static_cast<int>(r_hashes.error()));
+      throw std::invalid_argument("Malformed piece hashes string");
+  }
+  this->piece_hashes = *r_hashes;
 }
 }  // namespace fur::torrent
