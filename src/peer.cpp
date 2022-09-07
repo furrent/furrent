@@ -1,14 +1,15 @@
 #include "peer.hpp"
 
 #include <memory>
-#include <stdexcept>
 #include <regex>
+#include <stdexcept>
 
 #include "bencode/bencode_parser.hpp"
 #include "bencode/bencode_value.hpp"
 #include "cpr/cpr.h"
 #include "fmt/core.h"
 #include "hash.hpp"
+#include "spdlog/spdlog.h"
 
 namespace fur::peer {
 std::string Peer::address() const {
@@ -25,6 +26,8 @@ Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
   std::regex_match(ip_s, match, ip_regex);
 
   if (match.empty()) {
+    auto logger = spdlog::get("custom");
+    logger->error("not a valid ip");
     throw std::invalid_argument("not a valid ip");
   }
 
@@ -51,6 +54,8 @@ PeerResult announce(const torrent::TorrentFile& torrent_f) {
 
   if (res.status_code == 0 || res.status_code >= 400) {
     //throw std::runtime_error("could not announce to tracker");
+    auto logger = spdlog::get("custom");
+    logger->error("Could not announce to tracker");
     return PeerResult::ERROR(PeerError::AnnounceError);
   }
   return parse_tracker_response(res.text);
@@ -62,8 +67,8 @@ PeerResult parse_tracker_response(const std::string& text) {
   bencode::BencodeParser parser;
   auto tree = parser.decode(text);
   if(!tree.valid()){
-    // Do something
-    // TODO: log the parser error
+    auto logger = spdlog::get("custom");
+    logger->error("Parser error {}", static_cast<int>(tree.error()));
     return PeerResult::ERROR(PeerError::ParserError);
   }
   auto& dict = dynamic_cast<bencode::BencodeDict&>(*(*tree)).value();
