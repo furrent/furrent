@@ -1,13 +1,19 @@
 #include "download/downloader.hpp"
 
+#include <cstdint>
+#include <fstream>
+#include <memory>
 #include <vector>
 
+#include "bencode/bencode_parser.hpp"
 #include "catch2/catch.hpp"
 #include "hash.hpp"
+#include "log/logger.hpp"
 #include "peer.hpp"
 #include "tfriend.hpp"
 
 using namespace fur::peer;
+using namespace fur::bencode;
 using namespace fur::download::downloader;
 using namespace fur::hash;
 
@@ -68,4 +74,33 @@ TEST_CASE("[Downloader] Download one piece, same size as a block") {
   REQUIRE(result.has_value());
   // 16384 is 16KB
   REQUIRE(result->content.size() == 16384);
+}
+
+TEST_CASE("[Downloader] Download alice") {
+  // Faker on port 4006 seeds a whole alice.txt file contained in the fixtures/
+  // directory
+
+  Peer peer("127.0.0.1", 4006);
+
+  // Read torrent file to string
+  std::ifstream f("../test/fixtures/alice.txt.torrent");
+  std::stringstream buf;
+  buf << f.rdbuf();
+  std::string content = buf.str();
+
+  // Parse bencode
+  BencodeParser parser;
+  auto ben_tree = parser.decode(content);
+
+  // Parse TorrentFile
+  TorrentFile torrent(*ben_tree);
+
+  Downloader down(torrent, peer);
+
+  TestingFriend::Downloader_ensure_connected(down);
+
+  const uint32_t n_pieces = 5;
+  for (uint32_t idx = 0; idx < n_pieces; idx++) {
+    auto result = TestingFriend::Downloader_try_download(down, Task{idx});
+  }
 }

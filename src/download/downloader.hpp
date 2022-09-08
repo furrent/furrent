@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -19,13 +20,13 @@ using namespace fur::download::message;
 /// bound to a specific `TorrentFile` and has a reference to it.
 // TODO Remove once the real struct is merged
 struct Task {
-  int index;
+  uint32_t index;
 };
 
 /// A downloaded piece for a torrent file.
 // TODO Remove once the real struct is merged
 struct Result {
-  int index;
+  uint32_t index;
   std::vector<uint8_t> content;
 };
 

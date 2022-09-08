@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <stdexcept>
 
-#include "asio.hpp"
 #include "download/util.hpp"
+#include "log/logger.hpp"
 
 using fur::download::message::MessageKind;
 
@@ -14,6 +14,8 @@ Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
     : torrent{torrent}, peer{peer} {}
 
 void Downloader::ensure_connected() {
+  auto logger = spdlog::get("custom");
+
   if (socket.has_value() && socket->is_open()) return;
 
   // Destroy any zombie socket
@@ -23,6 +25,8 @@ void Downloader::ensure_connected() {
 
   // TCP connect
   socket->connect(peer.ip, peer.port, std::chrono::milliseconds(2));
+  logger->debug("TCP connected with {}", peer.address());
+
   // BitTorrent handshake
   handshake();
 
@@ -44,8 +48,12 @@ void Downloader::ensure_connected() {
         "peer sent a bitfield with a size that doesn't match the torrent");
   }
 
+  logger->debug("{} sent its bitfield", peer.address());
+
   send_message(UnchokeMessage(), std::chrono::seconds(1));
+  logger->debug("We unchoked {}", peer.address());
   send_message(InterestedMessage(), std::chrono::seconds(1));
+  logger->debug("We are interested in {}", peer.address());
 
   // Every connection starts chocked
   choked = true;
@@ -59,6 +67,7 @@ void Downloader::ensure_connected() {
     }
     // No need to do anything for all other messages
   }
+  logger->debug("{} unchoked us", peer.address());
 }
 
 // 1  for the length of the protocol identifier
@@ -114,43 +123,90 @@ void Downloader::handshake() {
   if (torrent.info_hash != response_info_hash) {
     throw std::runtime_error("bad handshake");
   }
+
+  auto logger = spdlog::get("custom");
+  logger->debug("Hand shaken with {}", peer.address());
 }
 
 std::optional<Result> Downloader::try_download(const Task& task) {
-  // Ask for 16KB
-  send_message(RequestMessage(task.index, 0, 16384), std::chrono::seconds(1));
+  auto logger = spdlog::get("custom");
 
-  std::optional<std::vector<uint8_t>> block;
+  // The resulting piece
+  std::vector<uint8_t> piece;
+  piece.resize(torrent.piece_length);
 
-  auto timeout = std::chrono::seconds(1);
-  while (!block.has_value()) {
+  // How many bytes to demand in a `RequestMessage`. Should be 16KB.
+  constexpr int BLOCK_SIZE = 16384;
+
+  // How many blocks are there to download in total. Integer ceil division.
+  const int blocks_total = (torrent.piece_length + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  // How many blocks have we requested so far.
+  int blocks_requested = 0;
+  // How many blocks have we received so far.
+  int blocks_received = 0;
+
+  // How many requested but unreceived blocks do we want to await at once
+  constexpr int PIPELINE_SIZE_MAX = 5;
+
+  auto timeout = std::chrono::seconds(2);
+  // While the piece is not entirely downloaded
+  while (blocks_received < blocks_total) {
+    if (!choked) {
+      while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX) {
+        // Might be shorter if this is the last block
+        auto length = static_cast<long>(BLOCK_SIZE);
+        if (blocks_requested == blocks_total - 1) {
+          length =
+              torrent.length - blocks_requested * static_cast<long>(BLOCK_SIZE);
+        }
+
+        auto offset = blocks_requested * BLOCK_SIZE;
+
+        send_message(RequestMessage(task.index, offset, length),
+                     std::chrono::seconds(1));
+        blocks_requested++;
+        logger->debug("Requested {} bytes at offset {} of piece {} from {}",
+                      length, offset, task.index, peer.address());
+      }
+    }
+
     auto message = recv_message(timeout);
-
     switch (message->kind()) {
       case MessageKind::Choke:
         choked = true;
         // Use a slightly longer timeout to wait to be unchoked
         timeout = std::chrono::seconds(11);
+        logger->debug("{} choked us", peer.address());
         break;
       case MessageKind::Unchoke:
         choked = false;
         // Reset timeout to the lower one
         timeout = std::chrono::seconds(1);
+        logger->debug("{} unchoked us", peer.address());
         break;
-      case MessageKind::Have:
+      case MessageKind::Have: {
         // Nice, the peer has acquired a new piece that it can share
-        bitfield->set(dynamic_cast<HaveMessage&>(*message).index);
+        auto new_piece_index = dynamic_cast<HaveMessage&>(*message).index;
+        bitfield->set(new_piece_index);
+        logger->debug("{} now has piece {}", peer.address(), new_piece_index);
         break;
-      case MessageKind::Piece:
+      }
+      case MessageKind::Piece: {
         // There it is
-        block = dynamic_cast<PieceMessage&>(*message).block;
+        auto piece_message = dynamic_cast<PieceMessage&>(*message);
+        std::copy(piece_message.block.begin(), piece_message.block.end(),
+                  piece.begin() + piece_message.begin);
+        blocks_received++;
+        logger->debug("{} sent us {} bytes at offset {} of piece {}",
+                      peer.address(), piece_message.block.size(),
+                      piece_message.begin, task.index);
         break;
+      }
       default:;  // We can safely ignore other messages (hopefully)
     }
   }
-  // If we got to this line, that means we received our data so the test passes
-  // TODO Download more than just the first 16KB
-  return Result{0, std::move(block.value())};
+
+  return Result{task.index, std::move(piece)};
 }
 
 void Downloader::send_message(const Message& msg, timeout timeout) {
