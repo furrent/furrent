@@ -1,9 +1,9 @@
-import random
 import socket
 
 
-def random_16kb_block():
-    return bytes([random.randint(0, 255) for _ in range(2 ** 14)])
+def a_16kb_block():
+    # This is known to have SHA1 hash equal to 19e5dc34eda79ca3ee73860b61b66185149b6fb4
+    return bytes([1 for _ in range(2 ** 14)])
 
 
 # Accepts a connection from a peer then:
@@ -21,8 +21,8 @@ def faker_connect_plus_piece():
         print(f"Handshake from {handshake[-20:].decode()}")
         # Accept any handshake and reply with some sort of peer id
         conn.send(handshake[:-20] + b"WhoLetTheDogsOut----")
-        # Send a bitfield
-        conn.send(b"\x00\x00\x00\x02\x05\x05")
+        # Send a bitfield indicating we have the first and only piece for a dummy torrent
+        conn.send(b"\x00\x00\x00\x02\x05" + bytes([0b10000000]))
         # Send an unchoke message
         conn.send(b"\x00\x00\x00\x01\x01")
 
@@ -44,4 +44,4 @@ def faker_connect_plus_piece():
         assert request[15] == 0x40
         assert request[16] == 0x00
 
-        conn.send(b"\x00\x00\x40\x09\x07\x00\x00\x00\x00\x00\x00\x00\x00" + random_16kb_block())
+        conn.send(b"\x00\x00\x40\x09\x07\x00\x00\x00\x00\x00\x00\x00\x00" + a_16kb_block())
