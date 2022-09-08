@@ -15,14 +15,17 @@ const char* FUR_LOG_FILE = "log.txt";
 const char* FUR_LOG_FORMAT = "[%T][%L][%t] %v";
 }
 
-std::shared_ptr<spdlog::logger> initialize_custom_logger() {
-
+std::shared_ptr<spdlog::logger> initialize_custom_logger(bool do_file_sink) {
   std::vector<spdlog::sink_ptr> sinks = {
       // Console with colors
       std::make_shared<spdlog::sinks::stdout_color_sink_mt>(),
-      // File on disk
-      std::make_shared<spdlog::sinks::basic_file_sink_mt>(FUR_LOG_FILE)
   };
+
+  if (do_file_sink) {
+    // File on disk
+    sinks.push_back(
+        std::make_shared<spdlog::sinks::basic_file_sink_mt>(FUR_LOG_FILE));
+  }
 
   auto logger = std::make_shared<spdlog::logger>("custom",
                                                  std::begin(sinks),
