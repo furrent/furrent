@@ -16,37 +16,27 @@ Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
 void Downloader::ensure_connected() {
   if (socket.has_value() && socket->is_open()) return;
 
+  // Destroy any zombie socket
+  socket.reset();
   // Construct the socket
   socket.emplace();
-  socket->connect(peer.ip, peer.port, std::chrono::milliseconds(500));
-  handshake();
 
-  // Every connection starts chocked
-  choked = true;
-  bitfield = std::nullopt;
+  // TCP connect
+  socket->connect(peer.ip, peer.port, std::chrono::milliseconds(2));
+  // BitTorrent handshake
+  handshake();
 
   // `BitfieldMessage` is either the first message sent or the peer has no piece
   // to share. In the latter case, we're not interested in them and can drop the
   // connection.
-  while (!bitfield.has_value()) {
-    auto message = recv_message(std::chrono::seconds(11));
-
-    switch (message->kind()) {
-      case MessageKind::Bitfield: {
-        auto bitfield_message = dynamic_cast<BitfieldMessage&>(*message);
-        bitfield.emplace(bitfield_message.bitfield.get_bytes(),
-                         bitfield_message.bitfield.len);
-        break;
-      }
-      case MessageKind::Choke:
-        choked = true;
-        break;
-      case MessageKind::Unchoke:
-        choked = false;
-        break;
-      default:;  // No need to do anything for all other messages
-    }
+  auto message = recv_message(std::chrono::seconds(5));
+  if (message->kind() != MessageKind::Bitfield) {
+    throw std::runtime_error("no bitfield");
   }
+  auto bitfield_message = dynamic_cast<BitfieldMessage&>(*message);
+  bitfield.reset();
+  bitfield.emplace(bitfield_message.bitfield.get_bytes(),
+                   bitfield_message.bitfield.len);
 
   // Check that the bitfield has the correct length
   if (bitfield->len != torrent.piece_hashes.size()) {
@@ -54,10 +44,16 @@ void Downloader::ensure_connected() {
         "peer sent a bitfield with a size that doesn't match the torrent");
   }
 
+  send_message(UnchokeMessage(), std::chrono::seconds(1));
+  send_message(InterestedMessage(), std::chrono::seconds(1));
+
+  // Every connection starts chocked
+  choked = true;
+
   // Now we need to wait to be unchoked by the peer. Only then can we start to
   // ask for pieces.
   while (choked) {
-    auto message = recv_message(std::chrono::seconds(11));
+    message = recv_message(std::chrono::seconds(11));
     if (message->kind() == MessageKind::Unchoke) {
       choked = false;
     }

@@ -20,3 +20,8 @@ def faker_connect():
         conn.send(b"\x00\x00\x00\x02\x05\x05")
         # Send an unchoke message
         conn.send(b"\x00\x00\x00\x01\x01")
+
+        # Unchoke
+        assert conn.recv(5) == b"\x00\x00\x00\x01\x01"
+        # Interested
+        assert conn.recv(5) == b"\x00\x00\x00\x01\x02"

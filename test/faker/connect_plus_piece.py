@@ -26,6 +26,11 @@ def faker_connect_plus_piece():
         # Send an unchoke message
         conn.send(b"\x00\x00\x00\x01\x01")
 
+        # Unchoke
+        assert conn.recv(5) == b"\x00\x00\x00\x01\x01"
+        # Interested
+        assert conn.recv(5) == b"\x00\x00\x00\x01\x02"
+
         request = conn.recv(17)
         # The length of a request message
         assert request[3] == 13
