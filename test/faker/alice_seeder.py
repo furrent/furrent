@@ -137,3 +137,7 @@ def faker_alice():
                 print(f"Now also have piece {new_piece_i}")
                 # Send a Have message
                 conn.send(b"\x00\x00\x00\x05\x04" + struct.pack(">i", new_piece_i))
+
+            # Randomly send a KeepAlive, just because we can
+            if random.random() < 0.2:
+                conn.send(b"\x00\x00\x00\x00")
