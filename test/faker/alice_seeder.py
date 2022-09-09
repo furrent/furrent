@@ -30,8 +30,8 @@ def random_bitfield_fresh():
     # This is simplified and only works with a one-byte bitfield
     bitfield = 0x00
     for i in range(N_PIECES):
-        # Randomly set a bit with a 70% percent chance
-        if random.random() < 0.7:
+        # Randomly set a bit with a 30% percent chance
+        if random.random() < 0.3:
             bitfield |= 1 << (8 - i - 1)
 
     # This is an edge case, but we cannot let the bitfield be empty just because
@@ -116,7 +116,7 @@ def faker_alice():
             payload = read_fixture(piece_index, piece_offset, length)
 
             # Sometimes send a corrupt block
-            if random.random() < 0.2:
+            if random.random() < 0.1:
                 payload = bytearray(payload)
                 # Set a random byte to a random value
                 payload[random.randint(0, length - 1)] = random.randint(0, 255)
