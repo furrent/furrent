@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <fstream>
-#include <memory>
+#include <thread>
 #include <vector>
 
 #include "bencode/bencode_parser.hpp"
@@ -98,8 +98,12 @@ TEST_CASE("[Downloader] Download alice") {
 
   TestingFriend::Downloader_ensure_connected(down);
 
-  const int n_pieces = 5;
-  for (int idx = 0; idx < n_pieces; idx++) {
-    auto result = TestingFriend::Downloader_try_download(down, Task{idx});
+  int n_pieces_left = 5;
+  while (n_pieces_left > 0) {
+    for (int idx = 0; idx < n_pieces_left; idx++) {
+      auto result = TestingFriend::Downloader_try_download(down, Task{idx});
+      if (result.has_value()) n_pieces_left--;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
 }
