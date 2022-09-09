@@ -143,7 +143,6 @@ std::optional<Result> Downloader::try_download(const Task& task) {
 
   // The resulting piece
   std::vector<uint8_t> piece;
-  piece.resize(torrent.piece_length);
 
   auto piece_length = torrent.piece_length;
   // Might be shorter if this is the last piece
@@ -158,6 +157,8 @@ std::optional<Result> Downloader::try_download(const Task& task) {
     assert(piece_length <= std::numeric_limits<int>::max());
     piece_length = static_cast<int>(l_piece_length);
   }
+
+  piece.resize(piece_length);
 
   // How many bytes to demand in a `RequestMessage`. Should be 16KB.
   constexpr int BLOCK_SIZE = 16384;

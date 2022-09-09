@@ -1,5 +1,6 @@
 #include "download/downloader.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <thread>
@@ -98,11 +99,15 @@ void test_alice() {
 
   TestingFriend::Downloader_ensure_connected(down);
 
-  int n_pieces_left = 5;
-  while (n_pieces_left > 0) {
-    for (int idx = 0; idx < n_pieces_left; idx++) {
+  std::vector<int> pieces_left{0, 1, 2, 3, 4};
+  while (!pieces_left.empty()) {
+    // Must not mutate original array while iterating
+    auto pieces_left_copy = pieces_left;
+    for (auto idx : pieces_left_copy) {
       auto result = TestingFriend::Downloader_try_download(down, Task{idx});
-      if (result.has_value()) n_pieces_left--;
+      if (result.has_value())
+        pieces_left.erase(
+            std::find(pieces_left.begin(), pieces_left.end(), idx));
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
