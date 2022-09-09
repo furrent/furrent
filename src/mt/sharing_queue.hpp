@@ -55,7 +55,10 @@ public:
     [[nodiscard]] Result steal();
 
     /// Wait for a new item in the queue
-    void wait_for_work() const;
+    void wait_work() const;
+
+    /// Wait for the queue to be empty
+    void wait_empty() const;
 
     /// Wake up all waiting threads
     void begin_skip_waiting();

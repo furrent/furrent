@@ -1,6 +1,7 @@
 #include "catch2/catch.hpp"
 
 #include <iostream>
+#include <vector>
 
 #include <mt/group.hpp>
 
@@ -10,8 +11,10 @@ struct ThreadState { int value; };
 
 TEST_CASE("Thread group creation") {
 
-    const size_t THREADS_NUM = 4;
-    bool checked[THREADS_NUM] = { false };
+    const size_t THREADS_NUM = std::thread::hardware_concurrency();
+
+    std::vector<bool> checked;
+    checked.resize(THREADS_NUM);
 
     {
         // Threads whould exists only inside this scope
@@ -27,13 +30,13 @@ TEST_CASE("Thread group creation") {
         group.terminate();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        for(size_t i = 0; i < THREADS_NUM; i++)
-            REQUIRE(group.get_thread_state(i).value == 100);
+        for(auto& state : group.get_states())
+            REQUIRE(state.value == 100);
     }
 
     bool valid = true;
-    for (bool value : checked)
-        valid &= value;
+    for(auto check : checked)
+        valid &= check;
     
     REQUIRE(valid);
 }
