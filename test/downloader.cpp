@@ -97,13 +97,12 @@ void test_alice() {
 
   Downloader down(torrent, peer);
 
-  TestingFriend::Downloader_ensure_connected(down);
-
   std::vector<int> pieces_left{0, 1, 2, 3, 4};
   while (!pieces_left.empty()) {
     // Must not mutate original array while iterating
     auto pieces_left_copy = pieces_left;
     for (auto idx : pieces_left_copy) {
+      TestingFriend::Downloader_ensure_connected(down);
       auto result = TestingFriend::Downloader_try_download(down, Task{idx});
       if (result.has_value())
         pieces_left.erase(
@@ -118,7 +117,7 @@ void test_alice() {
 TEST_CASE("[Downloader] Download alice") {
   // Do it a couple of times because the alice faker is non-deterministic and
   // may not always stress all `Downloader` behavior patterns
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 100; i++) {
     test_alice();
   }
 }

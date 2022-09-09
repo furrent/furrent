@@ -149,8 +149,8 @@ def handle(conn):
             # Choke
             conn.send(b"\x00\x00\x00\x01\x00")
 
-            # Hang forever with a 50% chance
-            if random.random() < 1:
+            # Hang forever with a 30% chance
+            if random.random() < 0.3:
                 conn.detach()
                 return
             else:

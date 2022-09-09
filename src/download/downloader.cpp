@@ -21,8 +21,9 @@ void Downloader::ensure_connected() {
 
   if (socket.has_value() && socket->is_open()) return;
 
-  // Destroy any zombie socket
+  // Destroy any zombie socket and reset choked status
   socket.reset();
+  choked = true;
   // Construct the socket
   socket.emplace();
 
@@ -173,62 +174,79 @@ std::optional<Result> Downloader::try_download(const Task& task) {
   // How many requested but unreceived blocks do we want to await at once
   constexpr int PIPELINE_SIZE_MAX = 5;
 
+  // Dynamically updated to be longer after a Choke and shorter after an Unchoke
   auto timeout = std::chrono::seconds(2);
-  // While the piece is not entirely downloaded
-  while (blocks_received < blocks_total) {
-    if (!choked) {
-      while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX &&
-             blocks_requested < blocks_total) {
-        // Might be shorter if this is the last block
-        auto length = BLOCK_SIZE;
-        if (blocks_requested == blocks_total - 1) {
-          length = piece_length - blocks_requested * BLOCK_SIZE;
+
+  try {
+    // While the piece is not entirely downloaded
+    while (blocks_received < blocks_total) {
+      if (!choked) {
+        while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX &&
+               blocks_requested < blocks_total) {
+          // Might be shorter if this is the last block
+          auto length = BLOCK_SIZE;
+          if (blocks_requested == blocks_total - 1) {
+            length = piece_length - blocks_requested * BLOCK_SIZE;
+          }
+
+          auto offset = blocks_requested * BLOCK_SIZE;
+
+          send_message(RequestMessage(task.index, offset, length),
+                       std::chrono::seconds(1));
+          blocks_requested++;
+          logger->debug("Requested {} bytes at offset {} of piece {} from {}",
+                        length, offset, task.index, peer.address());
         }
+      }
 
-        auto offset = blocks_requested * BLOCK_SIZE;
-
-        send_message(RequestMessage(task.index, offset, length),
-                     std::chrono::seconds(1));
-        blocks_requested++;
-        logger->debug("Requested {} bytes at offset {} of piece {} from {}",
-                      length, offset, task.index, peer.address());
+      auto message = recv_message(timeout);
+      switch (message->kind()) {
+        case MessageKind::Choke:
+          choked = true;
+          // Use a slightly longer timeout to wait to be unchoked
+          timeout = std::chrono::seconds(11);
+          logger->debug("{} choked us", peer.address());
+          break;
+        case MessageKind::Unchoke:
+          choked = false;
+          // Reset timeout to the lower one
+          timeout = std::chrono::seconds(1);
+          logger->debug("{} unchoked us", peer.address());
+          break;
+        case MessageKind::Have: {
+          // Nice, the peer has acquired a new piece that it can share
+          auto new_piece_index = dynamic_cast<HaveMessage&>(*message).index;
+          bitfield->set(new_piece_index);
+          logger->debug("{} now has piece {}", peer.address(), new_piece_index);
+          break;
+        }
+        case MessageKind::Piece: {
+          // There it is
+          auto piece_message = dynamic_cast<PieceMessage&>(*message);
+          std::copy(piece_message.block.begin(), piece_message.block.end(),
+                    piece.begin() + piece_message.begin);
+          blocks_received++;
+          logger->debug("{} sent us {} bytes at offset {} of piece {}",
+                        peer.address(), piece_message.block.size(),
+                        piece_message.begin, task.index);
+          break;
+        }
+        default:;  // We can safely ignore other messages (hopefully)
       }
     }
+  } catch (const std::system_error& err) {
+    logger->debug("Error downloading piece {} from {}: {}", task.index,
+                  peer.address(), err.what());
 
-    auto message = recv_message(timeout);
-    switch (message->kind()) {
-      case MessageKind::Choke:
-        choked = true;
-        // Use a slightly longer timeout to wait to be unchoked
-        timeout = std::chrono::seconds(11);
-        logger->debug("{} choked us", peer.address());
-        break;
-      case MessageKind::Unchoke:
-        choked = false;
-        // Reset timeout to the lower one
-        timeout = std::chrono::seconds(1);
-        logger->debug("{} unchoked us", peer.address());
-        break;
-      case MessageKind::Have: {
-        // Nice, the peer has acquired a new piece that it can share
-        auto new_piece_index = dynamic_cast<HaveMessage&>(*message).index;
-        bitfield->set(new_piece_index);
-        logger->debug("{} now has piece {}", peer.address(), new_piece_index);
-        break;
-      }
-      case MessageKind::Piece: {
-        // There it is
-        auto piece_message = dynamic_cast<PieceMessage&>(*message);
-        std::copy(piece_message.block.begin(), piece_message.block.end(),
-                  piece.begin() + piece_message.begin);
-        blocks_received++;
-        logger->debug("{} sent us {} bytes at offset {} of piece {}",
-                      peer.address(), piece_message.block.size(),
-                      piece_message.begin, task.index);
-        break;
-      }
-      default:;  // We can safely ignore other messages (hopefully)
+    try {
+      socket->close();
+    } catch (std::exception& _) {
     }
+
+    // Any next call to `Downloader::ensure_connected` will destroy any leftover
+    // socket and reset `choked`
+
+    return std::nullopt;
   }
 
   if (!hash::verify_piece(piece, torrent.piece_hashes[task.index])) {
