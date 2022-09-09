@@ -5,8 +5,6 @@ from os import path
 
 FIXTURE_PATH = path.realpath(path.join(path.dirname(__file__), "../fixtures/alice.txt"))
 
-# From the alice.torrent file
-N_PIECES = 5
 # From the alice.torrent file. This is 32KB so 2 block requests per piece.
 PIECE_LENGTH = 32768
 
@@ -44,9 +42,11 @@ def faker_alice():
         # Interested
         assert conn.recv(5) == b"\x00\x00\x00\x01\x02"
 
-        pieces_left = N_PIECES
-        while pieces_left > 0:
+        while True:
             request = conn.recv(17)
+            if not request:
+                # This is an EOF
+                break
             # The length of a request message
             assert request[3] == 13
             # ID of a request message
