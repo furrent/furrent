@@ -26,11 +26,16 @@ def faker_alice():
     while True:
         conn, _ = sock.accept()
         handshake = conn.recv(68)
-        print(f"Handshake from {handshake[-20:].decode()}")
+
+        try:
+            print(f"Handshake from {handshake[-20:].decode()}")
+        except UnicodeDecodeError:
+            print("Handshake from <non utf8 peer id>")
+
         # Accept any handshake and reply with some sort of peer id
         conn.send(handshake[:-20] + b"WhoLetTheDogsOut----")
         # Send a bitfield (there are 5 pieces so that makes it just 1 byte)
-        conn.send(bytes([0b11111000]))
+        conn.send(b"\x00\x00\x00\x02\x05" + bytes([0b11111000]))
         # Send an unchoke message
         conn.send(b"\x00\x00\x00\x01\x01")
 
@@ -61,6 +66,6 @@ def faker_alice():
             message += b"\x07"
             message += struct.pack(">i", piece_index)
             message += struct.pack(">i", piece_offset)
-            message += struct.pack(">i", payload)
+            message += payload
 
-            conn.send(payload)
+            conn.send(message)
