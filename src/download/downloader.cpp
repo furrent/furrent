@@ -135,11 +135,18 @@ std::optional<Result> Downloader::try_download(const Task& task) {
   std::vector<uint8_t> piece;
   piece.resize(torrent.piece_length);
 
+  auto piece_length = torrent.piece_length;
+  // Might be shorter if this is the last piece
+  if (task.index == torrent.piece_hashes.size() - 1) {
+    piece_length = static_cast<int>(torrent.length) -
+                   (torrent.piece_hashes.size() - 1) * torrent.piece_length;
+  }
+
   // How many bytes to demand in a `RequestMessage`. Should be 16KB.
   constexpr int BLOCK_SIZE = 16384;
 
   // How many blocks are there to download in total. Integer ceil division.
-  const int blocks_total = (torrent.piece_length + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  const int blocks_total = (piece_length + BLOCK_SIZE - 1) / BLOCK_SIZE;
   // How many blocks have we requested so far.
   int blocks_requested = 0;
   // How many blocks have we received so far.
@@ -152,12 +159,13 @@ std::optional<Result> Downloader::try_download(const Task& task) {
   // While the piece is not entirely downloaded
   while (blocks_received < blocks_total) {
     if (!choked) {
-      while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX) {
+      while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX &&
+             blocks_requested < blocks_total) {
         // Might be shorter if this is the last block
         auto length = static_cast<long>(BLOCK_SIZE);
         if (blocks_requested == blocks_total - 1) {
           length =
-              torrent.length - blocks_requested * static_cast<long>(BLOCK_SIZE);
+              piece_length - blocks_requested * static_cast<long>(BLOCK_SIZE);
         }
 
         auto offset = blocks_requested * BLOCK_SIZE;
@@ -205,6 +213,9 @@ std::optional<Result> Downloader::try_download(const Task& task) {
       default:;  // We can safely ignore other messages (hopefully)
     }
   }
+
+  logger->debug("Piece {} completely downloaded from {}", task.index,
+                peer.address());
 
   return Result{task.index, std::move(piece)};
 }

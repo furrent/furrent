@@ -8,7 +8,6 @@
 #include "bencode/bencode_parser.hpp"
 #include "catch2/catch.hpp"
 #include "hash.hpp"
-#include "log/logger.hpp"
 #include "peer.hpp"
 #include "tfriend.hpp"
 
