@@ -16,7 +16,7 @@ const size_t THREAD_COUNT = 16;
 TEST_CASE("[mt] Stealing simple") {
 
     std::atomic_bool alive = true;
-    int result_value = 0;
+    int result_value;
 
     // Queue owner can push work
     SharingQueue<int> owner_queue;
@@ -28,10 +28,11 @@ TEST_CASE("[mt] Stealing simple") {
     std::thread thief([&] {
         while(alive) {
             auto result = owner_queue.steal();
-            if (!result.valid() && result.error() != SharingQueue<int>::Error::Empty)
-                REQUIRE(false);
-
-            result_value = *result;
+            if (result.valid())
+                result_value = *result;
+            else
+                std::this_thread::sleep_for(
+                    std::chrono::milliseconds(100));
         }
     });
 
