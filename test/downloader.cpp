@@ -75,7 +75,7 @@ TEST_CASE("[Downloader] Download one piece, same size as a block") {
   REQUIRE(result->content.size() == 16384);
 }
 
-TEST_CASE("[Downloader] Download alice") {
+void test_alice() {
   // Faker on port 4006 seeds a whole alice.txt file contained in the fixtures/
   // directory
 
@@ -105,5 +105,13 @@ TEST_CASE("[Downloader] Download alice") {
       if (result.has_value()) n_pieces_left--;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+}
+
+TEST_CASE("[Downloader] Download alice") {
+  // Do it a couple of times because the alice faker is non-deterministic and
+  // may not always stress all `Downloader` behavior patterns
+  for (int i = 0; i < 10; i++) {
+    test_alice();
   }
 }
