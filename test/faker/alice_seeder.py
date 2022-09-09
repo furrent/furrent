@@ -170,4 +170,6 @@ def faker_alice():
         try:
             handle(conn)
         except ConnectionResetError:
-            print("Socket dropped")
+            print("Connection reset")
+        except BrokenPipeError:
+            print("Broken pipe")
