@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 
 #include "download/util.hpp"
@@ -131,15 +132,26 @@ void Downloader::handshake() {
 std::optional<Result> Downloader::try_download(const Task& task) {
   auto logger = spdlog::get("custom");
 
+  assert(task.index >= 0);
+  assert(!torrent.piece_hashes.empty());
+  assert(torrent.piece_hashes.size() - 1 <= std::numeric_limits<long>::max());
+
   // The resulting piece
   std::vector<uint8_t> piece;
   piece.resize(torrent.piece_length);
 
   auto piece_length = torrent.piece_length;
   // Might be shorter if this is the last piece
-  if (task.index == torrent.piece_hashes.size() - 1) {
-    piece_length = static_cast<int>(torrent.length) -
-                   (torrent.piece_hashes.size() - 1) * torrent.piece_length;
+  if (static_cast<size_t>(task.index) == torrent.piece_hashes.size() - 1) {
+    // Perform computation in `long` because `torrent.length` might be large but
+    // then go back to a smaller `int` which should suffice.
+    long before_this_piece =
+        static_cast<long>(torrent.piece_hashes.size() - 1) *
+        torrent.piece_length;
+    assert(torrent.length >= before_this_piece);
+    long l_piece_length = torrent.length - before_this_piece;
+    assert(piece_length <= std::numeric_limits<int>::max());
+    piece_length = static_cast<int>(l_piece_length);
   }
 
   // How many bytes to demand in a `RequestMessage`. Should be 16KB.
@@ -162,10 +174,9 @@ std::optional<Result> Downloader::try_download(const Task& task) {
       while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX &&
              blocks_requested < blocks_total) {
         // Might be shorter if this is the last block
-        auto length = static_cast<long>(BLOCK_SIZE);
+        auto length = BLOCK_SIZE;
         if (blocks_requested == blocks_total - 1) {
-          length =
-              piece_length - blocks_requested * static_cast<long>(BLOCK_SIZE);
+          length = piece_length - blocks_requested * BLOCK_SIZE;
         }
 
         auto offset = blocks_requested * BLOCK_SIZE;

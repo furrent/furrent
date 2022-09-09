@@ -20,13 +20,13 @@ using namespace fur::download::message;
 /// bound to a specific `TorrentFile` and has a reference to it.
 // TODO Remove once the real struct is merged
 struct Task {
-  uint32_t index;
+  int index;
 };
 
 /// A downloaded piece for a torrent file.
 // TODO Remove once the real struct is merged
 struct Result {
-  uint32_t index;
+  int index;
   std::vector<uint8_t> content;
 };
 

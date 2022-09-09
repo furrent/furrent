@@ -98,8 +98,8 @@ TEST_CASE("[Downloader] Download alice") {
 
   TestingFriend::Downloader_ensure_connected(down);
 
-  const uint32_t n_pieces = 5;
-  for (uint32_t idx = 0; idx < n_pieces; idx++) {
+  const int n_pieces = 5;
+  for (int idx = 0; idx < n_pieces; idx++) {
     auto result = TestingFriend::Downloader_try_download(down, Task{idx});
   }
 }
