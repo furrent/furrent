@@ -12,6 +12,8 @@
 #include <functional>
 #include <thread>
 
+#include <optional>
+
 namespace fur::mt {
 
 /// Used to control threads execution
@@ -70,8 +72,8 @@ public:
     /// Terminate thread execution, this operation is irrecuperable
     void terminate();
 
-    /// Obtain thread state
-    State& get_thread_state(size_t thread);
+    /// Obtain threads state
+    std::vector<State>& get_states();
 
     /// Get total number of workers
     size_t get_worker_count() const;
