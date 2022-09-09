@@ -141,7 +141,7 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
                 if (failed_stealing_count >= STEALING_LIMIT) {
 
                     logger->debug("thread {:02d} is waiting for work on global queue", index);
-                    _global_queue.wait_for_work();
+                    _global_queue.wait_work();
                     failed_stealing_count = 0;
                 }
                 // If there is nothing then we steal from a random worker

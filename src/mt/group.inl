@@ -42,8 +42,8 @@ void ThreadGroup<State>::terminate() {
 }
 
 template<typename State>
-State& ThreadGroup<State>::get_thread_state(size_t thread) {
-    return _states[thread];
+std::vector<State>& ThreadGroup<State>::get_states() {
+    return _states;
 }
 
 template<typename State>
