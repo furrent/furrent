@@ -102,7 +102,6 @@ void test_alice() {
     // Must not mutate original array while iterating
     auto pieces_left_copy = pieces_left;
     for (auto idx : pieces_left_copy) {
-      TestingFriend::Downloader_ensure_connected(down);
       auto result = TestingFriend::Downloader_try_download(down, Task{idx});
       if (result.has_value())
         pieces_left.erase(

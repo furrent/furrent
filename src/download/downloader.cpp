@@ -135,6 +135,8 @@ void Downloader::handshake() {
 std::optional<Result> Downloader::try_download(const Task& task) {
   auto logger = spdlog::get("custom");
 
+  ensure_connected();
+
   // Peer doesn't have this piece
   if (!bitfield->get(task.index)) return std::nullopt;
 
