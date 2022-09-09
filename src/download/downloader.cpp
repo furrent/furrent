@@ -1,11 +1,13 @@
 #include "download/downloader.hpp"
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
 
 #include "download/util.hpp"
+#include "hash.hpp"
 #include "log/logger.hpp"
 
 using fur::download::message::MessageKind;
@@ -226,6 +228,11 @@ std::optional<Result> Downloader::try_download(const Task& task) {
       }
       default:;  // We can safely ignore other messages (hopefully)
     }
+  }
+
+  if (!hash::verify_piece(piece, torrent.piece_hashes[task.index])) {
+    logger->debug("{} sent corrupt piece {}", peer.address(), task.index);
+    return std::nullopt;
   }
 
   logger->debug("Piece {} completely downloaded from {}", task.index,
