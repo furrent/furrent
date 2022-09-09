@@ -2,6 +2,7 @@ import os
 import random
 import socket
 import struct
+import time
 from os import path
 
 FIXTURE_PATH = path.realpath(path.join(path.dirname(__file__), "../fixtures/alice.txt"))
@@ -142,6 +143,20 @@ def handle(conn):
         # Randomly send a NotInterested, just because we can
         if random.random() < 0.2:
             conn.send(b"\x00\x00\x00\x01\x03")
+
+        # Randomly choke the peer with a 3% chance
+        if random.random() < 0.03:
+            # Choke
+            conn.send(b"\x00\x00\x00\x01\x00")
+
+            # Hang forever with a 50% chance
+            if random.random() < 1:
+                conn.detach()
+                return
+            else:
+                time.sleep(1)
+                # Unchoke
+                conn.send(b"\x00\x00\x00\x01\x01")
 
 
 # A simplified BitTorrent client that seeds an "Alice in Wonderland" .txt ISO
