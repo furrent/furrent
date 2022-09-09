@@ -132,6 +132,9 @@ void Downloader::handshake() {
 std::optional<Result> Downloader::try_download(const Task& task) {
   auto logger = spdlog::get("custom");
 
+  // Peer doesn't have this piece
+  if (!bitfield->get(task.index)) return std::nullopt;
+
   assert(task.index >= 0);
   assert(!torrent.piece_hashes.empty());
   assert(torrent.piece_hashes.size() - 1 <= std::numeric_limits<long>::max());
