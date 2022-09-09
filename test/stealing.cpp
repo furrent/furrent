@@ -20,7 +20,6 @@ TEST_CASE("[mt] Stealing simple") {
     std::thread owner([&] {
         owner_queue.insert(5);    
     });
-    owner.join();
 
     // Thief steals from queue owner
     int result_value = 0;
@@ -33,6 +32,8 @@ TEST_CASE("[mt] Stealing simple") {
             result_value = *result;
         }
     });
+
+    owner.join();
     thief.join();
 
     REQUIRE(result_value == 5);
