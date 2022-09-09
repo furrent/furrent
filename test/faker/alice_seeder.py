@@ -116,7 +116,7 @@ def faker_alice():
             payload = read_fixture(piece_index, piece_offset, length)
 
             # Sometimes send a corrupt block
-            if random.random() < 0.1:
+            if random.random() < 0.2:
                 payload = bytearray(payload)
                 # Set a random byte to a random value
                 payload[random.randint(0, length - 1)] = random.randint(0, 255)

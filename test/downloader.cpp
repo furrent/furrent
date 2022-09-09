@@ -108,10 +108,12 @@ void test_alice() {
   }
 }
 
+// This is quite a time-consuming test, feel free to skip when running other
+// tests locally
 TEST_CASE("[Downloader] Download alice") {
   // Do it a couple of times because the alice faker is non-deterministic and
   // may not always stress all `Downloader` behavior patterns
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 20; i++) {
     test_alice();
   }
 }
