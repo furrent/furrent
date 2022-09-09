@@ -135,7 +135,15 @@ def handle(conn):
         if random.random() < 0.2:
             conn.send(b"\x00\x00\x00\x00")
 
-        
+        # Randomly send an Interested, just because we can
+        if random.random() < 0.2:
+            conn.send(b"\x00\x00\x00\x01\x02")
+
+        # Randomly send a NotInterested, just because we can
+        if random.random() < 0.2:
+            conn.send(b"\x00\x00\x00\x01\x03")
+
+
 # A simplified BitTorrent client that seeds an "Alice in Wonderland" .txt ISO
 def faker_alice():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
