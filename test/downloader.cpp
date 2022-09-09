@@ -98,6 +98,8 @@ void test_alice() {
   Downloader down(torrent, peer);
 
   std::vector<int> pieces_left{0, 1, 2, 3, 4};
+  auto original_pieces_left = pieces_left;
+
   while (!pieces_left.empty()) {
     // Must not mutate original array while iterating
     auto pieces_left_copy = pieces_left;
@@ -107,6 +109,15 @@ void test_alice() {
         pieces_left.erase(
             std::find(pieces_left.begin(), pieces_left.end(), idx));
     }
+
+    // The faker has none of the remaining pieces. The faker only
+    // simulates acquiring a new piece when receiving requests from us, but
+    // we're not sending any, so we're stuck a loop because `try_download` keeps
+    // returning `std::nullopt`. Kickstart the whole process again.
+    if (pieces_left_copy.size() == pieces_left.size()) {
+      pieces_left = original_pieces_left;
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
 }

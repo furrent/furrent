@@ -21,9 +21,11 @@ void Downloader::ensure_connected() {
 
   if (socket.has_value() && socket->is_open()) return;
 
-  // Destroy any zombie socket and reset choked status
+  // Destroy any zombie socket and reset choked status (only really useful when
+  // the socket is there but unhealthy. That is: `is_open` returns false)
   socket.reset();
   choked = true;
+
   // Construct the socket
   socket.emplace();
 
@@ -242,11 +244,11 @@ std::optional<Result> Downloader::try_download(const Task& task) {
 
     try {
       socket->close();
-    } catch (std::exception& _) {
+    } catch (const std::exception& _) {
+      // `Downloader::ensure_connected` would think the socket is still healthy
+      // if `socket->close()` somehow fails. Force it to recreate the socket.
+      socket.reset();
     }
-
-    // Any next call to `Downloader::ensure_connected` will destroy any leftover
-    // socket and reset `choked`
 
     return std::nullopt;
   }
