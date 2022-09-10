@@ -7,7 +7,9 @@
 
 #include "download/bitfield.hpp"
 #include "torrent.hpp"
+#include "util/result.hpp"
 
+using namespace fur::util;
 using namespace fur::download::bitfield;
 
 namespace fur::download::message {
@@ -22,6 +24,21 @@ enum class MessageKind {
   Request,
   Piece,
 };
+
+enum class DecodeError {
+  /// Message has payload but didn't expect any
+  UnexpectedPayload,
+  /// Message has an invalid header. Meaning it's not a `KeepAliveMessage` and
+  /// it's missing the length field or message id
+  InvalidHeader,
+  /// Not a known message type
+  UnknownMessageID,
+  /// Payload has invalid length, according the message's total length and
+  /// message ID
+  InvalidPayloadLength,
+};
+
+std::string display_decode_error(const DecodeError& err);
 
 /// Virtual class for messages exchanged between BitTorrent clients.
 /// They are all shaped like:
@@ -39,7 +56,7 @@ class Message {
   /// is advised to avoid invalid state. The `TorrentFile` is currently only
   /// required because `BitfieldMessage` needs to know the piece count to
   /// decode itself nicely.
-  [[nodiscard]] static std::optional<std::unique_ptr<Message>> decode(
+  [[nodiscard]] static Result<std::unique_ptr<Message>, DecodeError> decode(
       const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
 
   /// Returns the kind of this message. Used before `dynamic_cast`ing when the
@@ -150,7 +167,7 @@ class HaveMessage final : public Message {
 
   explicit HaveMessage(uint32_t index) : index{index} {}
 
-  [[nodiscard]] static std::optional<std::unique_ptr<HaveMessage>> decode(
+  [[nodiscard]] static Result<std::unique_ptr<HaveMessage>, DecodeError> decode(
       const std::vector<uint8_t>& buf);
 
   [[nodiscard]] MessageKind kind() const override { return MessageKind::Have; }
@@ -170,7 +187,7 @@ class BitfieldMessage final : public Message {
 
   explicit BitfieldMessage(Bitfield bitfield) : bitfield{std::move(bitfield)} {}
 
-  [[nodiscard]] static std::optional<std::unique_ptr<BitfieldMessage>> decode(
+  [[nodiscard]] static std::unique_ptr<BitfieldMessage> decode(
       const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
 
   [[nodiscard]] MessageKind kind() const override {
@@ -196,8 +213,8 @@ class RequestMessage final : public Message {
   RequestMessage(uint32_t index, uint32_t begin, uint32_t length)
       : index{index}, begin{begin}, length{length} {}
 
-  [[nodiscard]] static std::optional<std::unique_ptr<RequestMessage>> decode(
-      const std::vector<uint8_t>& buf);
+  [[nodiscard]] static Result<std::unique_ptr<RequestMessage>, DecodeError>
+  decode(const std::vector<uint8_t>& buf);
 
   [[nodiscard]] MessageKind kind() const override {
     return MessageKind::Request;
@@ -223,8 +240,8 @@ class PieceMessage final : public Message {
   PieceMessage(uint32_t index, uint32_t begin, std::vector<uint8_t> block)
       : index{index}, begin{begin}, block{std::move(block)} {}
 
-  [[nodiscard]] static std::optional<std::unique_ptr<PieceMessage>> decode(
-      const std::vector<uint8_t>& buf);
+  [[nodiscard]] static Result<std::unique_ptr<PieceMessage>, DecodeError>
+  decode(const std::vector<uint8_t>& buf);
 
   [[nodiscard]] MessageKind kind() const override { return MessageKind::Piece; }
 

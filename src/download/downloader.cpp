@@ -13,13 +13,24 @@
 using fur::download::message::MessageKind;
 
 namespace fur::download::downloader {
+DownloaderError from_socket_error(const socket::SocketError& err) {
+  switch (err) {
+    case socket::SocketError::Timeout:
+      return DownloaderError::SocketTimeout;
+    default:
+      return DownloaderError::SocketOther;
+  }
+}
+
 Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
     : torrent{torrent}, peer{peer} {}
 
-void Downloader::ensure_connected() {
+Outcome<DownloaderError> Downloader::ensure_connected() {
+  using Outcome = Outcome<DownloaderError>;
+
   auto logger = spdlog::get("custom");
 
-  if (socket.has_value() && socket->is_open()) return;
+  if (socket.has_value() && socket->is_open()) return Outcome::OK({});
 
   // Destroy any zombie socket and reset choked status (only really useful when
   // the socket is there but unhealthy. That is: `is_open` returns false)
@@ -30,16 +41,27 @@ void Downloader::ensure_connected() {
   socket.emplace();
 
   // TCP connect
-  socket->connect(peer.ip, peer.port, std::chrono::milliseconds(2));
+  auto maybe_connect =
+      socket->connect(peer.ip, peer.port, std::chrono::milliseconds(2));
+  if (!maybe_connect.valid()) {
+    destroy_socket();
+    return Outcome::ERROR(from_socket_error(maybe_connect.error()));
+  }
+
   logger->debug("TCP connected with {}", peer.address());
 
   // BitTorrent handshake
-  handshake();
+  auto maybe_handshake = handshake();
+  if (!maybe_handshake.valid()) return maybe_handshake;
 
   // `BitfieldMessage` is either the first message sent or the peer has no piece
   // to share. In the latter case, we're not interested in them and can drop the
   // connection.
-  auto message = recv_message(std::chrono::seconds(5));
+  auto maybe_message = recv_message(std::chrono::seconds(5));
+  if (!maybe_message.valid())
+    return Outcome::ERROR(DownloaderError(maybe_message.error()));
+  auto message = std::move(*maybe_message);
+
   if (message->kind() != MessageKind::Bitfield) {
     throw std::runtime_error("no bitfield");
   }
@@ -50,15 +72,18 @@ void Downloader::ensure_connected() {
 
   // Check that the bitfield has the correct length
   if (bitfield->len != torrent.piece_hashes.size()) {
-    throw std::runtime_error(
-        "peer sent a bitfield with a size that doesn't match the torrent");
+    return Outcome::ERROR(DownloaderError::InvalidBitfieldLength);
   }
 
   logger->debug("{} sent its bitfield", peer.address());
 
-  send_message(UnchokeMessage(), std::chrono::seconds(1));
+  auto maybe_unchoke = send_message(UnchokeMessage(), std::chrono::seconds(1));
+  if (!maybe_unchoke.valid()) return maybe_unchoke;
   logger->debug("We unchoked {}", peer.address());
-  send_message(InterestedMessage(), std::chrono::seconds(1));
+
+  auto maybe_interested =
+      send_message(InterestedMessage(), std::chrono::seconds(1));
+  if (!maybe_interested.valid()) return maybe_interested;
   logger->debug("We are interested in {}", peer.address());
 
   // Every connection starts chocked
@@ -67,13 +92,20 @@ void Downloader::ensure_connected() {
   // Now we need to wait to be unchoked by the peer. Only then can we start to
   // ask for pieces.
   while (choked) {
-    message = recv_message(std::chrono::seconds(11));
+    maybe_message = recv_message(std::chrono::seconds(11));
+    if (!maybe_message.valid())
+      return Outcome::ERROR(DownloaderError(maybe_message.error()));
+    message = std::move(*maybe_message);
+
     if (message->kind() == MessageKind::Unchoke) {
       choked = false;
     }
     // No need to do anything for all other messages
   }
+
   logger->debug("{} unchoked us", peer.address());
+
+  return Outcome::OK({});
 }
 
 // 1  for the length of the protocol identifier
@@ -87,7 +119,9 @@ const int HANDSHAKE_LENGTH = 1 + 19 + 8 + 20 + 20;
 /// info-hash field.
 const int INFO_HASH_OFFSET = 1 + 19 + 8;
 
-void Downloader::handshake() {
+Outcome<DownloaderError> Downloader::handshake() {
+  using Outcome = Outcome<DownloaderError>;
+
   // Handshake message that we're going to build step-by-step
   std::vector<uint8_t> message;
   // Reserve some bytes so all calls to `insert` don't need to make heap
@@ -113,11 +147,20 @@ void Downloader::handshake() {
   message.insert(message.end(), peerId.begin(), peerId.end());
 
   // The message is ready, send it to the peer
-  socket->write(message, std::chrono::milliseconds(100));
+  auto maybe_sent = socket->write(message, std::chrono::milliseconds(100));
+  if (!maybe_sent.valid()) {
+    destroy_socket();
+    return Outcome::ERROR(from_socket_error(maybe_sent.error()));
+  }
 
   // Read the response
-  auto response =
+  auto maybe_response =
       socket->read(HANDSHAKE_LENGTH, std::chrono::milliseconds(100));
+  if (!maybe_response.valid()) {
+    destroy_socket();
+    return Outcome::ERROR(from_socket_error(maybe_response.error()));
+  }
+  auto response = std::move(*maybe_response);
 
   // Extract the info-hash from the response
   hash::hash_t response_info_hash;
@@ -127,20 +170,27 @@ void Downloader::handshake() {
 
   // In a BitTorrent handshake, the peer should respond with the same info-hash
   if (torrent.info_hash != response_info_hash) {
-    throw std::runtime_error("bad handshake");
+    return Outcome::ERROR(DownloaderError::DifferentInfoHash);
   }
 
   auto logger = spdlog::get("custom");
   logger->debug("Hand shaken with {}", peer.address());
+
+  return Outcome::OK({});
 }
 
-std::optional<Result> Downloader::try_download(const Task& task) {
+Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
+  using Result = Result<Downloaded, DownloaderError>;
+
   auto logger = spdlog::get("custom");
 
-  ensure_connected();
+  auto maybe_connected = ensure_connected();
+  if (!maybe_connected.valid())
+    return Result::ERROR(DownloaderError(maybe_connected.error()));
 
   // Peer doesn't have this piece
-  if (!bitfield->get(task.index)) return std::nullopt;
+  if (!bitfield->get(task.index))
+    return Result::ERROR(DownloaderError::MissingPiece);
 
   assert(task.index >= 0);
   assert(!torrent.piece_hashes.empty());
@@ -181,97 +231,107 @@ std::optional<Result> Downloader::try_download(const Task& task) {
   // Dynamically updated to be longer after a Choke and shorter after an Unchoke
   auto timeout = std::chrono::seconds(2);
 
-  try {
-    // While the piece is not entirely downloaded
-    while (blocks_received < blocks_total) {
-      if (!choked) {
-        while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX &&
-               blocks_requested < blocks_total) {
-          // Might be shorter if this is the last block
-          auto length = BLOCK_SIZE;
-          if (blocks_requested == blocks_total - 1) {
-            length = piece_length - blocks_requested * BLOCK_SIZE;
-          }
-
-          auto offset = blocks_requested * BLOCK_SIZE;
-
-          send_message(RequestMessage(task.index, offset, length),
-                       std::chrono::seconds(1));
-          blocks_requested++;
-          logger->debug("Requested {} bytes at offset {} of piece {} from {}",
-                        length, offset, task.index, peer.address());
+  // While the piece is not entirely downloaded
+  while (blocks_received < blocks_total) {
+    if (!choked) {
+      while ((blocks_requested - blocks_received) < PIPELINE_SIZE_MAX &&
+             blocks_requested < blocks_total) {
+        // Might be shorter if this is the last block
+        auto length = BLOCK_SIZE;
+        if (blocks_requested == blocks_total - 1) {
+          length = piece_length - blocks_requested * BLOCK_SIZE;
         }
-      }
 
-      auto message = recv_message(timeout);
-      switch (message->kind()) {
-        case MessageKind::Choke:
-          choked = true;
-          // Use a slightly longer timeout to wait to be unchoked
-          timeout = std::chrono::seconds(11);
-          logger->debug("{} choked us", peer.address());
-          break;
-        case MessageKind::Unchoke:
-          choked = false;
-          // Reset timeout to the lower one
-          timeout = std::chrono::seconds(1);
-          logger->debug("{} unchoked us", peer.address());
-          break;
-        case MessageKind::Have: {
-          // Nice, the peer has acquired a new piece that it can share
-          auto new_piece_index = dynamic_cast<HaveMessage&>(*message).index;
-          bitfield->set(new_piece_index);
-          logger->debug("{} now has piece {}", peer.address(), new_piece_index);
-          break;
+        auto offset = blocks_requested * BLOCK_SIZE;
+
+        auto maybe_sent =
+            send_message(RequestMessage(task.index, offset, length),
+                         std::chrono::seconds(1));
+        if (!maybe_sent.valid()) {
+          return Result::ERROR(DownloaderError(maybe_sent.error()));
         }
-        case MessageKind::Piece: {
-          // There it is
-          auto piece_message = dynamic_cast<PieceMessage&>(*message);
-          std::copy(piece_message.block.begin(), piece_message.block.end(),
-                    piece.begin() + piece_message.begin);
-          blocks_received++;
-          logger->debug("{} sent us {} bytes at offset {} of piece {}",
-                        peer.address(), piece_message.block.size(),
-                        piece_message.begin, task.index);
-          break;
-        }
-        default:;  // We can safely ignore other messages (hopefully)
+
+        blocks_requested++;
+        logger->debug("Requested {} bytes at offset {} of piece {} from {}",
+                      length, offset, task.index, peer.address());
       }
     }
-  } catch (const std::system_error& err) {
-    logger->debug("Error downloading piece {} from {}: {}", task.index,
-                  peer.address(), err.what());
 
-    try {
-      socket->close();
-    } catch (const std::exception& _) {
-      // `Downloader::ensure_connected` would think the socket is still healthy
-      // if `socket->close()` somehow fails. Force it to recreate the socket.
-      socket.reset();
+    auto maybe_message = recv_message(timeout);
+    if (!maybe_message.valid())
+      return Result::ERROR(DownloaderError(maybe_message.error()));
+    auto message = std::move(*maybe_message);
+
+    switch (message->kind()) {
+      case MessageKind::Choke:
+        choked = true;
+        // Use a slightly longer timeout to wait to be unchoked
+        timeout = std::chrono::seconds(11);
+        logger->debug("{} choked us", peer.address());
+        break;
+      case MessageKind::Unchoke:
+        choked = false;
+        // Reset timeout to the lower one
+        timeout = std::chrono::seconds(1);
+        logger->debug("{} unchoked us", peer.address());
+        break;
+      case MessageKind::Have: {
+        // Nice, the peer has acquired a new piece that it can share
+        auto new_piece_index = dynamic_cast<HaveMessage&>(*message).index;
+        bitfield->set(new_piece_index);
+        logger->debug("{} now has piece {}", peer.address(), new_piece_index);
+        break;
+      }
+      case MessageKind::Piece: {
+        // There it is
+        auto piece_message = dynamic_cast<PieceMessage&>(*message);
+        std::copy(piece_message.block.begin(), piece_message.block.end(),
+                  piece.begin() + piece_message.begin);
+        blocks_received++;
+        logger->debug("{} sent us {} bytes at offset {} of piece {}",
+                      peer.address(), piece_message.block.size(),
+                      piece_message.begin, task.index);
+        break;
+      }
+      default:;  // We can safely ignore other messages (hopefully)
     }
-
-    return std::nullopt;
   }
 
   if (!hash::verify_piece(piece, torrent.piece_hashes[task.index])) {
     logger->debug("{} sent corrupt piece {}", peer.address(), task.index);
-    return std::nullopt;
+    return Result::ERROR(DownloaderError::CorruptPiece);
   }
 
   logger->debug("Piece {} completely downloaded from {}", task.index,
                 peer.address());
 
-  return Result{task.index, std::move(piece)};
+  return Result::OK({task.index, std::move(piece)});
 }
 
-void Downloader::send_message(const Message& msg, timeout timeout) {
-  socket->write(msg.encode(), timeout);
+Outcome<DownloaderError> Downloader::send_message(const Message& msg,
+                                                  timeout timeout) {
+  auto outcome = socket->write(msg.encode(), timeout);
+  if (outcome.valid()) {
+    return Outcome<DownloaderError>::OK({});
+  } else {
+    destroy_socket();
+    return Outcome<DownloaderError>::ERROR(from_socket_error(outcome.error()));
+  }
 }
 
-std::unique_ptr<Message> Downloader::recv_message(timeout timeout) {
+Result<std::unique_ptr<Message>, DownloaderError> Downloader::recv_message(
+    timeout timeout) {
+  using Result = Result<std::unique_ptr<Message>, DownloaderError>;
+
   auto before_read_len = std::chrono::steady_clock::now();
 
-  auto message_len_bytes = socket->read(4, timeout);
+  auto maybe_message_len_bytes = socket->read(4, timeout);
+  if (!maybe_message_len_bytes.valid()) {
+    destroy_socket();
+    return Result::ERROR(from_socket_error(maybe_message_len_bytes.error()));
+  }
+  auto message_len_bytes = *maybe_message_len_bytes;
+
   auto message_len = decode_big_endian(
       std::array<uint8_t, 4>{message_len_bytes[0], message_len_bytes[1],
                              message_len_bytes[2], message_len_bytes[3]});
@@ -280,7 +340,12 @@ std::unique_ptr<Message> Downloader::recv_message(timeout timeout) {
   // read the message length.
   timeout -= std::chrono::steady_clock::now() - before_read_len;
 
-  auto rest = socket->read(message_len, timeout);
+  auto maybe_rest = socket->read(message_len, timeout);
+  if (!maybe_rest.valid()) {
+    destroy_socket();
+    return Result::ERROR(from_socket_error(maybe_rest.error()));
+  }
+  auto rest = *maybe_rest;
 
   std::vector<std::uint8_t> whole;
   whole.reserve(message_len_bytes.size() + rest.size());
@@ -288,15 +353,22 @@ std::unique_ptr<Message> Downloader::recv_message(timeout timeout) {
   whole.insert(whole.end(), rest.begin(), rest.end());
 
   auto message = Message::decode(torrent, whole);
-  if (!message.has_value()) {
-    throw std::runtime_error("unable to decode a message from the stream");
+  if (!message.valid()) {
+    auto logger = spdlog::get("custom");
+    logger->error("received invalid message: {}",
+                  display_decode_error(message.error()));
+
+    return Result::ERROR(DownloaderError::InvalidMessage);
   }
 
-  return std::move(message.value());
+  return Result::OK(std::move(*message));
 }
 
-void Downloader::abort() {
-  socket->close();
-  socket = std::nullopt;
+void Downloader::destroy_socket() {
+  try {
+    socket->close();
+  } catch (const std::exception& _) {
+  }
+  socket.reset();
 }
 }  // namespace fur::download::downloader

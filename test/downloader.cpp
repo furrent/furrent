@@ -38,7 +38,7 @@ TEST_CASE("[Downloader] Ensure connected") {
 
   // Assert that the socket is not yet present (lazily initialized)
   REQUIRE(!TestingFriend::Downloader_socket(down).has_value());
-  TestingFriend::Downloader_ensure_connected(down);
+  REQUIRE(TestingFriend::Downloader_ensure_connected(down).valid());
   // Assert that the socket is now present
   REQUIRE(TestingFriend::Downloader_socket(down).has_value());
 }
@@ -64,16 +64,12 @@ TEST_CASE("[Downloader] Download one piece, same size as a block") {
 
   Downloader down(torrent, peer);
 
-  // Assert that the socket is not yet present (lazily initialized)
-  REQUIRE(!TestingFriend::Downloader_socket(down).has_value());
-  TestingFriend::Downloader_ensure_connected(down);
-  // Assert that the socket is now present
-  REQUIRE(TestingFriend::Downloader_socket(down).has_value());
+  auto maybe_downloaded = TestingFriend::Downloader_try_download(down, Task{0});
+  REQUIRE(maybe_downloaded.valid());
+  auto downloaded = *maybe_downloaded;
 
-  auto result = TestingFriend::Downloader_try_download(down, Task{0});
-  REQUIRE(result.has_value());
   // 16384 is 16KB
-  REQUIRE(result->content.size() == 16384);
+  REQUIRE(downloaded.content.size() == 16384);
 }
 
 void test_alice() {
@@ -104,10 +100,13 @@ void test_alice() {
     // Must not mutate original array while iterating
     auto pieces_left_copy = pieces_left;
     for (auto idx : pieces_left_copy) {
-      auto result = TestingFriend::Downloader_try_download(down, Task{idx});
-      if (result.has_value())
-        pieces_left.erase(
-            std::find(pieces_left.begin(), pieces_left.end(), idx));
+      auto maybe_downloaded =
+          TestingFriend::Downloader_try_download(down, Task{idx});
+      if (!maybe_downloaded.valid()) {
+        continue;
+      }
+
+      pieces_left.erase(std::find(pieces_left.begin(), pieces_left.end(), idx));
     }
 
     // The faker has none of the remaining pieces. The faker only
@@ -127,7 +126,7 @@ void test_alice() {
 TEST_CASE("[Downloader] Download alice") {
   // Do it a couple of times because the alice faker is non-deterministic and
   // may not always stress all `Downloader` behavior patterns
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 20; i++) {
     test_alice();
   }
 }

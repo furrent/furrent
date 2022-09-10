@@ -13,14 +13,15 @@ TEST_CASE("[Socket] Basic") {
 
   Socket sock;
   auto ip = asio::ip::make_address_v4("127.0.0.1").to_uint();
-  sock.connect(ip, 4002, std::chrono::milliseconds{50});
+  REQUIRE(sock.connect(ip, 4002, std::chrono::milliseconds{50}).valid());
 
   const std::vector<uint8_t> data{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
   sock.write(data, std::chrono::milliseconds{50});
-  auto result = sock.read(10, std::chrono::milliseconds{50});
+  auto maybe_result = sock.read(10, std::chrono::milliseconds{50});
+  REQUIRE(maybe_result.valid());
 
-  REQUIRE(data == result);
+  REQUIRE(data == *maybe_result);
 }
 
 TEST_CASE("[Socket] Timeout expire") {
@@ -35,8 +36,9 @@ TEST_CASE("[Socket] Timeout expire") {
 
   sock.write(data, std::chrono::seconds(1));
 
-  REQUIRE_THROWS_AS(sock.read(10, std::chrono::milliseconds{50}),
-                    std::system_error);
+  auto maybe_read = sock.read(10, std::chrono::milliseconds{50});
+  REQUIRE(!maybe_read.valid());
+  REQUIRE(maybe_read.error() == SocketError::Timeout);
 }
 
 TEST_CASE("[Socket] Invalid connect") {
@@ -44,5 +46,8 @@ TEST_CASE("[Socket] Invalid connect") {
 
   Socket sock;
   auto ip = asio::ip::make_address_v4("127.0.0.1").to_uint();
-  REQUIRE_THROWS(sock.connect(ip, 3999, std::chrono::milliseconds{50}));
+
+  auto maybe_connect = sock.connect(ip, 3999, std::chrono::milliseconds{50});
+  REQUIRE(!maybe_connect.valid());
+  REQUIRE(maybe_connect.error() != SocketError::Timeout);
 }

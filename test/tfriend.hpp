@@ -7,6 +7,7 @@
 #include "download/bitfield.hpp"
 #include "download/downloader.hpp"
 #include "download/socket.hpp"
+#include "util/result.hpp"
 
 using namespace fur::download::socket;
 using namespace fur::download::downloader;
@@ -16,12 +17,13 @@ using namespace fur::download::bitfield;
 /// order to allow private members to be accessed, for testing purposes.
 struct TestingFriend {
  public:
-  static void Downloader_ensure_connected(Downloader& down) {
-    down.ensure_connected();
+  static Outcome<DownloaderError> Downloader_ensure_connected(
+      Downloader& down) {
+    return down.ensure_connected();
   }
 
-  static std::optional<Result> Downloader_try_download(Downloader& down,
-                                                       const Task& task) {
+  static Result<Downloaded, DownloaderError> Downloader_try_download(
+      Downloader& down, const Task& task) {
     return down.try_download(task);
   }
 
