@@ -62,6 +62,11 @@ def read_fixture(piece_index, piece_offset, length):
 
 
 def handle(conn):
+    # Sometimes drop the socket before handshaking
+    if random.random() < 0.0:
+        conn.close()
+        return
+
     handshake = conn.recv(68)
 
     try:
@@ -69,23 +74,61 @@ def handle(conn):
     except UnicodeDecodeError:
         print("Handshake from <non utf8 peer id>")
 
+    # Sometimes send the wrong info hash
+    if random.random() < 0.05:
+        handshake = bytearray(handshake)
+        # Byte at index 30 is well withing the info-hash boundaries
+        handshake[30] = 0
+        handshake = bytes(handshake)
+
     # Accept any handshake and reply with some sort of peer id
     conn.send(handshake[:-20] + b"WhoLetTheDogsOut----")
 
+    # Somtimes drop the connection after handshaking
+    if random.random() < 0.05:
+        conn.close()
+        return
+
     bitfield = random_bitfield_fresh()
     print(f"Bitfield is {bitfield:08b}")
-    # Send a bitfield (there are 5 pieces so that makes it just 1 byte)
-    conn.send(b"\x00\x00\x00\x02\x05" + struct.pack("B", bitfield))
 
-    # Send an unchoke message
-    conn.send(b"\x00\x00\x00\x01\x01")
+    # Sometimes, don't send a bitfield
+    if not random.random() < 0.15:
+        print("Sending bitfield")
+        # Send a bitfield (there are 5 pieces so that makes it just 1 byte)
+        conn.send(b"\x00\x00\x00\x02\x05" + struct.pack("B", bitfield))
 
-    # Unchoke
-    assert conn.recv(5) == b"\x00\x00\x00\x01\x01"
-    # Interested
-    assert conn.recv(5) == b"\x00\x00\x00\x01\x02"
+    # Sometimes don't unchoke
+    if not random.random() < 0.15:
+        # Sometimes send a bad unchoke (unexpected payload)
+        if random.random() < 0.3:
+            print("Sending bad unchoke")
+            conn.send(b"\x00\x00\x00\x02\x01\x05")
+        else:
+            # Send an unchoke message
+            print("Sending unchoke")
+            conn.send(b"\x00\x00\x00\x01\x01")
+
+    # We should expect the peer to have dropped the connection by now, in the case that we did not send a bitfield
+
+    maybe_unchoke = conn.recv(5)
+    if not maybe_unchoke:
+        print("EOF")
+        return
+    assert maybe_unchoke == b"\x00\x00\x00\x01\x01"
+
+    maybe_interested = conn.recv(5)
+    if not maybe_interested:
+        print("EOF")
+        return
+    assert maybe_interested == b"\x00\x00\x00\x01\x02"
 
     while True:
+        # Somtimes drop the connection between a message and the next
+        if random.random() < 0.02:
+            conn.close()
+            return
+
         request = conn.recv(17)
         if not request:
             # This is an EOF
@@ -129,8 +172,13 @@ def handle(conn):
             # Let's say we have acquired a new piece
             bitfield, new_piece_i = random_bitfield_update(bitfield)
             print(f"Now also have piece {new_piece_i}")
-            # Send a Have message
-            conn.send(b"\x00\x00\x00\x05\x04" + struct.pack(">i", new_piece_i))
+
+            # Send a Have message, but sometimes make the payload the wrong length
+            if random.random() < 0.05:
+                print("Sending bad message")
+                conn.send(b"\x00\x00\x00\x06\x04" + struct.pack(">i", new_piece_i) + b"\x00")
+            else:
+                conn.send(b"\x00\x00\x00\x05\x04" + struct.pack(">i", new_piece_i))
 
         # Randomly send a KeepAlive, just because we can
         if random.random() < 0.2:
