@@ -13,6 +13,10 @@
 using fur::download::message::MessageKind;
 
 namespace fur::download::downloader {
+/// Should be greater than 10 seconds for a realistic torrent client but smaller
+/// values result in quicker testing
+const int UNCHOKE_TIMEOUT = 2;
+
 DownloaderError from_socket_error(const socket::SocketError& err) {
   switch (err) {
     case socket::SocketError::Timeout:
@@ -78,7 +82,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   // `BitfieldMessage` is either the first message sent or the peer has no piece
   // to share. In the latter case, we're not interested in them and can drop the
   // connection.
-  auto maybe_message = recv_message(std::chrono::seconds(5));
+  auto maybe_message = recv_message(std::chrono::seconds(1));
   if (!maybe_message.valid())
     return Outcome::ERROR(DownloaderError(maybe_message.error()));
   auto message = std::move(*maybe_message);
@@ -113,7 +117,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   // Now we need to wait to be unchoked by the peer. Only then can we start to
   // ask for pieces.
   while (choked) {
-    maybe_message = recv_message(std::chrono::seconds(11));
+    maybe_message = recv_message(std::chrono::seconds(UNCHOKE_TIMEOUT));
     if (!maybe_message.valid())
       return Outcome::ERROR(DownloaderError(maybe_message.error()));
     message = std::move(*maybe_message);
@@ -287,7 +291,7 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
       case MessageKind::Choke:
         choked = true;
         // Use a slightly longer timeout to wait to be unchoked
-        timeout = std::chrono::seconds(11);
+        timeout = std::chrono::seconds(UNCHOKE_TIMEOUT);
         logger->debug("{} choked us", peer.address());
         break;
       case MessageKind::Unchoke:
