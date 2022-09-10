@@ -9,6 +9,7 @@
 #include "bencode/bencode_parser.hpp"
 #include "catch2/catch.hpp"
 #include "hash.hpp"
+#include "log/logger.hpp"
 #include "peer.hpp"
 #include "tfriend.hpp"
 
@@ -72,7 +73,7 @@ TEST_CASE("[Downloader] Download one piece, same size as a block") {
   REQUIRE(downloaded.content.size() == 16384);
 }
 
-void test_alice() {
+void test_alice(std::vector<DownloaderError>& errors) {
   // Faker on port 4006 seeds a whole alice.txt file contained in the fixtures/
   // directory
 
@@ -103,6 +104,15 @@ void test_alice() {
       auto maybe_downloaded =
           TestingFriend::Downloader_try_download(down, Task{idx});
       if (!maybe_downloaded.valid()) {
+        spdlog::get("custom")->error(
+            "error in downloader: {}",
+            display_downloader_error(maybe_downloaded.error()));
+
+        auto erase_me =
+            std::find(errors.begin(), errors.end(), maybe_downloaded.error());
+        if (erase_me != errors.end()) {
+          errors.erase(erase_me);
+        }
         continue;
       }
 
@@ -124,9 +134,21 @@ void test_alice() {
 // This is quite a time-consuming test, feel free to skip when running other
 // tests locally
 TEST_CASE("[Downloader] Download alice") {
+  // Assert that all possible errors are encountered at least once
+  std::vector<DownloaderError> errors{
+      DownloaderError::DifferentInfoHash, DownloaderError::InvalidMessage,
+      DownloaderError::NoBitfield,        DownloaderError::MissingPiece,
+      DownloaderError::CorruptPiece,      DownloaderError::SocketTimeout,
+      DownloaderError::SocketOther,
+  };
+
   // Do it a couple of times because the alice faker is non-deterministic and
   // may not always stress all `Downloader` behavior patterns
-  for (int i = 0; i < 20; i++) {
-    test_alice();
+  for (int i = 0; i < 100; i++) {
+    SECTION ("Iteration " + std::to_string(i)) {
+      test_alice(errors);
+    }
   }
+
+  REQUIRE(errors.empty());
 }
