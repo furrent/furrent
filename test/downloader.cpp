@@ -145,9 +145,7 @@ TEST_CASE("[Downloader] Download alice") {
   // Do it a couple of times because the alice faker is non-deterministic and
   // may not always stress all `Downloader` behavior patterns
   for (int i = 0; i < 100; i++) {
-    SECTION ("Iteration " + std::to_string(i)) {
-      test_alice(errors);
-    }
+    test_alice(errors);
   }
 
   REQUIRE(errors.empty());
