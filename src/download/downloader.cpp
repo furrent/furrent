@@ -85,20 +85,16 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   auto maybe_message = recv_message(std::chrono::seconds(1));
   if (!maybe_message.valid())
     return Outcome::ERROR(DownloaderError(maybe_message.error()));
-  auto message = std::move(*maybe_message);
+  auto message = std::unique_ptr<Message>(maybe_message->release());
 
   if (message->kind() != MessageKind::Bitfield) {
-    throw std::runtime_error("no bitfield");
+    destroy_socket();
+    return Outcome::ERROR(DownloaderError::NoBitfield);
   }
-  auto bitfield_message = dynamic_cast<BitfieldMessage&>(*message);
+  auto& bitfield_message = dynamic_cast<BitfieldMessage&>(*message);
   bitfield.reset();
   bitfield.emplace(bitfield_message.bitfield.get_bytes(),
                    bitfield_message.bitfield.len);
-
-  // Check that the bitfield has the correct length
-  if (bitfield->len != torrent.piece_hashes.size()) {
-    return Outcome::ERROR(DownloaderError::InvalidBitfieldLength);
-  }
 
   logger->debug("{} sent its bitfield", peer.address());
 
@@ -120,7 +116,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
     maybe_message = recv_message(std::chrono::seconds(UNCHOKE_TIMEOUT));
     if (!maybe_message.valid())
       return Outcome::ERROR(DownloaderError(maybe_message.error()));
-    message = std::move(*maybe_message);
+    message = std::unique_ptr<Message>(maybe_message->release());
 
     if (message->kind() == MessageKind::Unchoke) {
       choked = false;
@@ -185,7 +181,7 @@ Outcome<DownloaderError> Downloader::handshake() {
     destroy_socket();
     return Outcome::ERROR(from_socket_error(maybe_response.error()));
   }
-  auto response = std::move(*maybe_response);
+  auto response = *maybe_response;
 
   // Extract the info-hash from the response
   hash::hash_t response_info_hash;
@@ -195,6 +191,7 @@ Outcome<DownloaderError> Downloader::handshake() {
 
   // In a BitTorrent handshake, the peer should respond with the same info-hash
   if (torrent.info_hash != response_info_hash) {
+    destroy_socket();
     return Outcome::ERROR(DownloaderError::DifferentInfoHash);
   }
 
@@ -285,7 +282,7 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
     auto maybe_message = recv_message(timeout);
     if (!maybe_message.valid())
       return Result::ERROR(DownloaderError(maybe_message.error()));
-    auto message = std::move(*maybe_message);
+    auto message = std::unique_ptr<Message>(maybe_message->release());
 
     switch (message->kind()) {
       case MessageKind::Choke:
@@ -302,14 +299,15 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
         break;
       case MessageKind::Have: {
         // Nice, the peer has acquired a new piece that it can share
-        auto new_piece_index = dynamic_cast<HaveMessage&>(*message).index;
+        auto& have_message = dynamic_cast<HaveMessage&>(*message);
+        auto new_piece_index = have_message.index;
         bitfield->set(new_piece_index);
         logger->debug("{} now has piece {}", peer.address(), new_piece_index);
         break;
       }
       case MessageKind::Piece: {
         // There it is
-        auto piece_message = dynamic_cast<PieceMessage&>(*message);
+        auto& piece_message = dynamic_cast<PieceMessage&>(*message);
         std::copy(piece_message.block.begin(), piece_message.block.end(),
                   piece.begin() + piece_message.begin);
         blocks_received++;
@@ -379,6 +377,8 @@ Result<std::unique_ptr<Message>, DownloaderError> Downloader::recv_message(
 
   auto message = Message::decode(torrent, whole);
   if (!message.valid()) {
+    destroy_socket();
+
     auto logger = spdlog::get("custom");
     logger->error("received invalid message: {}",
                   display_decode_error(message.error()));
@@ -386,7 +386,7 @@ Result<std::unique_ptr<Message>, DownloaderError> Downloader::recv_message(
     return Result::ERROR(DownloaderError::InvalidMessage);
   }
 
-  return Result::OK(std::move(*message));
+  return Result::OK(std::unique_ptr<Message>(message->release()));
 }
 
 void Downloader::destroy_socket() {
