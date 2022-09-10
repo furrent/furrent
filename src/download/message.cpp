@@ -98,7 +98,7 @@ Result<std::unique_ptr<Message>, DecodeError> Message::decode(
       case 4: {
         auto message = HaveMessage::decode(payload);
         if (message.valid())
-          return Result::OK(std::move(*message));
+          return Result::OK(std::unique_ptr<Message>(message->release()));
         else
           err = message.error();
         break;
@@ -110,7 +110,7 @@ Result<std::unique_ptr<Message>, DecodeError> Message::decode(
       case 6: {
         auto message = RequestMessage::decode(payload);
         if (message.valid())
-          return Result::OK(std::move(*message));
+          return Result::OK(std::unique_ptr<Message>(message->release()));
         else
           err = message.error();
         break;
@@ -118,7 +118,7 @@ Result<std::unique_ptr<Message>, DecodeError> Message::decode(
       case 7: {
         auto message = PieceMessage::decode(payload);
         if (message.valid())
-          return Result::OK(std::move(*message));
+          return Result::OK(std::unique_ptr<Message>(message->release()));
         else
           err = message.error();
         break;
