@@ -22,6 +22,27 @@ DownloaderError from_socket_error(const socket::SocketError& err) {
   }
 }
 
+std::string display_downloader_error(const DownloaderError& err) {
+  switch (err) {
+    case DownloaderError::DifferentInfoHash:
+      return "DifferentInfoHash";
+    case DownloaderError::InvalidMessage:
+      return "InvalidMessage";
+    case DownloaderError::NoBitfield:
+      return "NoBitfield";
+    case DownloaderError::MissingPiece:
+      return "MissingPiece";
+    case DownloaderError::CorruptPiece:
+      return "CorruptPiece";
+    case DownloaderError::SocketTimeout:
+      return "SocketTimeout";
+    case DownloaderError::SocketOther:
+      return "SocketOther";
+    default:
+      return "<invalid downloader error>";
+  }
+}
+
 Downloader::Downloader(const TorrentFile& torrent, const Peer& peer)
     : torrent{torrent}, peer{peer} {}
 

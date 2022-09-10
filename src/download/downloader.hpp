@@ -34,12 +34,12 @@ struct Downloaded {
 
 namespace fur::download::downloader {
 enum class DownloaderError {
-  /// The peer sent back a differnt info hash when handshaking
+  /// The peer sent back a different info hash when handshaking
   DifferentInfoHash,
-  /// The peer sent a bitfield with a length that doesn't match the torrent
-  InvalidBitfieldLength,
   /// Error decoding a BitTorrent TCP protocol message
   InvalidMessage,
+  /// The peer didn't send the bitfield as its first message
+  NoBitfield,
   /// The peer doesn't have the requested piece
   MissingPiece,
   /// The piece was correctly downloaded but doesn't match the expected hash
@@ -49,6 +49,8 @@ enum class DownloaderError {
   /// The socket experienced some other, generic, error
   SocketOther,
 };
+
+std::string display_downloader_error(const DownloaderError& err);
 
 DownloaderError from_socket_error(const socket::SocketError& err);
 
