@@ -4,9 +4,19 @@
 #include <vector>
 
 #include "asio.hpp"
+#include "util/result.hpp"
+
+using namespace fur::util;
 
 namespace fur::download::socket {
 using timeout = std::chrono::steady_clock::duration;
+
+enum class SocketError {
+  /// Socket timed out
+  Timeout,
+  /// Socket experienced some other generic error
+  Other,
+};
 
 /// A `Socket` wraps an `asio::ip::tcp::socket` providing a simplified interface
 /// enhanced with timeout support. All methods are blocking and don't spawn
@@ -14,19 +24,19 @@ using timeout = std::chrono::steady_clock::duration;
 class Socket {
  public:
   /// Attempt connecting to a TCP server within the given timeout.
-  void connect(uint32_t ip, uint16_t port, timeout timeout);
+  Outcome<SocketError> connect(uint32_t ip, uint16_t port, timeout timeout);
 
   /// Returns `true` if the socket is open
   bool is_open();
 
   /// Attempt to write all the bytes in `buf` to the socket with the given
   /// timeout.
-  void write(const std::vector<uint8_t>& buf, timeout timeout);
+  Outcome<SocketError> write(const std::vector<uint8_t>& buf, timeout timeout);
   /// Attempt to readn `n` bytes from the socket with the given timeout.
-  std::vector<uint8_t> read(uint32_t n, timeout timeout);
+  Result<std::vector<uint8_t>, SocketError> read(uint32_t n, timeout timeout);
 
   /// Close the socket
-  void close();
+  Outcome<SocketError> close();
 
  private:
   /// Asynchronous runtime. Restarted before each operation.

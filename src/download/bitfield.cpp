@@ -9,6 +9,8 @@ uint32_t byte_index(uint32_t bit_index) { return bit_index / 8; }
 uint32_t byte_offset(uint32_t bit_index) { return bit_index % 8; }
 
 /// Throws an exception if `index` is not within the bounds of the bitfield
+// Not using `Result` because this is truly exceptional behavior which shouldn't
+// be handled in code.
 void assert_within_bounds(uint32_t len, uint32_t index) {
   if (index >= len) {
     throw std::invalid_argument("bitfield is too short for this index");

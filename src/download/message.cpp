@@ -5,6 +5,21 @@
 #include "download/util.hpp"
 
 namespace fur::download::message {
+std::string display_decode_error(const DecodeError& err) {
+  switch (err) {
+    case DecodeError::UnexpectedPayload:
+      return "UnexpectedPayload";
+    case DecodeError::InvalidHeader:
+      return "InvalidHeader";
+    case DecodeError::UnknownMessageID:
+      return "UnknownMessageID";
+    case DecodeError::InvalidPayloadLength:
+      return "InvalidPayloadLength";
+    default:
+      return "<invalid decoding error>";
+  }
+}
+
 std::vector<uint8_t> Message::encode() const {
   // Collect bytes here
   std::vector<uint8_t> result;
@@ -24,12 +39,15 @@ std::vector<uint8_t> Message::encode() const {
   return result;
 }
 
-std::optional<std::unique_ptr<Message>> Message::decode(
+Result<std::unique_ptr<Message>, DecodeError> Message::decode(
     const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf) {
+  using Result = Result<std::unique_ptr<Message>, DecodeError>;
+
   // Treat `KeepAliveMessage` differently because that's the only message
   // with no payload and such.
   if (buf == KeepAliveMessage().encode()) {
-    return std::make_unique<KeepAliveMessage>();
+    auto message = std::make_unique<KeepAliveMessage>();
+    return Result::OK(std::move(message));
   }
 
   // WARN: Do note that `buf.size()` is the length of the entire message
@@ -37,7 +55,7 @@ std::optional<std::unique_ptr<Message>> Message::decode(
   // bytes of the message itself, which is just 1 + the length of the payload.
 
   // Need at least 4 bytes for the message length and 1 for the message ID
-  if (buf.size() < 5) return std::nullopt;
+  if (buf.size() < 5) return Result::ERROR(DecodeError::InvalidHeader);
 
   auto id = buf[4];
 
@@ -46,45 +64,87 @@ std::optional<std::unique_ptr<Message>> Message::decode(
   // Skip over 4 bytes for the length and 1 for the message ID
   payload.erase(payload.begin(), payload.begin() + 5);
 
-  switch (id) {
-    case 0:
-      // Payload should be empty for this message
-      if (!payload.empty()) return std::nullopt;
-      return std::make_unique<ChokeMessage>();
-    case 1:
-      // Payload should be empty for this message
-      if (!payload.empty()) return std::nullopt;
-      return std::make_unique<UnchokeMessage>();
-    case 2:
-      // Payload should be empty for this message
-      if (!payload.empty()) return std::nullopt;
-      return std::make_unique<InterestedMessage>();
-    case 3:
-      // Payload should be empty for this message
-      if (!payload.empty()) return std::nullopt;
-      return std::make_unique<NotInterestedMessage>();
-    case 4:
-      return HaveMessage::decode(payload);
-    case 5:
-      return BitfieldMessage::decode(torrent, payload);
-    case 6:
-      return RequestMessage::decode(payload);
-    case 7:
-      return PieceMessage::decode(payload);
-    default:
-      // Unknown message ID
-      return std::nullopt;
+  // Simple, payload-less, messages
+  if (id < 4) {
+    // Payload should be empty for this message
+    if (!payload.empty()) Result::ERROR(DecodeError::UnexpectedPayload);
+
+    std::unique_ptr<Message> message;
+    switch (id) {
+      case 0: {
+        message = std::make_unique<ChokeMessage>();
+        break;
+      }
+      case 1: {
+        message = std::make_unique<UnchokeMessage>();
+        break;
+      }
+      case 2: {
+        message = std::make_unique<InterestedMessage>();
+        break;
+      }
+      case 3: {
+        message = std::make_unique<NotInterestedMessage>();
+        break;
+      }
+      default:;  // Unreachable
+    }
+
+    return Result::OK(std::move(message));
+  } else if (id < 8) {
+    DecodeError err;
+
+    switch (id) {
+      case 4: {
+        auto message = HaveMessage::decode(payload);
+        if (message.valid())
+          return Result::OK(std::unique_ptr<Message>(message->release()));
+        else
+          err = message.error();
+        break;
+      }
+      case 5: {
+        auto message = BitfieldMessage::decode(torrent, payload);
+        return Result::OK(std::move(message));
+      }
+      case 6: {
+        auto message = RequestMessage::decode(payload);
+        if (message.valid())
+          return Result::OK(std::unique_ptr<Message>(message->release()));
+        else
+          err = message.error();
+        break;
+      }
+      case 7: {
+        auto message = PieceMessage::decode(payload);
+        if (message.valid())
+          return Result::OK(std::unique_ptr<Message>(message->release()));
+        else
+          err = message.error();
+        break;
+      }
+      default:;  // Unreachable
+    }
+
+    return Result::ERROR(DecodeError(err));
+  } else {
+    // Unknown message ID
+    return Result ::ERROR(DecodeError::UnknownMessageID);
   }
 }
 
-std::optional<std::unique_ptr<HaveMessage>> HaveMessage::decode(
+Result<std::unique_ptr<HaveMessage>, DecodeError> HaveMessage::decode(
     const std::vector<uint8_t>& buf) {
+  using Result = Result<std::unique_ptr<HaveMessage>, DecodeError>;
+
   // Payload should be exactly 4 bytes long: an unsigned 32 bits integer
-  if (buf.size() != 4) return std::nullopt;
+  if (buf.size() != 4) return Result::ERROR(DecodeError::InvalidPayloadLength);
 
   auto index =
       decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
-  return std::make_unique<HaveMessage>(index);
+
+  auto message = std::make_unique<HaveMessage>(index);
+  return Result::OK(std::move(message));
 }
 
 std::vector<uint8_t> HaveMessage::encode_payload() const {
@@ -98,7 +158,7 @@ std::vector<uint8_t> HaveMessage::encode_payload() const {
   return result;
 }
 
-std::optional<std::unique_ptr<BitfieldMessage>> BitfieldMessage::decode(
+std::unique_ptr<BitfieldMessage> BitfieldMessage::decode(
     const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf) {
   return std::make_unique<BitfieldMessage>(
       Bitfield(buf, torrent.piece_hashes.size()));
@@ -108,10 +168,13 @@ std::vector<uint8_t> BitfieldMessage::encode_payload() const {
   return bitfield.get_bytes();
 }
 
-std::optional<std::unique_ptr<RequestMessage>> RequestMessage::decode(
+Result<std::unique_ptr<RequestMessage>, DecodeError> RequestMessage::decode(
     const std::vector<uint8_t>& buf) {
+  using Result = Result<std::unique_ptr<RequestMessage>, DecodeError>;
+
   // Payload should be exactly 12 bytes long: 3x unsigned 32 bits integers
-  if (buf.size() != 3 * 4) return std::nullopt;
+  if (buf.size() != 3 * 4)
+    return Result::ERROR(DecodeError::InvalidPayloadLength);
 
   auto index =
       decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
@@ -119,7 +182,8 @@ std::optional<std::unique_ptr<RequestMessage>> RequestMessage::decode(
       decode_big_endian(std::array<uint8_t, 4>{buf[4], buf[5], buf[6], buf[7]});
   auto length = decode_big_endian(
       std::array<uint8_t, 4>{buf[8], buf[9], buf[10], buf[11]});
-  return std::make_unique<RequestMessage>(index, begin, length);
+  auto message = std::make_unique<RequestMessage>(index, begin, length);
+  return Result::OK(std::move(message));
 }
 
 std::vector<uint8_t> RequestMessage::encode_payload() const {
@@ -138,10 +202,12 @@ std::vector<uint8_t> RequestMessage::encode_payload() const {
   return result;
 }
 
-std::optional<std::unique_ptr<PieceMessage>> PieceMessage::decode(
+Result<std::unique_ptr<PieceMessage>, DecodeError> PieceMessage::decode(
     const std::vector<uint8_t>& buf) {
+  using Result = Result<std::unique_ptr<PieceMessage>, DecodeError>;
+
   // Payload should be at least 8 bytes long: 2x unsigned 32 bits integers
-  if (buf.size() < 8) return std::nullopt;
+  if (buf.size() < 8) return Result::ERROR(DecodeError::InvalidPayloadLength);
 
   auto index =
       decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
@@ -153,7 +219,8 @@ std::optional<std::unique_ptr<PieceMessage>> PieceMessage::decode(
   // Skip the first 8 bytes
   block.erase(block.begin(), block.begin() + 8);
 
-  return std::make_unique<PieceMessage>(index, begin, block);
+  auto message = std::make_unique<PieceMessage>(index, begin, block);
+  return Result::OK(std::move(message));
 }
 
 std::vector<uint8_t> PieceMessage::encode_payload() const {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -9,7 +10,9 @@
 #include "peer.hpp"
 #include "tfriend_fw.hpp"
 #include "torrent.hpp"
+#include "util/result.hpp"
 
+using namespace fur::util;
 using namespace fur::peer;
 using namespace fur::torrent;
 using namespace fur::download::socket;
@@ -24,12 +27,33 @@ struct Task {
 
 /// A downloaded piece for a torrent file.
 // TODO Remove once the real struct is merged
-struct Result {
+struct Downloaded {
   int index;
   std::vector<uint8_t> content;
 };
 
 namespace fur::download::downloader {
+enum class DownloaderError {
+  /// The peer sent back a different info hash when handshaking
+  DifferentInfoHash,
+  /// Error decoding a BitTorrent TCP protocol message
+  InvalidMessage,
+  /// The peer didn't send the bitfield as its first message
+  NoBitfield,
+  /// The peer doesn't have the requested piece
+  MissingPiece,
+  /// The piece was correctly downloaded but doesn't match the expected hash
+  CorruptPiece,
+  /// The socket timed out
+  SocketTimeout,
+  /// The socket experienced some other, generic, error
+  SocketOther,
+};
+
+std::string display_downloader_error(const DownloaderError& err);
+
+DownloaderError from_socket_error(const socket::SocketError& err);
+
 /// Handles downloading of torrent pieces. Must be initialized with a
 /// `TorrentFile` and a `Peer` discovered from that same torrent. This type is
 /// intrinsically not copyable because it embeds an ASIO socket.
@@ -45,7 +69,7 @@ class Downloader {
   ///  - This peer not having the requested piece available
   ///  - The connection timing out
   ///  - The downloaded piece being corrupt
-  [[nodiscard]] std::optional<Result> try_download(const Task&);
+  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(const Task&);
 
  private:
   const TorrentFile& torrent;
@@ -69,14 +93,17 @@ class Downloader {
   /// Ensures that the `socket` is present and in good health (not dropped,
   /// timed out and such). Should always call this method first, before
   /// accessing the socket.
-  void ensure_connected();
+  Outcome<DownloaderError> ensure_connected();
   /// Performs the BitTorrent handshake.
-  void handshake();
+  Outcome<DownloaderError> handshake();
 
-  void send_message(const Message& msg, timeout timeout);
-  std::unique_ptr<Message> recv_message(timeout timeout);
+  Outcome<DownloaderError> send_message(const Message& msg, timeout timeout);
+  Result<std::unique_ptr<Message>, DownloaderError> recv_message(
+      timeout timeout);
 
-  void abort();
+  /// Should be called after any socket error to make sure that it is re-created
+  /// upon new operations.
+  void destroy_socket();
 
   // Befriend this class so the unit tests are able to access private members.
   friend TestingFriend;
