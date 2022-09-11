@@ -9,9 +9,8 @@
 #include "peer.hpp"
 #include "torrent.hpp"
 
-using namespace fur::bencode;
-using namespace fur::download;
-using namespace fur::download::downloader;
+const char* TORRENT_1 = "../extra/debian-11.4.0-amd64-netinst.iso.torrent";
+const char* TORRENT_2 = "../extra/ubuntu-22.04.1-desktop-amd64.iso.torrent";
 
 int main(int argc, char* argv[]) {
   fur::log::initialize_custom_logger();

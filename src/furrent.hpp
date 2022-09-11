@@ -5,14 +5,23 @@
 #include <mt/sharing_queue.hpp>
 #include <mt/group.hpp>
 #include <mt/task.hpp>
+#include <download/downloader.hpp>
+#include <download/lender_pool.hpp>
 
 namespace fur {
+
+typedef download::downloader::Downloader PeerDownloader;
+typedef download::lender_pool::LenderPool<PeerDownloader> PeerLenderPool;
 
 struct TorrentDescriptor {
     /// Name of the file where the torrent can be found
     std::string filename;
     /// Parsed torrent file
     std::optional<torrent::TorrentFile> torrent;
+    /// Peers' downloaders where to ask for the pieces
+    PeerLenderPool downloaders;
+    /// Interval to next update
+    size_t interval;
 };
 
 /// Load torrent from file and spawn all piece download tasks
@@ -31,13 +40,11 @@ class DownloadPieceTask : public mt::ITask {
 
     /// Reference to preallocated torrent descriptor in furrent
     TorrentDescriptor& _descriptor;
-
-    size_t _index;
-    size_t _offset;
-    size_t _bytes;
+    /// Contains all information relative to the piece to download
+    download::PieceDescriptor _piece;
 
 public:
-    DownloadPieceTask(TorrentDescriptor& descr, size_t index, size_t offset, size_t bytes);
+    DownloadPieceTask(TorrentDescriptor& descr, download::PieceDescriptor piece);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 };
 

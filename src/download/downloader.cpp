@@ -129,6 +129,14 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   return Outcome::OK({});
 }
 
+const TorrentFile& Downloader::get_torrent() const {
+  return torrent;
+}
+
+const Peer& Downloader::get_peer() const {
+  return peer;
+}
+
 // 1  for the length of the protocol identifier
 // 19 for the protocol identifier itself
 // 8  for the extensions bits

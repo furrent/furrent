@@ -18,12 +18,15 @@ using namespace fur::torrent;
 using namespace fur::download::socket;
 using namespace fur::download::message;
 
-/// The `TorrentFile` is not required because any given `Downloader` is already
-/// bound to a specific `TorrentFile` and has a reference to it.
-// TODO Remove once the real struct is merged
-struct Task {
-  int index;
-};
+namespace fur::download {
+
+  /// Describes a piece of a torrent
+  struct PieceDescriptor {
+      size_t index;
+      size_t offset;
+      size_t bytes;
+      size_t attempts;
+  };
 
 /// A downloaded piece for a torrent file.
 // TODO Remove once the real struct is merged

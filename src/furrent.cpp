@@ -51,29 +51,67 @@ void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_qu
     // From now on the descriptor is available to all
     _descriptor.torrent = std::make_optional<fur::torrent::TorrentFile>(*b_tree);
 
+    // Generate peers
+    logger->info("Generating list of peers for {}", _descriptor.filename);
+    auto response = peer::announce(*_descriptor.torrent);
+    _descriptor.interval = response.interval;
+
+    logger->info("List of peers for {}:", _descriptor.filename);
+    for(auto& peer : response.peers) {
+        logger->info("\t{}", peer.address());
+
+        _descriptor.downloaders.put(
+            PeerDownloader(*_descriptor.torrent, peer));
+    }
+
     const size_t piece_length = _descriptor.torrent->piece_length;
     const size_t pieces_count = _descriptor.torrent->length / piece_length;
 
-
     // Generate all downloading tasks
     logger->info("Generating {} pieces torrent file {}", pieces_count, _descriptor.filename);
-    for(size_t piece = 0; piece < pieces_count; piece++) {
-
-        size_t offset = piece * piece_length;
+    for(size_t index = 0; index < pieces_count; index++) {
+        size_t offset = index * piece_length;
+        
+        download::PieceDescriptor piece { index, offset, piece_length, 0 };
         local_queue.insert(std::make_unique<DownloadPieceTask>(
-            _descriptor, piece, offset, piece_length));
+            _descriptor, piece));
     }
 }
 
-DownloadPieceTask::DownloadPieceTask(TorrentDescriptor& desc, size_t index, size_t offset, size_t bytes)
-: _descriptor{desc}, _index{index}, _offset{offset}, _bytes{bytes} { }
+DownloadPieceTask::DownloadPieceTask(TorrentDescriptor& desc, download::PieceDescriptor piece)
+: _descriptor{desc}, _piece{piece} { }
 
 void DownloadPieceTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
 
     // Default global logger
     auto logger = spdlog::get("custom");
-    //logger->info("Downloading piece {} of {} for torrent {}", 
-    //    _index, _descriptor.torrent->piece_length, _descriptor.filename);
+    
+    const size_t piece_length = _descriptor.torrent->piece_length;
+    const size_t pieces_count = _descriptor.torrent->length / piece_length;
+
+    auto downloader = _descriptor.downloaders.get();
+    auto peer = downloader->get_peer();
+
+    logger->info("Downloading piece {} of {} for {} from {}", 
+        _piece.index + 1, pieces_count, _descriptor.filename, peer.address());
+
+    auto result = downloader->try_download(_piece);
+
+    // Download completed!
+    if (result.has_value()) {
+        logger->info("Download of piece {} of {} for {} from {} COMPLETED", 
+            _piece.index + 1, pieces_count, _descriptor.filename, peer.address());
+    }
+    // Download failed!
+    else {
+        logger->info("Download of piece {} of {} for {} from {} FAILED, retrying...", 
+            _piece.index + 1, pieces_count, _descriptor.filename, peer.address());
+
+        // Retry operation by creating a new DownloadPieceTask
+        _piece.attempts += 1;
+        local_queue.insert(std::make_unique<DownloadPieceTask>(
+            _descriptor, _piece));
+    }
 }
 
 Furrent::Furrent() {
@@ -167,7 +205,7 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 void Furrent::add_torrent(const std::string& filename) {
 
     /// Allocate descriptor for the new torrent 
-    _descriptors.push_front({ filename, std::nullopt });
+    _descriptors.push_front({ filename, std::nullopt, {}, 0 });
     auto& descriptor = _descriptors.front();
 
     /// Begin loading task 
