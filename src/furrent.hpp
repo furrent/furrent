@@ -10,16 +10,13 @@
 
 namespace fur {
 
-typedef download::downloader::Downloader PeerDownloader;
-typedef download::lender_pool::LenderPool<PeerDownloader> PeerLenderPool;
-
 struct TorrentDescriptor {
     /// Name of the file where the torrent can be found
     std::string filename;
     /// Parsed torrent file
     std::optional<torrent::TorrentFile> torrent;
     /// Peers' downloaders where to ask for the pieces
-    PeerLenderPool downloaders;
+    std::vector<Peer> downloaders;
     /// Interval to next update
     size_t interval;
 };

@@ -20,20 +20,21 @@ using namespace fur::download::message;
 
 namespace fur::download {
 
-  /// Describes a piece of a torrent
-  struct PieceDescriptor {
-      size_t index;
-      size_t offset;
-      size_t bytes;
-      size_t attempts;
-  };
+/// Describes a piece of a torrent
+struct PieceDescriptor {
+    size_t index;
+    size_t offset;
+    size_t attempts;
+};
 
 /// A downloaded piece for a torrent file.
 // TODO Remove once the real struct is merged
 struct Downloaded {
-  int index;
+  size_t index;
   std::vector<uint8_t> content;
 };
+
+}
 
 namespace fur::download::downloader {
 enum class DownloaderError {
@@ -72,7 +73,10 @@ class Downloader {
   ///  - This peer not having the requested piece available
   ///  - The connection timing out
   ///  - The downloaded piece being corrupt
-  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(const Task&);
+  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(const PieceDescriptor&);
+
+  const TorrentFile& get_torrent() const;
+  const Peer& get_peer() const;
 
  private:
   const TorrentFile& torrent;

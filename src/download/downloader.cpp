@@ -209,7 +209,7 @@ Outcome<DownloaderError> Downloader::handshake() {
   return Outcome::OK({});
 }
 
-Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
+Result<Downloaded, DownloaderError> Downloader::try_download(const PieceDescriptor& task) {
   using Result = Result<Downloaded, DownloaderError>;
 
   auto logger = spdlog::get("custom");
@@ -222,7 +222,6 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
   if (!bitfield->get(task.index))
     return Result::ERROR(DownloaderError::MissingPiece);
 
-  assert(task.index >= 0);
   assert(!torrent.piece_hashes.empty());
   assert(torrent.piece_hashes.size() - 1 <= std::numeric_limits<long>::max());
 

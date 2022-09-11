@@ -55,14 +55,11 @@ void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_qu
     logger->info("Generating list of peers for {}", _descriptor.filename);
     auto response = peer::announce(*_descriptor.torrent);
     _descriptor.interval = response.interval;
+    _descriptor.downloaders = response.peers;
 
     logger->info("List of peers for {}:", _descriptor.filename);
-    for(auto& peer : response.peers) {
+    for(auto& peer : response.peers)
         logger->info("\t{}", peer.address());
-
-        _descriptor.downloaders.put(
-            PeerDownloader(*_descriptor.torrent, peer));
-    }
 
     const size_t piece_length = _descriptor.torrent->piece_length;
     const size_t pieces_count = _descriptor.torrent->length / piece_length;
@@ -72,7 +69,7 @@ void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_qu
     for(size_t index = 0; index < pieces_count; index++) {
         size_t offset = index * piece_length;
         
-        download::PieceDescriptor piece { index, offset, piece_length, 0 };
+        download::PieceDescriptor piece { index, offset, 0 };
         local_queue.insert(std::make_unique<DownloadPieceTask>(
             _descriptor, piece));
     }
@@ -89,21 +86,32 @@ void DownloadPieceTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queu
     const size_t piece_length = _descriptor.torrent->piece_length;
     const size_t pieces_count = _descriptor.torrent->length / piece_length;
 
-    auto downloader = _descriptor.downloaders.get();
-    auto peer = downloader->get_peer();
+    const size_t d_count = _descriptor.downloaders.size();
+    auto peer = _descriptor.downloaders[(_piece.index + _piece.attempts) % d_count];
 
     logger->info("Downloading piece {} of {} for {} from {}", 
         _piece.index + 1, pieces_count, _descriptor.filename, peer.address());
 
-    auto result = downloader->try_download(_piece);
+    download::downloader::Downloader d(*_descriptor.torrent, peer);
+    auto result = d.try_download(_piece);
 
     // Download completed!
-    if (result.has_value()) {
+    if (result.valid()) {
         logger->info("Download of piece {} of {} for {} from {} COMPLETED", 
             _piece.index + 1, pieces_count, _descriptor.filename, peer.address());
+
+        // TODO: Spawn write to file task
     }
     // Download failed!
     else {
+
+        // Failed too many times
+        if (_piece.attempts >= 3) {
+            logger->info("Download of piece {} of {} for {} from {} FAILED TO MANY TIMES, stopping...", 
+                _piece.index + 1, pieces_count, _descriptor.filename, peer.address());
+            return;
+        }
+
         logger->info("Download of piece {} of {} for {} from {} FAILED, retrying...", 
             _piece.index + 1, pieces_count, _descriptor.filename, peer.address());
 
