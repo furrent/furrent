@@ -97,10 +97,13 @@ class Downloader {
   /// `std::nullopt` when a connection drops and is later recycled.
   std::optional<Bitfield> bitfield;
 
+public:
   /// Ensures that the `socket` is present and in good health (not dropped,
   /// timed out and such). Should always call this method first, before
   /// accessing the socket.
   Outcome<DownloaderError> ensure_connected();
+
+private:
   /// Performs the BitTorrent handshake.
   Outcome<DownloaderError> handshake();
 

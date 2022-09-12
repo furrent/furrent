@@ -12,8 +12,10 @@ int main(int argc, char* argv[]) {
   auto logger = spdlog::get("custom");
 
   fur::Furrent furrent;
-  furrent.add_torrent("../extra/debian-11.4.0-amd64-netinst.iso.torrent");
+  //furrent.add_torrent("../extra/raspios-2022-09-06-raspios-bullseye-armhf.img.xz.torrent");
+  furrent.add_torrent("../extra/debian-11.4.0-amd64-netinst.iso copy.torrent");
 
-  std::this_thread::sleep_for(std::chrono::seconds(30));
+  //std::this_thread::sleep_for(std::chrono::seconds(30));
+  while(true);
   return 0;
 }
