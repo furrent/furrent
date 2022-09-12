@@ -1,58 +1,43 @@
-#include <cstdint>
-#include <fstream>
-#include <iostream>
-#include <log/logger.hpp>
-#include <sstream>
+#include "raylib.h"
+#define RAYGUI_IMPLEMENTATION
+#include "log/logger.hpp"
 
-#include "bencode/bencode_parser.hpp"
-#include "download/downloader.hpp"
-#include "peer.hpp"
-#include "torrent.hpp"
+#include "raygui.h"
 
-using namespace fur::bencode;
-using namespace fur::download;
-using namespace fur::download::downloader;
-
-int main(int argc, char* argv[]) {
+int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
 
-  if (argc != 4) {
-    logger->error("usage: furrent <path> <ip> <port>");
-    return 1;
-  }
+  const int screenWidth = 800;
+  const int screenHeight = 600;
 
-  std::string ip = std::string(argv[2]);
-  uint16_t port = std::atoi(argv[3]);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  SetConfigFlags(FLAG_WINDOW_HIGHDPI);
+  InitWindow(screenWidth, screenHeight, "Furrent");
 
-  Peer peer(ip, port);
+  SetWindowPosition(0, 0);
 
-  // Read torrent file to string
-  std::ifstream f(argv[1]);
-  std::stringstream buf;
-  buf << f.rdbuf();
-  std::string content = buf.str();
+  SetTargetFPS(60);
 
-  // Parse bencode
-  BencodeParser parser;
-  auto ben_tree = parser.decode(content);
+  int counter = 0;
 
-  // Parse TorrentFile
-  TorrentFile torrent(*ben_tree);
+  while (!WindowShouldClose()) {
+    BeginDrawing();
 
-  Downloader down(torrent, peer);
+    ClearBackground(RAYWHITE);
 
-  for (int i = 0; i < static_cast<int>(torrent.piece_hashes.size()); i++) {
-    while (true) {
-      auto maybe_downloaded = down.try_download(Task{i});
-      if (!maybe_downloaded.valid()) continue;
-
-      for (auto c : maybe_downloaded->content) {
-        std::cout << c;
-      }
-      break;
+    if (GuiButton(Rectangle{10, 10, screenWidth - 10, 100}, "I am Furrent!")) {
+      logger->info("button pressed");
+      counter++;
     }
+
+    auto counter_string = std::to_string(counter);
+    DrawText(counter_string.c_str(), 10, 150, 10, GRAY);
+
+    EndDrawing();
   }
+
+  CloseWindow();
 
   return 0;
 }
