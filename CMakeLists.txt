@@ -10,9 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)
 
 # Undefined behavior checking at runtime
-option(USAN     OFF)
+option(USAN "Enable UB sanitizer" OFF)
 # Compile with coverage support
-option(COVERAGE OFF)
+option(COVERAGE "Enable coverage output" OFF)
+# Compile with raylib and raygui support. Should be enabled unless you're only interested in running unit tests
+option(RAYLIB_ENABLE "Enable raylib" ON)
 
 set(COMPILER_FLAGS
     -Wall -Wextra -Wpedantic
@@ -105,14 +107,16 @@ target_link_options(furrent
 target_compile_definitions(furrent PRIVATE ${COMPILER_DEFINITIONS})
 target_link_libraries(furrent furrent_lib)
 
-# =====================
-# Add raylib dependency
-# =====================
-set(BUILD_EXAMPLES OFF)
-set(BUILD_GAMES OFF)
-FetchContent_Declare(raylib GIT_REPOSITORY https://github.com/raysan5/raylib.git GIT_TAG master)
-FetchContent_MakeAvailable(raylib)
-target_link_libraries(furrent raylib)
+if (RAYLIB_ENABLE)
+    # =====================
+    # Add raylib dependency
+    # =====================
+    set(BUILD_EXAMPLES OFF)
+    set(BUILD_GAMES OFF)
+    FetchContent_Declare(raylib GIT_REPOSITORY https://github.com/raysan5/raylib.git GIT_TAG master)
+    FetchContent_MakeAvailable(raylib)
+    target_link_libraries(furrent raylib)
+endif()
 
 # ======================
 # Install binary to bin/
