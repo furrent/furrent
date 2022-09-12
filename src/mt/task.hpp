@@ -14,6 +14,7 @@
 #include <memory>
 
 #include <mt/sharing_queue.hpp>
+#include <policy/policy.hpp>
 
 namespace fur::mt {
 
@@ -25,6 +26,15 @@ public:
     /// Implements task custom logic
     /// @param queue queue where the task can append generated tasks
     virtual void execute(SharingQueue<Wrapper>& queue) = 0;
+
+    /// @return priority of the task, used for scheduling 
+    virtual size_t priority() const = 0;
+};
+
+/// Policy for extracing highest priority tasks first
+class PriorityPolicy : public policy::IPolicy<ITask::Wrapper> {
+public:
+    Iterator extract(Iterator begin, Iterator end) const override;
 };
 
 } // namespace fur::mt
