@@ -15,6 +15,9 @@ const size_t THREAD_COUNT = 16;
 
 TEST_CASE("[mt] Stealing simple") {
 
+    std::atomic_bool alive = true;
+    int result_value;
+
     // Queue owner can push work
     SharingQueue<int> owner_queue;
     std::thread owner([&] {
@@ -22,18 +25,21 @@ TEST_CASE("[mt] Stealing simple") {
     });
 
     // Thief steals from queue owner
-    int result_value = 0;
     std::thread thief([&] {
-        for(;;) {
+        while(alive) {
             auto result = owner_queue.steal();
-            if (!result.valid() && result.error() == SharingQueue<int>::Error::Empty)
-                return;
-
-            result_value = *result;
+            if (result.valid())
+                result_value = *result;
+            else
+                std::this_thread::sleep_for(
+                    std::chrono::milliseconds(100));
         }
     });
 
     owner.join();
+
+    owner_queue.wait_empty();
+    alive = false;
     thief.join();
 
     REQUIRE(result_value == 5);
@@ -85,7 +91,7 @@ TEST_CASE("[mt] Stealing hierarchical") {
                         else {
 
                             // Otherwise we sleep on the global queue
-                            global_queue.wait_for_work();
+                            global_queue.wait_work();
                         }
                     }
                 }
@@ -183,7 +189,7 @@ TEST_CASE("[mt] Stealing hierarchical with generator tasks") {
                         else {
 
                             // Otherwise we sleep on the global queue
-                            global_queue.wait_for_work();
+                            global_queue.wait_work();
                         }
                     }
                 }

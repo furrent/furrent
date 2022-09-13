@@ -1,6 +1,8 @@
 #include "hash.hpp"
 
 #include <array>
+#include <cassert>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -50,5 +52,12 @@ auto split_piece_hashes(const std::string& piece_hashes_str) -> HashResult {
     result.push_back(this_hash);
   }
   return HashResult::OK(std::move(result));
+}
+
+bool verify_piece(const std::vector<uint8_t>& piece, hash_t hash) {
+  assert(piece.size() < std::numeric_limits<int>::max());
+  hash_t buffer;
+  sha1::calc(piece.data(), static_cast<int>(piece.size()), buffer.begin());
+  return buffer == hash;
 }
 }  // namespace fur::hash

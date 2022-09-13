@@ -47,6 +47,14 @@ public:
  static Result ERROR(E&& error);
 };
 
+struct Empty {};
+
+/// @brief The same as `Result` except there's no useful value to wrap. This is
+/// wo work around the fact that `Result<void, ...>` is invalid.
+/// @tparam E type of the error
+template<typename E>
+using Outcome = Result<Empty, E>;
+
 } // namespace fur::util
 
 #include <util/result.inl>

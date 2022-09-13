@@ -40,13 +40,24 @@ auto SharingQueue<Work>::steal() -> Result {
 }
 
 template<typename Work>
-void SharingQueue<Work>::wait_for_work() const {
+void SharingQueue<Work>::wait_work() const {
 
     std::unique_lock<std::mutex> lock(_mutex);
-    if (_skip_waiting) return;
+    if (_skip_waiting || _work.size() != 0) return;
 
     _new_work_available.wait(lock, [this] {
         return _work.size() != 0 || _skip_waiting;
+    });
+}
+
+template<typename Work>
+void SharingQueue<Work>::wait_empty() const {
+
+    std::unique_lock<std::mutex> lock(_mutex);
+    if (_skip_waiting || _work.size() == 0) return;
+
+    _all_work_dispatched.wait(lock, [this] {
+        return _work.size() == 0 || _skip_waiting;
     });
 }
 
