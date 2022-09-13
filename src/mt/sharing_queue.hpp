@@ -1,14 +1,14 @@
 /**
- * @file sharind_queue.hpp
- * @author Filippo Ziche (filippo.ziche@gmail.com)
- * @brief Sharing queues allow the propagation of Tasks in order to
- *        maintain high utilization of threads
- * @version 0.1
- * @date 2022-09-05
- * 
- * @copyright Copyright (c) 2022
- * 
- */
+* @file sharind_queue.hpp
+* @author Filippo Ziche (filippo.ziche@gmail.com)
+* @brief Sharing queues allow the propagation of Tasks in order to
+*        maintain high utilization of threads
+* @version 0.1
+* @date 2022-09-05
+*
+* @copyright Copyright (c) 2022
+*
+*/
 
 #pragma once
 
@@ -55,7 +55,10 @@ public:
  [[nodiscard]] Result steal();
 
  /// Wait for a new item in the queue
- void wait_for_work() const;
+ void wait_work() const;
+
+ /// Wait for the queue to be empty
+ void wait_empty() const;
 
  /// Wake up all waiting threads
  void begin_skip_waiting();

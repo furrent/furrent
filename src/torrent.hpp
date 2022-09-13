@@ -20,7 +20,7 @@ struct TorrentFile {
   /// SHA1 hashes, one for each piece of the shared file
   std::vector<hash::hash_t> piece_hashes;
   /// The length, in bytes, of each piece
-  long piece_length;
+  int piece_length;
   /// The length, in bytes, of the entire shared file
   long length;
   /// The name of the shared file

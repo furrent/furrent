@@ -36,4 +36,7 @@ hash_t compute_info_hash(const std::string& bencoded_info_dict);
 /// Takes a string with the hashes of pieces from a torrent file and parses
 /// them into a vector of "hash_t". Each hash is 20 bytes long
 HashResult split_piece_hashes(const std::string& pieces);
+
+/// Checks that a downloaded piece matches the provided hash
+bool verify_piece(const std::vector<uint8_t>& piece, hash_t hash);
 }  // namespace fur::hash

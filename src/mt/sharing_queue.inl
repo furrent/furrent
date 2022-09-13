@@ -1,5 +1,5 @@
 #include <mt/sharing_queue.hpp>
-#if 0
+
 namespace fur::mt {
 
 template<typename Work>
@@ -8,67 +8,66 @@ SharingQueue<Work>::SharingQueue()
 
 template<typename Work>
 auto SharingQueue<Work>::try_extract(const policy::IPolicy<Work>& policy) -> Result {
-    
-    bool work_empty = false;
-    
-    _mutex.lock();
-    auto result = _work.extract(policy);
-    if (_work.size() == 0)
-        work_empty = true;
-    _mutex.unlock();
 
-    if (work_empty)
-        _all_work_dispatched.notify_all();
-        
-    return result;
+  bool work_empty = false;
+
+  _mutex.lock();
+  auto result = _work.extract(policy);
+  if (_work.size() == 0)
+    work_empty = true;
+  _mutex.unlock();
+
+  if (work_empty)
+    _all_work_dispatched.notify_all();
+
+  return result;
 }
 
 template<typename Work>
 void SharingQueue<Work>::insert(Work&& work) {
 
-    _mutex.lock();
-    _work.insert(std::forward<Work>(work));
-    _mutex.unlock();
+  _mutex.lock();
+  _work.insert(std::forward<Work>(work));
+  _mutex.unlock();
 
-    _new_work_available.notify_all();
+  _new_work_available.notify_all();
 }
 
 template<typename Work>
 auto SharingQueue<Work>::steal() -> Result {
-    policy::FIFOPolicy<Work> policy;
-    return try_extract(policy);
+  policy::FIFOPolicy<Work> policy;
+  return try_extract(policy);
 }
 
 template<typename Work>
 void SharingQueue<Work>::wait_work() const {
 
-    std::unique_lock<std::mutex> lock(_mutex);
-    if (_skip_waiting || _work.size() != 0) return;
+  std::unique_lock<std::mutex> lock(_mutex);
+  if (_skip_waiting || _work.size() != 0) return;
 
-    _new_work_available.wait(lock, [this] {
-        return _work.size() != 0 || _skip_waiting;
-    });
+  _new_work_available.wait(lock, [this] {
+    return _work.size() != 0 || _skip_waiting;
+  });
 }
 
 template<typename Work>
 void SharingQueue<Work>::wait_empty() const {
 
-    std::unique_lock<std::mutex> lock(_mutex);
-    if (_skip_waiting || _work.size() == 0) return;
+  std::unique_lock<std::mutex> lock(_mutex);
+  if (_skip_waiting || _work.size() == 0) return;
 
-    _all_work_dispatched.wait(lock, [this] {
-        return _work.size() == 0 || _skip_waiting;
-    });
+  _all_work_dispatched.wait(lock, [this] {
+    return _work.size() == 0 || _skip_waiting;
+  });
 }
 
 template<typename Work>
 void SharingQueue<Work>::begin_skip_waiting() {
-    _mutex.lock();
-    _skip_waiting = true;
-    _mutex.unlock();
+  _mutex.lock();
+  _skip_waiting = true;
+  _mutex.unlock();
 
-    _new_work_available.notify_all();
+  _new_work_available.notify_all();
 }
 
 } // namespace fur::mt
-#endif

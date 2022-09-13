@@ -70,4 +70,5 @@ bool verify_piece(const std::vector<uint8_t>& piece, hash_t hash) {
   sha1::calc(piece.data(), static_cast<int>(piece.size()), buffer.begin());
   return buffer == hash;
 }
+
 }  // namespace fur::hash
