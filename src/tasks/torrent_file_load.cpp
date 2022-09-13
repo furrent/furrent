@@ -1,6 +1,8 @@
 #include <tasks/torrent.hpp>
 
 #include <bencode/bencode_parser.hpp>
+#include <platform/io.hpp>
+#include <config.hpp>
 #include <fstream>
 
 namespace fur::tasks {
@@ -36,6 +38,7 @@ void TorrentFileLoad::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue)
         */
        return;
     }
+    file.close();
 
     // Create torrent_manager for the file
     logger->info("Parsing torrent file {}", _descriptor.filename);
@@ -46,6 +49,14 @@ void TorrentFileLoad::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue)
     _descriptor.torrent = std::make_optional<fur::torrent::TorrentFile>(*b_tree);
     while(!_descriptor.regenerate_peers())
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    // Create file of correct size
+    std::string output_filename = config::DOWNLOAD_FOLDER + _descriptor.torrent->name;
+    auto file_creation = fur::platform::io::touch(output_filename, _descriptor.torrent->length);
+    if (!file_creation.valid()) {
+        logger->error("Error creating file for torrent {}", _descriptor.filename);
+        return;
+    }
 
     const size_t piece_length = _descriptor.torrent->piece_length;
     const size_t pieces_count = _descriptor.torrent->length / piece_length;

@@ -1,5 +1,7 @@
 #include <tasks/torrent.hpp>
 
+#include <config.hpp>
+
 namespace fur::tasks {
 
 TorrentPieceDownload::TorrentPieceDownload(TorrentDescriptor& desc, download::PieceDescriptor piece)
@@ -66,7 +68,21 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
             downloaded.content.size(), download_elapsed.count());
 
         _descriptor.downloaded_pieces += 1;
-        // TODO: Spawn write to file task
+        
+        {
+            // Write bytes to memory
+            std::unique_lock<std::shared_mutex> lock(_descriptor.mtx);
+
+            logger->info("Writing piece to file...");
+
+            // Create output file on system and open an handle
+            std::string output_filename = config::DOWNLOAD_FOLDER + _descriptor.filename;
+            std::ofstream stream = std::ofstream(output_filename, std::ios::out);
+
+            stream.seekp(_piece.offset, std::ios_base::beg);
+            stream.write(reinterpret_cast<char*>(&result->content[0]), result->content.size());
+            stream.close();
+        }
     }
     // Download failed!
     else {
