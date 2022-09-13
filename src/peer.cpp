@@ -79,8 +79,8 @@ PeerResult parse_tracker_response(const std::string& text) {
   auto tree = parser.decode(text);
   if (!tree.valid()) {
     auto logger = spdlog::get("custom");
-    //auto string = bencode::error_to_string(tree.error());
-    //logger->error("Bencode parser error: {}", string);
+    // auto string = bencode::error_to_string(tree.error());
+    // logger->error("Bencode parser error: {}", string);
     return PeerResult::ERROR(PeerError::ParserError);
   }
   auto& dict = dynamic_cast<bencode::BencodeDict&>(*(*tree)).value();

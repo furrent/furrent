@@ -1,21 +1,19 @@
-#include <furrent.hpp>
-
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <random>
-
 #include <bencode/bencode_parser.hpp>
-#include <policy/policy.hpp>
+#include <fstream>
+#include <furrent.hpp>
+#include <iostream>
 #include <log/logger.hpp>
+#include <policy/policy.hpp>
+#include <random>
+#include <sstream>
 
 namespace fur {
 
 TorrentFileLoadTask::TorrentFileLoadTask(TorrentDescriptor& desc)
-    : _descriptor(desc) { }
+    : _descriptor(desc) {}
 
-void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
-
+void TorrentFileLoadTask::execute(
+    mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
   // Default global logger
   auto logger = spdlog::get("custom");
 
@@ -23,7 +21,6 @@ void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_qu
   std::string content;
 
   if (file) {
-
     logger->info("Loading torrent file from {}", _descriptor.filename);
 
     std::ostringstream ss;
@@ -31,7 +28,6 @@ void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_qu
     content = ss.str();
 
   } else {
-
     logger->error("Error loading torrent from {}", _descriptor.filename);
 
     // TODO: manage the exception
@@ -53,36 +49,35 @@ void TorrentFileLoadTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_qu
   }
 
   // From now on the descriptor is available to all
-  _descriptor.torrent = std::make_optional<fur::torrent::TorrentFile>
-      (*(*b_tree));
+  _descriptor.torrent =
+      std::make_optional<fur::torrent::TorrentFile>(*(*b_tree));
 
   const size_t piece_length = _descriptor.torrent->piece_length;
   const size_t pieces_count = _descriptor.torrent->length / piece_length;
 
-
   // Generate all downloading tasks
-  logger->info("Generating {} pieces torrent file {}", pieces_count, _descriptor.filename);
-  for(size_t piece = 0; piece < pieces_count; piece++) {
-
+  logger->info("Generating {} pieces torrent file {}", pieces_count,
+               _descriptor.filename);
+  for (size_t piece = 0; piece < pieces_count; piece++) {
     size_t offset = piece * piece_length;
     local_queue.insert(std::make_unique<DownloadPieceTask>(
         _descriptor, piece, offset, piece_length));
   }
 }
 
-DownloadPieceTask::DownloadPieceTask(TorrentDescriptor& desc, size_t index, size_t offset, size_t bytes)
-    : _descriptor{desc}, _index{index}, _offset{offset}, _bytes{bytes} { }
+DownloadPieceTask::DownloadPieceTask(TorrentDescriptor& desc, size_t index,
+                                     size_t offset, size_t bytes)
+    : _descriptor{desc}, _index{index}, _offset{offset}, _bytes{bytes} {}
 
-void DownloadPieceTask::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
-
+void DownloadPieceTask::execute(
+    mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
   // Default global logger
   auto logger = spdlog::get("custom");
-  //logger->info("Downloading piece {} of {} for torrent {}",
-  //    _index, _descriptor.torrent->piece_length, _descriptor.filename);
+  // logger->info("Downloading piece {} of {} for torrent {}",
+  //     _index, _descriptor.torrent->piece_length, _descriptor.filename);
 }
 
 Furrent::Furrent() {
-
   /// Local queues of all workers
   const size_t concurrency = std::thread::hardware_concurrency();
   _local_queues = new TaskSharingQueue[concurrency];
@@ -92,23 +87,17 @@ Furrent::Furrent() {
   using std::placeholders::_3;
 
   /// This is the core of all workers
-  _workers.launch(
-      std::bind(&Furrent::thread_main, this, _1, _2, _3)
-  );
+  _workers.launch(std::bind(&Furrent::thread_main, this, _1, _2, _3));
 }
 
-
 Furrent::~Furrent() {
-
   _global_queue.begin_skip_waiting();
   _workers.terminate();
 
   delete[] _local_queues;
 }
 
-
 void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
-
   // TODO: custom policy per thread etc...
   policy::LIFOPolicy<mt::ITask::Wrapper> task_policy;
   const size_t concurrency = _workers.get_worker_count();
@@ -122,30 +111,24 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
   int failed_stealing_count = 0;
 
   auto& local_queue = _local_queues[index];
-  while(runner.alive()) {
-
+  while (runner.alive()) {
     // First we check our own local queue
     auto local_work = local_queue.try_extract(task_policy);
     if (local_work.valid()) {
-
-      //logger->debug("thread {:02d} is executing local work", index);
+      // logger->debug("thread {:02d} is executing local work", index);
       (*local_work)->execute(local_queue);
-    }
-    else {
-
+    } else {
       // Then we check the global queue
       auto global_work = _global_queue.try_extract(task_policy);
       if (global_work.valid()) {
-
-        //logger->debug("thread {:02d} is executing global work", index);
+        // logger->debug("thread {:02d} is executing global work", index);
         (*global_work)->execute(local_queue);
-      }
-      else {
-
-        // If we tried to steal too many times then wait for work in global queue
+      } else {
+        // If we tried to steal too many times then wait for work in global
+        // queue
         if (failed_stealing_count >= STEALING_LIMIT) {
-
-          logger->debug("thread {:02d} is waiting for work on global queue", index);
+          logger->debug("thread {:02d} is waiting for work on global queue",
+                        index);
           _global_queue.wait_work();
           failed_stealing_count = 0;
         }
@@ -156,11 +139,10 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 
           auto steal_work = _local_queues[steal_idx].steal();
           if (steal_work.valid()) {
-
-            logger->debug("thread {:02d} is executing stolen work from {:02d}", index, steal_idx);
+            logger->debug("thread {:02d} is executing stolen work from {:02d}",
+                          index, steal_idx);
             (*steal_work)->execute(local_queue);
-          }
-          else {
+          } else {
             failed_stealing_count += 1;
           }
         }
@@ -170,9 +152,8 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 }
 
 void Furrent::add_torrent(const std::string& filename) {
-
   /// Allocate descriptor for the new torrent
-  _descriptors.push_front({ filename, std::nullopt });
+  _descriptors.push_front({filename, std::nullopt});
   auto& descriptor = _descriptors.front();
 
   /// Begin loading task
@@ -183,4 +164,4 @@ const std::list<TorrentDescriptor>& Furrent::get_descriptors() const {
   return _descriptors;
 }
 
-} // namespace fur
+}  // namespace fur

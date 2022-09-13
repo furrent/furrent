@@ -46,17 +46,14 @@ std::unique_ptr<BencodeValue> get_debian_tree() {
 
   std::map<std::string, std::unique_ptr<BencodeValue>> info_dict;
   info_dict.emplace("length", std::make_unique<BencodeInt>(397410304));
-  info_dict.emplace("piece length",
-                    std::make_unique<BencodeInt>(262144));
+  info_dict.emplace("piece length", std::make_unique<BencodeInt>(262144));
   info_dict.emplace("name", std::make_unique<BencodeString>(
                                 "debian-11.4.0-amd64-netinst.iso"));
 
-  info_dict.emplace(
-      "pieces", std::make_unique<BencodeString>(
-                    std::string{debian_pieces_bytes, debian_pieces_n * 20}));
+  info_dict.emplace("pieces", std::make_unique<BencodeString>(std::string{
+                                  debian_pieces_bytes, debian_pieces_n * 20}));
 
-  dict.emplace("info",
-               std::make_unique<BencodeDict>(std::move(info_dict)));
+  dict.emplace("info", std::make_unique<BencodeDict>(std::move(info_dict)));
 
   BencodeDict tree{std::move(dict)};
 

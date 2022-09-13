@@ -1,10 +1,10 @@
 #pragma once
 
-#include <torrent_manager.hpp>
-#include <torrent.hpp>
-#include <mt/sharing_queue.hpp>
 #include <mt/group.hpp>
+#include <mt/sharing_queue.hpp>
 #include <mt/task.hpp>
+#include <torrent.hpp>
+#include <torrent_manager.hpp>
 
 namespace fur {
 
@@ -17,7 +17,6 @@ struct TorrentDescriptor {
 
 /// Load torrent from file and spawn all piece download tasks
 class TorrentFileLoadTask : public mt::ITask {
-
   /// Reference to preallocated torrent descriptor in furrent
   TorrentDescriptor& _descriptor;
 
@@ -28,7 +27,6 @@ class TorrentFileLoadTask : public mt::ITask {
 
 /// Download a piece of a torrent
 class DownloadPieceTask : public mt::ITask {
-
   /// Reference to preallocated torrent descriptor in furrent
   TorrentDescriptor& _descriptor;
 
@@ -37,17 +35,17 @@ class DownloadPieceTask : public mt::ITask {
   size_t _bytes;
 
  public:
-  DownloadPieceTask(TorrentDescriptor& descr, size_t index, size_t offset, size_t bytes);
+  DownloadPieceTask(TorrentDescriptor& descr, size_t index, size_t offset,
+                    size_t bytes);
   void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 };
 
 /// Main state of the program
 class Furrent {
-
   typedef mt::SharingQueue<mt::ITask::Wrapper> TaskSharingQueue;
 
   /// State of the worker threads
-  struct WorkerState { };
+  struct WorkerState {};
 
   /// List of torrents to download
   std::list<TorrentDescriptor> _descriptors;
@@ -61,7 +59,6 @@ class Furrent {
   mt::ThreadGroup<WorkerState> _workers;
 
  public:
-
   Furrent();
   virtual ~Furrent();
 
@@ -76,4 +73,4 @@ class Furrent {
   void thread_main(mt::Runner runner, WorkerState& state, size_t index);
 };
 
-} // namespace fur
+}  // namespace fur

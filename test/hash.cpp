@@ -47,8 +47,7 @@ TEST_CASE("[Hash] Split pieces string") {
       "\x01\x01"
       "\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02"
       "\x02\x02";
-  auto r =
-      split_piece_hashes(std::string{piece_hashes, 3 * 20});
+  auto r = split_piece_hashes(std::string{piece_hashes, 3 * 20});
   REQUIRE(r.valid());
   auto pieces = *r;
   REQUIRE((pieces).size() == 3);

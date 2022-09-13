@@ -7,23 +7,23 @@ using namespace fur::bencode;
 std::string error_to_string(const BencodeParserError error) {
   switch (error) {
     case BencodeParserError::InvalidString:
-      return "invalid bencoded string";
+      return "InvalidString";
     case BencodeParserError::IntFormat:
-      return "invalid integer format";
+      return "IntFormat";
     case BencodeParserError::IntValue:
-      return "invalid integer value";
+      return "IntValue";
     case BencodeParserError::StringFormat:
-      return "invalid string format";
+      return "StringFormat";
     case BencodeParserError::ListFormat:
-      return "invalid list format";
+      return "ListFormat";
     case BencodeParserError::DictFormat:
-      return "invalid dictionary format";
+      return "DictFormat";
     case BencodeParserError::DictKey:
-      return "invalid dictionary key";
+      return "DictKey";
     case BencodeParserError::DictKeyOrder:
-      return "invalid dictionary key order";
+      return "DictKeyOrder";
     default:
-      return "unknown error";
+      return "<invalid parser error>";
   }
 }
 
