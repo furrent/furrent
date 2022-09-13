@@ -2,8 +2,7 @@
 
 #include <regex>
 
-using namespace fur::bencode;
-
+namespace fur::bencode {
 std::string error_to_string(const BencodeParserError error) {
   switch (error) {
     case BencodeParserError::InvalidString:
@@ -203,3 +202,5 @@ auto BencodeParser::decode_dict() -> BencodeResult {
   _index += 1;
   return BencodeResult::OK(std::make_unique<BencodeDict>(std::move(ptr)));
 }
+
+}  // namespace fur::bencode

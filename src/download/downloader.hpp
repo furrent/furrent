@@ -33,6 +33,7 @@ struct Downloaded {
 };
 
 namespace fur::download::downloader {
+
 enum class DownloaderError {
   /// The peer sent back a different info hash when handshaking
   DifferentInfoHash,

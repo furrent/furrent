@@ -17,7 +17,7 @@ using namespace fur::peer;
 using namespace fur::bencode;
 using namespace fur::download::downloader;
 using namespace fur::hash;
-#if 0
+
 TEST_CASE("[Downloader] Ensure connected") {
   // Faker on port 4004 will read a BitTorrent handshake message and reply with
   // a correct response (same info-hash, possibly different peer ID) then send
@@ -90,7 +90,7 @@ void test_alice(std::vector<DownloaderError>& errors) {
   auto ben_tree = parser.decode(content);
 
   // Parse TorrentFile
-  TorrentFile torrent(*ben_tree);
+  TorrentFile torrent(*(*ben_tree));
 
   Downloader down(torrent, peer);
 
@@ -150,4 +150,3 @@ TEST_CASE("[Downloader] Download alice") {
 
   REQUIRE(errors.empty());
 }
-#endif
