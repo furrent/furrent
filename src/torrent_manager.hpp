@@ -1,12 +1,11 @@
 #pragma once
 
-#include <string>
+#include <atomic>
+#include <download/lender_pool.hpp>
 #include <list>
 #include <optional>
-#include <atomic>
-
 #include <peer.hpp>
-#include <download/lender_pool.hpp>
+#include <string>
 
 /// Namespace for the torrent manager. Contains the TorrentManager, every
 /// torrent file is mapped to a TorrentManager object.
@@ -134,4 +133,4 @@ using TorrentManagerRef = std::reference_wrapper<TorrentManager>;
 
 #endif
 
-} // namespace fur
+}  // namespace fur

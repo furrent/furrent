@@ -20,7 +20,7 @@ struct TorrentFile {
   /// SHA1 hashes, one for each piece of the shared file
   std::vector<hash::hash_t> piece_hashes;
   /// The length, in bytes, of each piece
-  int piece_length;
+  long piece_length;
   /// The length, in bytes, of the entire shared file
   long length;
   /// The name of the shared file
@@ -34,7 +34,7 @@ struct TorrentFile {
   explicit TorrentFile(const bencode::BencodeValue& tree);
 
   TorrentFile(const TorrentFile& o) = default;
-  TorrentFile& operator= (const TorrentFile& o) {
+  TorrentFile& operator=(const TorrentFile& o) {
     announce_url = o.announce_url;
     info_hash = o.info_hash;
     piece_hashes = o.piece_hashes;

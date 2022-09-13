@@ -3,7 +3,7 @@
 #include "catch2/catch.hpp"
 using namespace fur::bencode;
 
-TEST_CASE("[BencodeParser::decode()] Correct decode of a integer"){
+TEST_CASE("[BencodeParser::decode()] Correct decode of a integer") {
   BencodeParser parser{};
   // Positive integer
   auto r_1 = parser.decode("i42e");
@@ -21,7 +21,7 @@ TEST_CASE("[BencodeParser::decode()] Correct decode of a integer"){
   REQUIRE(b_2.value() == -42);
 }
 
-TEST_CASE("[BencodeParser::decode()] Wrong decode of a integer"){
+TEST_CASE("[BencodeParser::decode()] Wrong decode of a integer") {
   BencodeParser parser{};
   // Missing 'e'
   auto r_1 = parser.decode("i42");
@@ -59,7 +59,7 @@ TEST_CASE("[BencodeParser::decode()] Wrong decode of a string") {
   REQUIRE(r_3.error() == BencodeParserError::InvalidString);
 }
 
-TEST_CASE("[BencodeParser::decode()] Correct decode of a list"){
+TEST_CASE("[BencodeParser::decode()] Correct decode of a list") {
   BencodeParser parser{};
   auto list = parser.decode("l4:spami42ee");
   REQUIRE(list.valid());
@@ -71,7 +71,7 @@ TEST_CASE("[BencodeParser::decode()] Correct decode of a list"){
   REQUIRE(dynamic_cast<BencodeInt&>(*b.value()[1]).value() == 42);
 }
 
-TEST_CASE("[BencodeParser::decode()] Wrong decode of a list"){
+TEST_CASE("[BencodeParser::decode()] Wrong decode of a list") {
   BencodeParser parser{};
   // Missing "l" at the start
   auto r_1 = parser.decode("4:spami42ee");
@@ -83,7 +83,7 @@ TEST_CASE("[BencodeParser::decode()] Wrong decode of a list"){
   REQUIRE(r_2.error() == BencodeParserError::ListFormat);
 }
 
-TEST_CASE("[BencodeParser::decode()] Correct decode of a dictionary"){
+TEST_CASE("[BencodeParser::decode()] Correct decode of a dictionary") {
   BencodeParser parser{};
   auto dict = parser.decode("d3:bar4:spam3:fooi42ee");
   REQUIRE(dict.valid());
@@ -95,7 +95,7 @@ TEST_CASE("[BencodeParser::decode()] Correct decode of a dictionary"){
   REQUIRE(dynamic_cast<BencodeInt&>(*b.value()["foo"]).value() == 42);
 }
 
-TEST_CASE("[BencodeParser::decode()] Wrong decode of a dictionary"){
+TEST_CASE("[BencodeParser::decode()] Wrong decode of a dictionary") {
   BencodeParser parser{};
   // Missing "d" at the start
   auto r_1 = parser.decode("3:bar4:spam3:fooi42ee");
@@ -111,7 +111,7 @@ TEST_CASE("[BencodeParser::decode()] Wrong decode of a dictionary"){
   REQUIRE(r_3.error() == BencodeParserError::DictKeyOrder);
 }
 
-TEST_CASE("[BencodeParser::encode()] Correct encode of BencodeValue"){
+TEST_CASE("[BencodeParser::encode()] Correct encode of BencodeValue") {
   // The function is the same of the to_string, so the test are already
   // implemented in BencodeValue
   BencodeParser parser{};
@@ -133,10 +133,10 @@ TEST_CASE("[BencodeParser::encode()] Correct encode of BencodeValue"){
   m["foo"] = std::make_unique<BencodeInt>(42);
   auto b_5 = BencodeDict{std::move(m)};
   REQUIRE(parser.encode(b_5) == "d3:bar4:spam3:fooi42ee");
-
 }
 
-TEST_CASE("[BencodeParser::decode()] No invalid length of a string with 'i' chars") {
+TEST_CASE(
+    "[BencodeParser::decode()] No invalid length of a string with 'i' chars") {
   BencodeParser parser{};
   auto b = parser.decode("l8:intervali3ee");
   REQUIRE(b.valid());
@@ -147,5 +147,4 @@ TEST_CASE("[BencodeParser::decode()] No invalid length of a string with 'i' char
   REQUIRE(b_string.value() == "interval");
   auto& b_int = dynamic_cast<BencodeInt&>(*b_list.value()[1]);
   REQUIRE(b_int.value() == 3);
-
 }

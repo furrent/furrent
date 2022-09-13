@@ -8,7 +8,7 @@
 
 namespace fur::bencode {
 
-enum class BencodeParserError{
+enum class BencodeParserError {
   /// The bencoded string is not valid, the most general error that can occur
   /// typically where the string is not well formed
   InvalidString,
@@ -28,12 +28,14 @@ enum class BencodeParserError{
   DictKeyOrder
 };
 
+/// Function to translate a BencodeParserError into a string
+std::string error_to_string(BencodeParserError error);
+
 /// Result of a parsing operation
-typedef util::Result<std::unique_ptr<BencodeValue>, BencodeParserError>
-    BencodeResult;
+using BencodeResult =
+    util::Result<std::unique_ptr<BencodeValue>, BencodeParserError>;
 
 class BencodeParser {
-
  private:
   /// The index of the current token used for decoding
   unsigned int _index{};
@@ -59,7 +61,7 @@ class BencodeParser {
   BencodeResult decode(std::string const& decoded);
 
   /// Encodes a BencodeValue object into a bencode string
-  std::string encode(BencodeValue const& value);
+  static std::string encode(BencodeValue const& value);
 };
 
 }  // namespace fur::bencode

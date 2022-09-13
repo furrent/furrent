@@ -1,4 +1,5 @@
 #include "torrent_manager.hpp"
+
 #include <iomanip>
 #include <iostream>
 
@@ -89,4 +90,4 @@ bool TorrentManager::unfinished() {
 
 #endif
 
-}
+}  // namespace fur

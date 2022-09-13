@@ -36,15 +36,17 @@ struct AnnounceResult {
   std::vector<Peer> peers;
 };
 
-enum class PeerError{
+enum class PeerError {
   /// Generic error that comes from the BencodeParser
   ParserError,
   /// Can't announce to the tracker
   AnnounceError
 };
 
-typedef util::Result<AnnounceResult, PeerError>
-    PeerResult;
+/// Function to translate a PeerError to a string
+std::string error_to_string(PeerError error);
+
+using PeerResult = util::Result<AnnounceResult, PeerError>;
 
 /// Announce ourselves to the tracker and get a list of peers to download the
 /// file from

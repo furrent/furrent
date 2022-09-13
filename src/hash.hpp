@@ -12,14 +12,16 @@ namespace fur::hash {
 /// Type for a SHA1 hash
 using hash_t = std::array<uint8_t, 20>;
 
-enum class HashError{
-  // The hash of the given string is malformed
+enum class HashError {
+  /// The hash of the given string is malformed
   MalformedPieceHashesString
 };
 
+/// Function to translate an HashError to a string
+std::string error_to_string(HashError error);
+
 /// Result of a hash operation
-typedef util::Result<std::vector<hash_t>, HashError>
-    HashResult;
+using HashResult = util::Result<std::vector<hash_t>, HashError>;
 
 /// Encodes an hash to a string. Note that we're forcing the compiler to make
 /// "char" unsigned so a string can contain arbitrary bytes

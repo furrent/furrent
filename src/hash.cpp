@@ -11,6 +11,16 @@
 #include "spdlog/spdlog.h"
 
 namespace fur::hash {
+
+std::string error_to_string(const HashError error) {
+  switch (error) {
+    case HashError::MalformedPieceHashesString:
+      return "malformed piece hashes string";
+    default:
+      return "unknown error";
+  }
+}
+
 std::string hash_to_str(const hash_t& hash) {
   return std::string{hash.begin(), hash.end()};
 }

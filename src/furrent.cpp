@@ -42,14 +42,14 @@ void TorrentFileLoadTask::execute(
   logger->info("Parsing torrent file {}", _descriptor.filename);
   auto parser = fur::bencode::BencodeParser();
   auto b_tree = parser.decode(content);
-  if(!b_tree.valid()){
+  if (!b_tree.valid()) {
     logger->error("Parser error {}", static_cast<int>(b_tree.error()));
     return;
   }
 
   // From now on the descriptor is available to all
-  _descriptor.torrent = std::make_optional<fur::torrent::TorrentFile>(
-      *(*b_tree));
+  _descriptor.torrent =
+      std::make_optional<fur::torrent::TorrentFile>(*(*b_tree));
 
   const size_t piece_length = _descriptor.torrent->piece_length;
   const size_t pieces_count = _descriptor.torrent->length / piece_length;
@@ -72,8 +72,8 @@ void DownloadPieceTask::execute(
     mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
   // Default global logger
   auto logger = spdlog::get("custom");
-  logger->info("Downloading piece {} of {} for torrent {}",
-       _index, _descriptor.torrent->piece_length, _descriptor.filename);
+  logger->info("Downloading piece {} of {} for torrent {}", _index,
+               _descriptor.torrent->piece_length, _descriptor.filename);
 }
 
 Furrent::Furrent() {

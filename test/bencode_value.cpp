@@ -43,7 +43,6 @@ TEST_CASE("[BencodeValue::BencodeList] Correctly decodes an encoded list") {
   REQUIRE(l.value().size() == 2);
   REQUIRE(l.value()[0]->get_type() == BencodeType::Integer);
   REQUIRE(l.value()[1]->get_type() == BencodeType::String);
-
 }
 
 // ================

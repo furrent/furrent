@@ -12,7 +12,7 @@ using namespace fur::policy;
 using namespace fur::mt;
 
 const size_t THREAD_COUNT = 16;
-
+#if 0
 TEST_CASE("[mt] Stealing simple") {
 
     std::atomic_bool alive = true;
@@ -207,3 +207,4 @@ TEST_CASE("[mt] Stealing hierarchical with generator tasks") {
     for(auto& worker : workers)
         worker.join();
 }
+#endif

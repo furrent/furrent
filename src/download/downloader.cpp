@@ -1,4 +1,3 @@
-/*
 #include "download/downloader.hpp"
 
 #include <array>
@@ -11,6 +10,7 @@
 #include "hash.hpp"
 #include "log/logger.hpp"
 
+#if 0
 using fur::download::message::MessageKind;
 
 namespace fur::download::downloader {
@@ -399,3 +399,4 @@ void Downloader::destroy_socket() {
 }
 }  // namespace fur::download::downloader
 */
+#endif

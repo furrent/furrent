@@ -3,7 +3,6 @@
 #include <sstream>
 
 int main() {
-
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
 

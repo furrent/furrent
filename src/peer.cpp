@@ -12,6 +12,18 @@
 #include "spdlog/spdlog.h"
 
 namespace fur::peer {
+
+std::string error_to_string(const PeerError error) {
+  switch (error) {
+    case PeerError::AnnounceError:
+      return "can't announce to the tracker";
+    case PeerError::ParserError:
+      return "error during parsing of the file";
+    default:
+      return "unknown error";
+  }
+}
+
 std::string Peer::address() const {
   return fmt::format("{}.{}.{}.{}:{}", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
@@ -31,9 +43,9 @@ Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
     throw std::invalid_argument("not a valid ip");
   }
 
-  for (int i=1; i<=4; i++) {
+  for (int i = 1; i <= 4; i++) {
     uint32_t octet = std::stoi(match[i]);
-    ip |= octet << 8*(4-i);
+    ip |= octet << 8 * (4 - i);
   }
 }
 
@@ -65,15 +77,16 @@ PeerResult parse_tracker_response(const std::string& text) {
 
   bencode::BencodeParser parser;
   auto tree = parser.decode(text);
-  if(!tree.valid()){
+  if (!tree.valid()) {
     auto logger = spdlog::get("custom");
-    logger->error("Parser error {}", static_cast<int>(tree.error()));
+    //auto string = bencode::error_to_string(tree.error());
+    //logger->error("Bencode parser error: {}", string);
     return PeerResult::ERROR(PeerError::ParserError);
   }
   auto& dict = dynamic_cast<bencode::BencodeDict&>(*(*tree)).value();
 
   auto& interval = dynamic_cast<bencode::BencodeInt&>(*dict.at("interval"));
-  result.interval = interval.value();
+  result.interval = static_cast<int>(interval.value());
 
   auto& peers = dynamic_cast<bencode::BencodeString&>(*dict.at("peers"));
   for (auto it = peers.value().begin(); it < peers.value().end(); it += 6) {
