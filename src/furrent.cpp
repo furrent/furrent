@@ -44,7 +44,8 @@ void TorrentFileLoadTask::execute(
   auto parser = fur::bencode::BencodeParser();
   auto b_tree = parser.decode(content);
   if (!b_tree.valid()) {
-    logger->error("Parser error {}", static_cast<int>(b_tree.error()));
+    logger->error("Parser error {}",
+                  fur::bencode::error_to_string(b_tree.error()));
     return;
   }
 
