@@ -25,10 +25,15 @@ int main() {
 
   int flag_true = 1;
   const int border = 5;
+  //GetWorkingDirectory()
   GuiFileDialogState file_dialog =
-      InitGuiFileDialog(550, 500, GetWorkingDirectory(), false);
+      InitGuiFileDialog(550, 500, "/home/nicof/Desktop/univr/furrent/extra/", false,".torrent");
   file_dialog.fileTypeActive = true;
 
+  //auto x = LoadDirectoryFiles("/home/nicof/Desktop/univr/furrent/extra/");
+  //for (int i = 0; i<x.capacity; i++) {
+  //  logger->info("{}", x.paths[i]);
+  //}
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);

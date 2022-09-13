@@ -1,3 +1,56 @@
+/*******************************************************************************************
+*
+*   FileDialog v1.2 - Modal file dialog to open/save files
+*
+*   MODULE USAGE:
+*       #define GUI_FILE_DIALOG_IMPLEMENTATION
+*       #include "gui_file_dialog.h"
+*
+*       INIT: GuiFileDialogState state = InitGuiFileDialog();
+*       DRAW: GuiFileDialog(&state);
+*
+*   NOTE: This module depends on some raylib file system functions:
+*       - LoadDirectoryFiles()
+*       - UnloadDirectoryFiles()
+*       - GetWorkingDirectory()
+*       - DirectoryExists()
+*       - FileExists()
+*
+*   LICENSE: zlib/libpng
+*
+*   Copyright (c) 2019-2022 Ramon Santamaria (@raysan5)
+*
+*   This software is provided "as-is", without any express or implied warranty. In no event
+*   will the authors be held liable for any damages arising from the use of this software.
+*
+*   Permission is granted to anyone to use this software for any purpose, including commercial
+*   applications, and to alter it and redistribute it freely, subject to the following restrictions:
+*
+*     1. The origin of this software must not be misrepresented; you must not claim that you
+*     wrote the original software. If you use this software in a product, an acknowledgment
+*     in the product documentation would be appreciated but is not required.
+*
+*     2. Altered source versions must be plainly marked as such, and must not be misrepresented
+*     as being the original software.
+*
+*     3. This notice may not be removed or altered from any source distribution.
+*
+*********************************************************************************************
+ * Edited solutions for the following issues:
+ * - Filter system not working
+ * - File list didn't display correctly
+ * - Solution for c++ compatibility
+ *
+ * Example usage:
+ *
+ * InitGuiFileDialog(550, 500, "path", false,".extension");
+ *
+ * Now is available to set the filter directly in the constructor
+ *
+ * Author: nicof
+ **********************************************************************************************/
+
+
 #include "raylib.h"
 
 // WARNING: raygui implementation is expected to be defined before including this header
@@ -35,10 +88,14 @@ typedef struct {
 
   char dirPathTextCopy[256];
   char fileNameTextCopy[256];
+  // Edited - nicof: Save only the file name to be displayed on the file name text box
+  char realFileName[256];
 
   int prevFilesListActive;
 
   bool saveFileMode;
+
+  std::shared_ptr<spdlog::logger> logger;
 
 } GuiFileDialogState;
 
@@ -64,7 +121,7 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-GuiFileDialogState InitGuiFileDialog(int width, int height, const char *initPath, bool active);
+GuiFileDialogState InitGuiFileDialog(int width, int height, const char *initPath, bool active, std::shared_ptr<spdlog::logger> logger);
 void GuiFileDialog(GuiFileDialogState *state);
 
 #ifdef __cplusplus
@@ -127,7 +184,7 @@ static int GuiListViewFiles(Rectangle bounds, FileInfo *files, int count, int *f
 //----------------------------------------------------------------------------------
 // Module Functions Definition
 //----------------------------------------------------------------------------------
-GuiFileDialogState InitGuiFileDialog(int width, int height, const char *initPath, bool active)
+GuiFileDialogState InitGuiFileDialog(int width, int height, const char *initPath, bool active, const char *fileExt)
 {
   GuiFileDialogState state = { 0 };
 
@@ -167,7 +224,7 @@ GuiFileDialogState InitGuiFileDialog(int width, int height, const char *initPath
   strcpy(state.dirPathTextCopy, state.dirPathText);
   strcpy(state.fileNameTextCopy, state.fileNameText);
 
-  strcpy(state.filterExt, "all");
+  strcpy(state.filterExt, fileExt);
 
   state.dirFiles.count = 0;
 
@@ -179,6 +236,7 @@ void GuiFileDialog(GuiFileDialogState *state)
 {
   if (state->fileDialogActive)
   {
+
     const int winWidth = state->size.x;
     const int winHeight = state->size.y;
 
@@ -193,6 +251,7 @@ void GuiFileDialog(GuiFileDialogState *state)
 
     if (state->dirFiles.paths == NULL)
     {
+
       state->dirFiles = LoadDirectoryFilesEx(state->dirPathText, state->filterExt, false);
 
       for(int f = 0; f < state->dirFiles.count; f++)
@@ -209,7 +268,7 @@ void GuiFileDialog(GuiFileDialogState *state)
 
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
     state->fileDialogActive = !GuiWindowBox((Rectangle){ state->position.x + 0, state->position.y + 0, winWidth, winHeight }, "#198# Select File Dialog");
-
+    // Button back
     if (GuiButton((Rectangle){ state->position.x + winWidth - 50, state->position.y + 35, 40, 25 }, "< ..")) // || IsKeyReleased(KEY_DPAD_Y))
     {
       // Move dir path one level up
@@ -251,7 +310,16 @@ void GuiFileDialog(GuiFileDialogState *state)
     FileInfo fileInfo;
     state->filesListActive = GuiListViewFiles((Rectangle){ state->position.x + 10, state->position.y + 70, winWidth - 20, winHeight - 135 }, fileInfo, state->dirFiles.count, &state->itemFocused, &state->filesListScrollIndex, state->filesListActive);
 # else
-    state->filesListActive = GuiListViewEx((Rectangle){ state->position.x + 10, state->position.y + 70, winWidth - 20, winHeight - 135 }, (const char**)dirFilesIcon, state->dirFiles.count, &state->itemFocused, &state->filesListScrollIndex, state->filesListActive);
+    // Edited: nicof - Fix filenames errors
+    const char** names =
+        static_cast<const char **>(malloc(sizeof(char *) * state->dirFiles.count));
+    for(int i =0; i<state->dirFiles.count; i++)
+    {
+        names[i] = GetFileName(state->dirFiles.paths[i]);
+    }
+    //state->filesListActive = GuiListViewEx((Rectangle){ state->position.x + 10, state->position.y + 70, winWidth - 20, winHeight - 135 }, (const char**)dirFilesIcon, state->dirFiles.count, &state->itemFocused, &state->filesListScrollIndex, state->filesListActive);
+    state->filesListActive = GuiListViewEx((Rectangle){ state->position.x + 10, state->position.y + 70, winWidth - 20, winHeight - 135 },
+        names, state->dirFiles.count, &state->itemFocused, &state->filesListScrollIndex, state->filesListActive);
 # endif
     GuiSetStyle(LISTVIEW, TEXT_ALIGNMENT, prevTextAlignment);
     GuiSetStyle(LISTVIEW, LIST_ITEMS_HEIGHT, prevElementsHeight);
@@ -282,8 +350,10 @@ void GuiFileDialog(GuiFileDialogState *state)
     }
 
     GuiLabel((Rectangle){ state->position.x + 10, state->position.y + winHeight - 60, 68, 25 }, "File name:");
-
-    if (GuiTextBox((Rectangle){ state->position.x + 75, state->position.y + winHeight - 60, winWidth - 200, 25 }, state->fileNameText, 128, state->fileNameEditMode))
+    // Edited: nicof - Replace filename in the textbox
+    strcpy(state->realFileName,GetFileName(state->fileNameText));
+    //if (GuiTextBox((Rectangle){ state->position.x + 75, state->position.y + winHeight - 60, winWidth - 200, 25 }, state->fileNameText, 128, state->fileNameEditMode))
+    if (GuiTextBox((Rectangle){ state->position.x + 75, state->position.y + winHeight - 60, winWidth - 200, 25 }, state->realFileName, 128, state->fileNameEditMode))
     {
       if (*state->fileNameText)
       {
@@ -310,7 +380,7 @@ void GuiFileDialog(GuiFileDialogState *state)
       state->fileNameEditMode = !state->fileNameEditMode;
     }
 
-    state->fileTypeActive = GuiComboBox((Rectangle){ state->position.x + 75, state->position.y  + winHeight - 30, winWidth - 200, 25 }, "All files", state->fileTypeActive);
+    state->fileTypeActive = GuiComboBox((Rectangle){ state->position.x + 75, state->position.y  + winHeight - 30, winWidth - 200, 25 }, state->filterExt, state->fileTypeActive);
     GuiLabel((Rectangle){ state->position.x + 10, state->position.y + winHeight - 30, 68, 25 }, "File filter:");
 
     state->SelectFilePressed = GuiButton((Rectangle){ state->position.x + winWidth - 120, state->position.y + winHeight - 60, 110,
