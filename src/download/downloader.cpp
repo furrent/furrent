@@ -1,3 +1,4 @@
+/*
 #include "download/downloader.hpp"
 
 #include <array>
@@ -397,3 +398,4 @@ void Downloader::destroy_socket() {
   socket.reset();
 }
 }  // namespace fur::download::downloader
+*/

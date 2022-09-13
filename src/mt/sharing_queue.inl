@@ -1,5 +1,5 @@
 #include <mt/sharing_queue.hpp>
-
+/*
 namespace fur::mt {
 
 template<typename Work>
@@ -71,3 +71,4 @@ void SharingQueue<Work>::begin_skip_waiting() {
 }
 
 } // namespace fur::mt
+ */
