@@ -1,11 +1,10 @@
-#include "raylib.h"
 #include "log/logger.hpp"
+#include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #undef RAYGUI_IMPLEMENTATION
 #define GUI_FILE_DIALOG_IMPLEMENTATION
 #include "gui/file_dialog.h"
-
 
 int main() {
   fur::log::initialize_custom_logger();
@@ -26,28 +25,37 @@ int main() {
 
   int flag_true = 1;
   const int border = 5;
-  GuiFileDialogState file_dialog = InitGuiFileDialog(550, 500, GetWorkingDirectory(),false);
+  GuiFileDialogState file_dialog =
+      InitGuiFileDialog(550, 500, GetWorkingDirectory(), false);
+  file_dialog.fileTypeActive = true;
 
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
     // Title
-    GuiDrawText("Furrent", Rectangle{border,border, 0, 50}, TEXT_ALIGN_LEFT, BLACK);
-
-    // Button add torrent
-    if (GuiButton(Rectangle{w_width-border-150, 10, 150, 30},
-                  GuiIconText(ICON_FOLDER_OPEN, "Open torrent"))) {
-      file_dialog.fileDialogActive = true;
-    }
+    GuiDrawText("Furrent", Rectangle{border, border, 0, 50}, TEXT_ALIGN_LEFT,
+                BLACK);
+    auto button_file_dialog =
+        GuiButton(Rectangle{w_width - border - 150, 10, 150, 30},
+                  GuiIconText(ICON_FOLDER_OPEN, "Open torrent"));
 
     // Adding button to the right of the group box
-    GuiListView(Rectangle{ border, 50, w_width-border*2, w_height}, "Torrent list",
-                &flag_true, flag_true);
+    GuiListView(Rectangle{border, 50, w_width - border * 2, w_height},
+                "Torrent list", &flag_true, flag_true);
+
+    // Events
+    // Button add torrent
+    if (button_file_dialog) {
+      file_dialog.fileDialogActive = true;
+    }
     // Action on filedialog
-    if(file_dialog.SelectFilePressed){
-      if(IsFileExtension(file_dialog.fileNameText, ".torrent")){
+    if (file_dialog.SelectFilePressed) {
+      logger->info("Selected file: {}", file_dialog.fileNameText);
+      if (IsFileExtension(file_dialog.fileNameText, ".torrent")) {
         logger->info("Selected file: {}", file_dialog.fileNameText);
-        file_dialog.fileDialogActive = false;
+      } else {
+        file_dialog.SelectFilePressed = false;
+        file_dialog.fileDialogActive = true;
       }
     }
     GuiFileDialog(&file_dialog);
