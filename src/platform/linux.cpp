@@ -27,7 +27,7 @@ error:
 }
 
 IOResult write_bytes(const std::string& filename, const std::vector<uint8_t>& bytes, size_t offset) {
-    int fd = open(filename.c_str(), O_CREAT|O_WRONLY);
+    int fd = open(filename.c_str(), O_CREAT|O_WRONLY, 0666);
     if (fd < 0)
         goto error;
 
