@@ -25,6 +25,8 @@ struct TorrentFile {
   long length;
   /// The name of the shared file
   std::string name;
+  /// Shared output file stream for results
+  std::shared_ptr<std::ofstream> stream_ptr;
 
   /// Construct an empty TorrentFile instance
   explicit TorrentFile() = default;

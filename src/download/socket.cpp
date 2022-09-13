@@ -30,7 +30,7 @@ Outcome<SocketError> Socket::connect(uint32_t ip, uint16_t port,
   // could connect or there was some other unexpected error.
   if (ec) {
     auto logger = spdlog::get("custom");
-    logger->error("connecting socket: {}", ec.message());
+    logger->debug("connecting socket: {}", ec.message());
 
     switch (ec.value()) {
       case asio::error::operation_aborted:
@@ -69,7 +69,7 @@ Outcome<SocketError> Socket::write(const std::vector<uint8_t>& buf,
   // could write all the bytes or there was some other unexpected error.
   if (ec) {
     auto logger = spdlog::get("custom");
-    logger->error("writing to socket: {}", ec.message());
+    logger->debug("writing to socket: {}", ec.message());
 
     switch (ec.value()) {
       case asio::error::operation_aborted:
@@ -112,7 +112,7 @@ Result<std::vector<uint8_t>, SocketError> Socket::read(uint32_t n,
   // could read `n` bytes or there was some other unexpected error.
   if (ec) {
     auto logger = spdlog::get("custom");
-    logger->error("reading from socket: {}", ec.message());
+    logger->debug("reading from socket: {}", ec.message());
 
     switch (ec.value()) {
       case asio::error::operation_aborted:
@@ -150,7 +150,7 @@ void Socket::run(timeout timeout) {
       socket.close();
     } catch (const asio::system_error& err) {
       auto logger = spdlog::get("custom");
-      logger->error("closing socket after timeout elapsed: {}", err.what());
+      logger->debug("closing socket after timeout elapsed: {}", err.what());
 
       // Don't bubble up the error because this is non-critical. ASIO guarantees
       // that the underlying socket is closed anyway.
@@ -175,7 +175,7 @@ Outcome<SocketError> Socket::close() {
     socket.close();
   } catch (const asio::system_error& err) {
     auto logger = spdlog::get("custom");
-    logger->error("closing socket: {}", err.what());
+    logger->debug("closing socket: {}", err.what());
 
     return Outcome<SocketError>::ERROR(SocketError::Other);
   }

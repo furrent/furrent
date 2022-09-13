@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 
   fur::Furrent furrent;
   //furrent.add_torrent("../extra/raspios-2022-09-06-raspios-bullseye-armhf.img.xz.torrent");
-  furrent.add_torrent("../extra/debian-11.4.0-amd64-netinst.iso.torrent");
+  furrent.add_torrent("../extra/debian-11.5.0-amd64-i386-netinst.iso.torrent");
 
   //std::this_thread::sleep_for(std::chrono::seconds(30));
   while(true);

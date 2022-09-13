@@ -15,10 +15,9 @@ void TorrentFileLoad::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue)
     // Default global logger
     auto logger = spdlog::get("custom");
 
-    std::ifstream file(_descriptor.filename);
     std::string content;
-
-    if (file) {
+    std::ifstream file(_descriptor.filename);
+    if (file.good()) {
 
         logger->info("Loading torrent file from {}", _descriptor.filename);
 
@@ -38,7 +37,7 @@ void TorrentFileLoad::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue)
         */
        return;
     }
-    file.close();
+    //file.close();
 
     // Create torrent_manager for the file
     logger->info("Parsing torrent file {}", _descriptor.filename);
@@ -58,6 +57,9 @@ void TorrentFileLoad::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue)
         return;
     }
 
+    // Open output stream for file
+    _descriptor.torrent->stream_ptr = std::make_shared<std::ofstream>(output_filename);
+
     const size_t piece_length = _descriptor.torrent->piece_length;
     const size_t pieces_count = _descriptor.torrent->length / piece_length;
 
@@ -70,6 +72,9 @@ void TorrentFileLoad::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue)
         local_queue.insert(std::make_unique<TorrentPieceDownload>(
             _descriptor, piece));
     }
+
+    // Generate refresh peers task
+    local_queue.insert(std::make_unique<TorrentPeerRefresh>(_descriptor));
 }
 
 } // namespace fur::task

@@ -32,10 +32,12 @@ struct TorrentDescriptor {
     std::atomic_uint32_t downloaded_pieces;
     std::atomic_bool to_refresh;
 
-    TorrentDescriptor(const std::string& filename);
+    explicit TorrentDescriptor(const std::string& filename);
 
     /// Regenerate list of peers
     bool regenerate_peers();
+    /// True if there are no more pieces to download
+    bool finished();
 };
 
 /// Main state of the program  

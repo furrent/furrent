@@ -42,10 +42,10 @@ class TorrentPeerRefresh : public mt::ITask {
     TorrentDescriptor& _descriptor;
 
 public:
-    TorrentPeerRefresh(TorrentDescriptor& descr);
+    explicit TorrentPeerRefresh(TorrentDescriptor& descr);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 
-    size_t priority() const { return 3; }
+    size_t priority() const override;
 };
 
     

@@ -1,5 +1,7 @@
 #include <tasks/torrent.hpp>
 
+#include <fstream>
+
 #include <config.hpp>
 
 namespace fur::tasks {
@@ -16,37 +18,13 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
     fur::peer::Peer peer;
 
     {
-        // Allows multiple readers
-        _descriptor.mtx.lock_shared();
+        // Allows multiple readers, extract peer information and torrent file
+        std::shared_lock<std::shared_mutex> lock(_descriptor.mtx);
 
-        auto now = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - _descriptor.announce_time);
-        
-        // If the elapsed time is greater than the interval time we should spawn a refresh-peers-task
-        if (elapsed.count() > _descriptor.interval) {
-            _descriptor.to_refresh = true;
-
-            _descriptor.mtx.unlock_shared();
-            _descriptor.mtx.lock();
-
-            if (_descriptor.to_refresh) {
-                logger->info("Spawning refresh peer task for torrent {}", _descriptor.filename);
-
-                local_queue.insert(std::make_unique<TorrentPeerRefresh>(_descriptor));
-                _descriptor.announce_time = now;
-                _descriptor.to_refresh = false;
-            }
-
-            _descriptor.mtx.unlock();
-            _descriptor.mtx.lock_shared();
-        }
-
-        const size_t dsize = _descriptor.downloaders.size();
-        const size_t index = (_piece.index + _piece.attempts) % dsize;
+        const size_t count = _descriptor.downloaders.size();
+        const size_t index = (_piece.index + _piece.attempts) % count;
         peer = _descriptor.downloaders[index];
         torrent = *_descriptor.torrent;
-
-        _descriptor.mtx.unlock_shared();
     }
 
     auto download_begin = std::chrono::high_resolution_clock::now();
@@ -57,32 +35,33 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
     if (result.valid()) {
 
         auto download_end = std::chrono::high_resolution_clock::now();
-        auto download_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(download_end - download_begin);
+        auto download_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            download_end - download_begin);
 
         const size_t piece_length = torrent.piece_length;
         const size_t pieces_count = torrent.length / piece_length;
 
         auto downloaded = *result;
-        logger->info("Download of piece {:5}/{} from {} COMPLETED ({} bytes, {} ms)", 
-            _piece.index + 1, pieces_count, peer.address(), 
-            downloaded.content.size(), download_elapsed.count());
+        logger->info("Download of piece {:5}/{} from {} COMPLETED ({} bytes, {} ms)",
+                     _piece.index + 1, pieces_count, peer.address(),
+                     downloaded.content.size(), download_elapsed.count());
 
         _descriptor.downloaded_pieces += 1;
-        
+
+        auto write_begin = std::chrono::high_resolution_clock::now();
         {
             // Write bytes to memory
             std::unique_lock<std::shared_mutex> lock(_descriptor.mtx);
 
-            logger->info("Writing piece to file...");
-
             // Create output file on system and open an handle
-            std::string output_filename = config::DOWNLOAD_FOLDER + _descriptor.filename;
-            std::ofstream stream = std::ofstream(output_filename, std::ios::out);
-
-            stream.seekp(_piece.offset, std::ios_base::beg);
-            stream.write(reinterpret_cast<char*>(&result->content[0]), result->content.size());
-            stream.close();
+            auto& stream_ptr = _descriptor.torrent->stream_ptr;
+            stream_ptr->seekp(_piece.offset, std::ios_base::beg);
+            stream_ptr->write(reinterpret_cast<char*>(&result->content[0]), result->content.size());
         }
+        auto write_end = std::chrono::high_resolution_clock::now();
+        auto write_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(write_end - write_begin);
+        logger->info("Writing of piece {}/{} to file {} COMPLETED ({} ms)",
+                     _piece.index + 1, pieces_count, torrent.name, write_elapsed.count());
     }
     // Download failed!
     else {

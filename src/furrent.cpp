@@ -51,6 +51,11 @@ bool TorrentDescriptor::regenerate_peers() {
     downloaders = new_peers;
     return true;
 }
+bool TorrentDescriptor::finished() {
+  std::shared_lock<std::shared_mutex> lock(mtx);
+  const size_t total_pieces = torrent->length / torrent->piece_length;
+  return downloaded_pieces == total_pieces;
+}
 
 Furrent::Furrent() {
 
