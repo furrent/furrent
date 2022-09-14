@@ -22,9 +22,9 @@ namespace fur::download {
 
 /// Describes a piece of a torrent
 struct PieceDescriptor {
-    size_t index;
-    size_t offset;
-    size_t attempts;
+  size_t index;
+  size_t offset;
+  size_t attempts;
 };
 
 /// A downloaded piece for a torrent file.
@@ -34,7 +34,7 @@ struct Downloaded {
   std::vector<uint8_t> content;
 };
 
-}
+}  // namespace fur::download
 
 namespace fur::download::downloader {
 
@@ -74,7 +74,8 @@ class Downloader {
   ///  - This peer not having the requested piece available
   ///  - The connection timing out
   ///  - The downloaded piece being corrupt
-  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(const PieceDescriptor&);
+  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(
+      const PieceDescriptor&);
 
   const TorrentFile& get_torrent() const;
   const Peer& get_peer() const;
@@ -98,13 +99,13 @@ class Downloader {
   /// `std::nullopt` when a connection drops and is later recycled.
   std::optional<Bitfield> bitfield;
 
-public:
+ public:
   /// Ensures that the `socket` is present and in good health (not dropped,
   /// timed out and such). Should always call this method first, before
   /// accessing the socket.
   Outcome<DownloaderError> ensure_connected();
-  
-private:
+
+ private:
   /// Performs the BitTorrent handshake.
   Outcome<DownloaderError> handshake();
 

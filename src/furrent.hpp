@@ -1,7 +1,5 @@
 #pragma once
 
-#include <shared_mutex>
-
 #include <download/downloader.hpp>
 #include <download/lender_pool.hpp>
 #include <mt/group.hpp>
@@ -13,33 +11,32 @@
 namespace fur {
 
 struct TorrentDescriptor {
+  // Protects internal state, allows multiple readers but only one writer
+  std::shared_mutex mtx;
 
-    // Protects internal state, allows multiple readers but only one writer
-    std::shared_mutex mtx;
+  /// Name of the file where the torrent can be found
+  std::string filename;
+  /// Parsed torrent file
+  std::optional<torrent::TorrentFile> torrent;
+  /// Peers' downloaders where to ask for the pieces
+  std::vector<Peer> downloaders;
 
-    /// Name of the file where the torrent can be found
-    std::string filename;
-    /// Parsed torrent file
-    std::optional<torrent::TorrentFile> torrent;
-    /// Peers' downloaders where to ask for the pieces
-    std::vector<Peer> downloaders;
+  // Time of first announce
+  std::chrono::high_resolution_clock::time_point announce_time;
+  /// Interval to next update
+  size_t interval;
 
-    // Time of first announce
-    std::chrono::high_resolution_clock::time_point announce_time;
-    /// Interval to next update
-    size_t interval;
+  /// Number of pieces downloaded
+  std::atomic_uint32_t pieces_downloaded;
+  /// Number of pieces written to file
+  std::atomic_uint32_t pieces_saved;
 
-    /// Number of pieces downloaded
-    std::atomic_uint32_t pieces_downloaded;
-    /// Number of pieces written to file
-    std::atomic_uint32_t pieces_saved;
+  explicit TorrentDescriptor(const std::string& filename);
 
-    explicit TorrentDescriptor(const std::string& filename);
-
-    /// Regenerate list of peers
-    bool regenerate_peers();
-    /// True if there are no more pieces to download
-    bool download_finished();
+  /// Regenerate list of peers
+  bool regenerate_peers();
+  /// True if there are no more pieces to download
+  bool download_finished();
 };
 
 /// Main state of the program
