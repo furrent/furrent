@@ -20,8 +20,8 @@ void draw_list_element(std::string text, float pos){
 
 }
 
-void load_torrents(const Vector2 scoll){
-  std::vector<std::string> torrents{ "A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+void load_torrents(const std::vector<std::string>&torrents ,const Vector2 scoll){
+
   float pos = 0;
   for (auto t:torrents){
     if(pos + 50 < abs(scoll.y)){
@@ -37,9 +37,11 @@ void load_torrents(const Vector2 scoll){
 int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
-
+  const int BORDER = 5;
   const int w_width = 800;
   const int w_height = 600;
+
+  std::vector<std::string> torrents{ "A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   SetConfigFlags(FLAG_WINDOW_HIGHDPI);
@@ -52,7 +54,6 @@ int main() {
   SetTargetFPS(60);
 
   int flag_true = 1;
-  const int border = 5;
   //GetWorkingDirectory()
   GuiFileDialogState file_dialog =
       InitGuiFileDialog(550, 500, "/home/nicof/Desktop/univr/furrent/extra/", false,".torrent");
@@ -63,20 +64,20 @@ int main() {
     BeginDrawing();
     ClearBackground(RAYWHITE);
     // Title
-    GuiDrawText("Furrent", Rectangle{border, border, 0, 50}, TEXT_ALIGN_LEFT,
+    GuiDrawText("Furrent", Rectangle{BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT,
                 BLACK);
     auto button_file_dialog =
-        GuiButton(Rectangle{w_width - border - 150, 10, 150, 30},
+        GuiButton(Rectangle{w_width - BORDER - 150, 10, 150, 30},
                   GuiIconText(ICON_FOLDER_OPEN, "Open torrent"));
 
     // Panel header of the list
-    GuiScrollPanel(Rectangle{border, 100, w_width - border * 2, w_height-50},
+    GuiScrollPanel(Rectangle{BORDER, 100, w_width - BORDER * 2, w_height-100-BORDER},
                    NULL,
-                    Rectangle{border, 50, w_width - 100, 1000},
+                    Rectangle{BORDER, 50, w_width - 150, static_cast<float>(50*torrents.size())},
                    &scroll);
-    load_torrents(scroll);
+    load_torrents(torrents, scroll);
     GuiDrawRectangle(
-        Rectangle{border, 55, w_width - border * 2, 50},
+        Rectangle{BORDER, 55, w_width - BORDER * 2, 50},
         0,
         DARKBLUE,
         SKYBLUE);
@@ -84,7 +85,7 @@ int main() {
 
     // White panel to cut the scroll panel list
     GuiDrawRectangle(
-        Rectangle{border, w_height-2, w_width, w_width},
+        Rectangle{BORDER, w_height-BORDER, w_width, w_width},
         1,
         GetColor(0xf5f5f5ff),
         GetColor(0xf5f5f5ff));
