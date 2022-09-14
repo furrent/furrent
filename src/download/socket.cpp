@@ -20,7 +20,7 @@ Outcome<SocketError> Socket::connect(uint32_t ip, uint16_t port,
   // to the provided endpoint. When the operation yields (either because it
   // succeeded or because the timeout expired) the callback exports the error
   // code to the variable above.
-  asio::async_connect(socket, endpoints,
+  asio::async_connect(engine->socket, endpoints,
                       [&](const std::error_code& in_ec,
                           const asio::ip::tcp::endpoint&) { ec = in_ec; });
 
@@ -43,7 +43,7 @@ Outcome<SocketError> Socket::connect(uint32_t ip, uint16_t port,
   return Outcome<SocketError>::OK({});
 }
 
-bool Socket::is_open() { return socket.is_open(); }
+bool Socket::is_open() { return engine->socket.is_open(); }
 
 Outcome<SocketError> Socket::write(const std::vector<uint8_t>& buf,
                                    timeout timeout) {
@@ -60,7 +60,7 @@ Outcome<SocketError> Socket::write(const std::vector<uint8_t>& buf,
   // If the asynchronous runtime is able to complete the operation within the
   // timeout bounds, we can stand assured that all bytes have been written.
   asio::async_write(
-      socket, asio::buffer(buf),
+      engine->socket, asio::buffer(buf),
       [&](const std::error_code& in_ec, std::size_t) { ec = in_ec; });
 
   run(timeout);
@@ -103,7 +103,7 @@ Result<std::vector<uint8_t>, SocketError> Socket::read(uint32_t n,
   // runtime is able to complete the operation within the timeout bounds, we can
   // stand assured that all bytes have been read.
   asio::async_read(
-      socket, asio::buffer(buf),
+      engine->socket, asio::buffer(buf),
       [&](const std::error_code& in_ec, std::size_t) { ec = in_ec; });
 
   run(timeout);
@@ -128,18 +128,18 @@ Result<std::vector<uint8_t>, SocketError> Socket::read(uint32_t n,
 void Socket::run(timeout timeout) {
   // Restart the asynchronous runtime that might have been left in a
   // "stopped" state by a previous operation.
-  io.restart();
+  engine->ctx.restart();
 
   // Run all scheduled asynchronous operations until completion unless the
   // timeout expires.
-  io.run_for(timeout);
+  engine->ctx.run_for(timeout);
 
   // A stopped runtime indicates that all scheduled operations terminated
   // successfully. If that's not the case, then the timeout expired.
-  if (!io.stopped()) {
+  if (!engine->ctx.stopped()) {
     try {
       // Ask the socket to cancel any pending task.
-      socket.shutdown(asio::ip::tcp::socket::shutdown_both);
+      engine->socket.shutdown(asio::ip::tcp::socket::shutdown_both);
     } catch (const asio::system_error& _) {
       // We're calling `shutdown` because we're benevolent gods, but it doesn't
       // really matter if it fails.
@@ -147,7 +147,7 @@ void Socket::run(timeout timeout) {
 
     try {
       // Close the underlying socket.
-      socket.close();
+      engine->socket.close();
     } catch (const asio::system_error& err) {
       auto logger = spdlog::get("custom");
       logger->debug("closing socket after timeout elapsed: {}", err.what());
@@ -157,14 +157,14 @@ void Socket::run(timeout timeout) {
     }
 
     // Run all to completion to allow the socket to clean up.
-    io.run();
+    engine->ctx.run();
   }
 }
 
 Outcome<SocketError> Socket::close() {
   try {
     // Ask the socket to cancel any pending task.
-    socket.shutdown(asio::ip::tcp::socket::shutdown_both);
+    engine->socket.shutdown(asio::ip::tcp::socket::shutdown_both);
   } catch (const asio::system_error& _) {
     // We're calling `shutdown` because we're benevolent gods, but it doesn't
     // really matter if it fails.
@@ -172,7 +172,7 @@ Outcome<SocketError> Socket::close() {
 
   try {
     // Close the underlying socket.
-    socket.close();
+    engine->socket.close();
   } catch (const asio::system_error& err) {
     auto logger = spdlog::get("custom");
     logger->debug("closing socket: {}", err.what());
@@ -181,7 +181,7 @@ Outcome<SocketError> Socket::close() {
   }
 
   // Run all to completion to allow the socket to clean up.
-  io.run();
+  engine->ctx.run();
 
   return Outcome<SocketError>::OK({});
 }

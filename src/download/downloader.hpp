@@ -102,7 +102,7 @@ public:
   /// timed out and such). Should always call this method first, before
   /// accessing the socket.
   Outcome<DownloaderError> ensure_connected();
-
+  
 private:
   /// Performs the BitTorrent handshake.
   Outcome<DownloaderError> handshake();

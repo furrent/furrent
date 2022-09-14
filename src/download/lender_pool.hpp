@@ -60,11 +60,14 @@ template <typename T, typename Strategy = StratFirstAvailable<T>>
 class LenderPool {
  private:
   /// Used to notify any thread sleeping on `get()` that an object has been
-  /// returned.
+  /// returned or that a pool is no longer clearing.
   std::condition_variable cv;
-  /// Protects the `storage` vector.
+  /// Protects the `storage` vector and also `draining`.
   std::mutex mx;
   std::vector<SlotPtr<T>> storage;
+
+  /// Is the bool being drained?
+  bool draining = false;
 
  public:
   /// Inserts a new object into the pool.
@@ -74,7 +77,9 @@ class LenderPool {
   /// by using `std::unique_ptr`.
   void put(T inner) {
     std::unique_lock lock(mx);
+    if (draining) return;
     storage.push_back(std::make_unique<Slot<T>>(std::move(inner)));
+    cv.notify_one();
   }
 
   /// Borrow an object from the pool. This is blocking if no suitable objects
@@ -86,29 +91,50 @@ class LenderPool {
     std::unique_lock lock(mx);
 
     while (true) {
-      // We're using pointers here but for a good cause: the strategy cannot
-      // always return a slot (think about the scenario in which all objects
-      // are currently borrowed), so a `nullptr` value is used to represent this
-      // specific failure. `std::optional` cannot be used for reference types.
-      // But then: how is a `std::optional<T&>` any different from `T*`?
-      SlotPtr<T>* maybeSlot = strategy(storage);
+      if (!draining) {
+        // We're using pointers here but for a good cause: the strategy cannot
+        // always return a slot (think about the scenario in which all objects
+        // are currently borrowed), so a `nullptr` value is used to represent this specific failure. `std::optional` cannot be used for reference types. But then: how is a `std::optional<T&>` any different from `T*`?
+        SlotPtr<T>* maybeSlot = strategy(storage);
 
-      if (maybeSlot != nullptr) {
-        // This bad looking line is simply to convert to a `Slot<T>&`.
-        auto& slot = *(*maybeSlot).get();
-        slot.is_borrowed = true;
-        return Borrow(slot.inner, [&] {
-          std::unique_lock lock(mx);
-          slot.is_borrowed = false;
-          // This object has been released, notify any waiting thread.
-          cv.notify_one();
-        });
+        if (maybeSlot != nullptr) {
+          // This bad looking line is simply to convert to a `Slot<T>&`.
+          auto& slot = *(*maybeSlot).get();
+          slot.is_borrowed = true;
+          return Borrow(slot.inner, [&] {
+            std::unique_lock lock(mx);
+            slot.is_borrowed = false;
+            // This object has been released, notify any waiting thread.
+            cv.notify_all();
+          });
+        }
       }
 
-      // Too bad, there is no slot available to lend. Let's wait until something
-      // happens.
+      // Too bad, there is no slot available to lend or the pool is draining.
+      // Let's wait until something happens.
       cv.wait(lock);
     }
+  }
+
+  /// Block until the entire pool is drained
+  void drain() {
+    std::unique_lock lock(mx);
+    draining = true;
+
+    while (true) {
+      for (int i = 0; i < static_cast<int>(storage.size()); i++) {
+        if (!storage[i]->is_borrowed) {
+          storage.erase(storage.begin() + i);
+          i--;
+        }
+      }
+
+      if (storage.empty()) break;
+      cv.wait(lock);
+    }
+
+    draining = false;
+    cv.notify_all();
   }
 };
 

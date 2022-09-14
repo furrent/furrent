@@ -15,7 +15,7 @@ using fur::download::message::MessageKind;
 namespace fur::download::downloader {
 /// Should be greater than 10 seconds for a realistic torrent client but smaller
 /// values result in quicker testing
-const int UNCHOKE_TIMEOUT = 2;
+const int UNCHOKE_TIMEOUT = 15;
 
 DownloaderError from_socket_error(const socket::SocketError& err) {
   switch (err) {
@@ -67,7 +67,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
 
   // TCP connect
   auto maybe_connect =
-      socket->connect(peer.ip, peer.port, std::chrono::milliseconds(50));
+      socket->connect(peer.ip, peer.port, std::chrono::seconds(5));
   if (!maybe_connect.valid()) {
     destroy_socket();
     return Outcome::ERROR(from_socket_error(maybe_connect.error()));
@@ -82,7 +82,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   // `BitfieldMessage` is either the first message sent or the peer has no piece
   // to share. In the latter case, we're not interested in them and can drop the
   // connection.
-  auto maybe_message = recv_message(std::chrono::milliseconds(50));
+  auto maybe_message = recv_message(std::chrono::seconds(5));
   if (!maybe_message.valid())
     return Outcome::ERROR(DownloaderError(maybe_message.error()));
   auto message = std::unique_ptr<Message>(maybe_message->release());
@@ -98,12 +98,12 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
 
   logger->debug("{} sent its bitfield", peer.address());
 
-  auto maybe_unchoke = send_message(UnchokeMessage(), std::chrono::milliseconds(50));
+  auto maybe_unchoke = send_message(UnchokeMessage(), std::chrono::seconds(5));
   if (!maybe_unchoke.valid()) return maybe_unchoke;
   logger->debug("We unchoked {}", peer.address());
 
   auto maybe_interested =
-      send_message(InterestedMessage(), std::chrono::milliseconds(50));
+      send_message(InterestedMessage(), std::chrono::seconds(5));
   if (!maybe_interested.valid()) return maybe_interested;
   logger->debug("We are interested in {}", peer.address());
 
@@ -176,7 +176,7 @@ Outcome<DownloaderError> Downloader::handshake() {
   message.insert(message.end(), peerId.begin(), peerId.end());
 
   // The message is ready, send it to the peer
-  auto maybe_sent = socket->write(message, std::chrono::milliseconds(50));
+  auto maybe_sent = socket->write(message, std::chrono::seconds(5));
   if (!maybe_sent.valid()) {
     destroy_socket();
     return Outcome::ERROR(from_socket_error(maybe_sent.error()));
@@ -184,7 +184,7 @@ Outcome<DownloaderError> Downloader::handshake() {
 
   // Read the response
   auto maybe_response =
-      socket->read(HANDSHAKE_LENGTH, std::chrono::milliseconds(50));
+      socket->read(HANDSHAKE_LENGTH, std::chrono::seconds(5));
   if (!maybe_response.valid()) {
     destroy_socket();
     return Outcome::ERROR(from_socket_error(maybe_response.error()));
@@ -258,7 +258,7 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const PieceDescript
   constexpr int PIPELINE_SIZE_MAX = 5;
 
   // Dynamically updated to be longer after a Choke and shorter after an Unchoke
-  auto timeout = std::chrono::seconds(2);
+  auto timeout = std::chrono::seconds(5);
 
   // While the piece is not entirely downloaded
   while (blocks_received < blocks_total) {
@@ -275,7 +275,7 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const PieceDescript
 
         auto maybe_sent =
             send_message(RequestMessage(task.index, offset, length),
-                         std::chrono::seconds(1));
+                         std::chrono::seconds(5));
         if (!maybe_sent.valid()) {
           return Result::ERROR(DownloaderError(maybe_sent.error()));
         }
@@ -301,7 +301,7 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const PieceDescript
       case MessageKind::Unchoke:
         choked = false;
         // Reset timeout to the lower one
-        timeout = std::chrono::seconds(1);
+        timeout = std::chrono::seconds(5);
         logger->debug("{} unchoked us", peer.address());
         break;
       case MessageKind::Have: {
