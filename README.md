@@ -1,4 +1,11 @@
-# Furrent
+![banner](banner.png)
+
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/furrent/furrent/CMake)
+![GitHub contributors](https://img.shields.io/github/contributors/furrent/furrent)
+![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/furrent/furrent)
+![GitHub closed issues](https://img.shields.io/github/issues-closed/furrent/furrent)
+![GitHub repo size](https://img.shields.io/github/repo-size/furrent/furrent)
+
 Furrent is a tiny BitTorrent client
 
 ## Building
