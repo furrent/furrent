@@ -1,10 +1,10 @@
 ![banner](banner.png)
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/furrent/furrent/CMake)
-![GitHub contributors](https://img.shields.io/github/contributors/furrent/furrent)
-![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/furrent/furrent)
-![GitHub closed issues](https://img.shields.io/github/issues-closed/furrent/furrent)
-![GitHub repo size](https://img.shields.io/github/repo-size/furrent/furrent)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/furrent/furrent/CMake?style=for-the-badge&labelColor=ede9e0)
+![GitHub contributors](https://img.shields.io/github/contributors/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
+![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
+![GitHub closed issues](https://img.shields.io/github/issues-closed/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
+![GitHub repo size](https://img.shields.io/github/repo-size/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
 
 Furrent is a tiny BitTorrent client
 
