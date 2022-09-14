@@ -1,16 +1,28 @@
 #include "peer.hpp"
 
 #include <memory>
-#include <stdexcept>
 #include <regex>
+#include <stdexcept>
 
 #include "bencode/bencode_parser.hpp"
 #include "bencode/bencode_value.hpp"
 #include "cpr/cpr.h"
 #include "fmt/core.h"
 #include "hash.hpp"
+#include "spdlog/spdlog.h"
 
 namespace fur::peer {
+
+std::string error_to_string(const PeerError error) {
+  switch (error) {
+    case PeerError::AnnounceError:
+      return "can't announce to the tracker";
+    case PeerError::ParserError:
+      return "error during parsing of the file";
+    default:
+      return "unknown error";
+  }
+}
 
 std::string Peer::address() const {
   return fmt::format("{}.{}.{}.{}:{}", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
@@ -26,19 +38,21 @@ Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
   std::regex_match(ip_s, match, ip_regex);
 
   if (match.empty()) {
+    auto logger = spdlog::get("custom");
+    logger->error("not a valid ip");
     throw std::invalid_argument("not a valid ip");
   }
 
-  for (int i=1; i<=4; i++) {
+  for (int i = 1; i <= 4; i++) {
     uint32_t octet = std::stoi(match[i]);
-    ip |= octet << 8*(4-i);
+    ip |= octet << 8 * (4 - i);
   }
 }
 
 // Forward declare
-AnnounceResult parse_tracker_response(const std::string& text);
+PeerResult parse_tracker_response(const std::string& text);
 
-AnnounceResult announce(const torrent::TorrentFile& torrent_f) {
+PeerResult announce(const torrent::TorrentFile& torrent_f) {
   auto res = cpr::Get(cpr::Url{torrent_f.announce_url},
                       cpr::Parameters{
                           {"info_hash", hash::hash_to_str(torrent_f.info_hash)},
@@ -51,21 +65,28 @@ AnnounceResult announce(const torrent::TorrentFile& torrent_f) {
                       });
 
   if (res.status_code == 0 || res.status_code >= 400) {
-    throw std::runtime_error("could not announce to tracker");
+    auto logger = spdlog::get("custom");
+    logger->error("Could not announce to tracker");
+    return PeerResult::ERROR(PeerError::AnnounceError);
   }
-
   return parse_tracker_response(res.text);
 }
 
-AnnounceResult parse_tracker_response(const std::string& text) {
+PeerResult parse_tracker_response(const std::string& text) {
   AnnounceResult result;
 
   bencode::BencodeParser parser;
-  std::unique_ptr<bencode::BencodeValue> tree = parser.decode(text);
-  auto& dict = dynamic_cast<bencode::BencodeDict&>(*tree).value();
+  auto tree = parser.decode(text);
+  if (!tree.valid()) {
+    auto logger = spdlog::get("custom");
+    logger->error("Bencode parser error: {}",
+                  fur::bencode::error_to_string(tree.error()));
+    return PeerResult::ERROR(PeerError::ParserError);
+  }
+  auto& dict = dynamic_cast<bencode::BencodeDict&>(*(*tree)).value();
 
   auto& interval = dynamic_cast<bencode::BencodeInt&>(*dict.at("interval"));
-  result.interval = interval.value();
+  result.interval = static_cast<int>(interval.value());
 
   auto& peers = dynamic_cast<bencode::BencodeString&>(*dict.at("peers"));
   for (auto it = peers.value().begin(); it < peers.value().end(); it += 6) {
@@ -81,9 +102,9 @@ AnnounceResult parse_tracker_response(const std::string& text) {
     port |= *(it++) << 8;
     port |= *(it++);
 
-    result.peers.push_back(Peer{ip, port});
+    result.peers.emplace_back(ip, port);
   }
 
-  return result;
+  return PeerResult::OK(std::move(result));
 }
 }  // namespace fur::peer

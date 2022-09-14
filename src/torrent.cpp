@@ -3,6 +3,7 @@
 #include "bencode/bencode_parser.hpp"
 #include "bencode/bencode_value.hpp"
 #include "hash.hpp"
+#include "spdlog/spdlog.h"
 
 using namespace fur::bencode;
 
@@ -20,8 +21,7 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
   this->announce_url =
       dynamic_cast<BencodeString&>(*dict.at("announce")).value();
 
-  auto& bencode_info_dict =
-      dynamic_cast<BencodeDict&>(*dict.at("info"));
+  auto& bencode_info_dict = dynamic_cast<BencodeDict&>(*dict.at("info"));
 
   BencodeParser parser;
   std::string encoded_info_dict = parser.encode(bencode_info_dict);
@@ -29,17 +29,23 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
 
   auto& info_dict = bencode_info_dict.value();
 
-  this->name =
-      dynamic_cast<BencodeString&>(*info_dict.at("name")).value();
+  this->name = dynamic_cast<BencodeString&>(*info_dict.at("name")).value();
 
-  this->length =
-      dynamic_cast<BencodeInt&>(*info_dict.at("length")).value();
+  this->length = dynamic_cast<BencodeInt&>(*info_dict.at("length")).value();
 
-  this->piece_length =
-      dynamic_cast<BencodeInt&>(*info_dict.at("piece length")).value();
+  this->piece_length = static_cast<int>(
+      dynamic_cast<BencodeInt&>(*info_dict.at("piece length")).value());
 
-  auto pieces =
-      dynamic_cast<BencodeString&>(*info_dict.at("pieces")).value();
-  this->piece_hashes = hash::split_piece_hashes(pieces);
+  auto pieces = dynamic_cast<BencodeString&>(*info_dict.at("pieces")).value();
+
+  auto r_hashes = hash::split_piece_hashes(pieces);
+
+  if (!r_hashes.valid()) {
+    auto logger = spdlog::get("custom");
+    logger->error("Could not split piece hashes: {}",
+                  hash::error_to_string(r_hashes.error()));
+    throw std::invalid_argument("Malformed piece hashes string");
+  }
+  this->piece_hashes = *r_hashes;
 }
 }  // namespace fur::torrent

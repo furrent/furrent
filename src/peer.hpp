@@ -5,10 +5,12 @@
 #include <vector>
 
 #include "torrent.hpp"
+#include "util/result.hpp"
 
 /// Contains data structures and facilities for representing and discovering
 /// BitTorrent peers
 namespace fur::peer {
+
 /// Represents a single peer as given by the tracker
 struct Peer {
   uint32_t ip;
@@ -37,7 +39,19 @@ struct AnnounceResult {
   std::vector<Peer> peers;
 };
 
+enum class PeerError {
+  /// Generic error that comes from the BencodeParser
+  ParserError,
+  /// Can't announce to the tracker
+  AnnounceError
+};
+
+/// Function to translate a PeerError to a string
+std::string error_to_string(PeerError error);
+
+using PeerResult = util::Result<AnnounceResult, PeerError>;
+
 /// Announce ourselves to the tracker and get a list of peers to download the
 /// file from
-[[nodiscard]] AnnounceResult announce(const torrent::TorrentFile& torrent_f);
+[[nodiscard]] PeerResult announce(const torrent::TorrentFile& torrent_f);
 }  // namespace fur::peer

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <string>
-
 #include <spdlog/spdlog.h>
+
+#include <string>
 
 namespace fur::log {
 
@@ -15,5 +15,4 @@ namespace fur::log {
 std::shared_ptr<spdlog::logger> initialize_custom_logger(
     bool do_file_sink = true);
 
-} // namespace fur::log
-
+}  // namespace fur::log

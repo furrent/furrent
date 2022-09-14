@@ -5,9 +5,23 @@
 #include <string>
 #include <vector>
 
+#include "util/result.hpp"
+
 namespace fur::hash {
+
 /// Type for a SHA1 hash
 using hash_t = std::array<uint8_t, 20>;
+
+enum class HashError {
+  /// The hash of the given string is malformed
+  MalformedPieceHashesString
+};
+
+/// Function to translate an HashError to a string
+std::string error_to_string(HashError error);
+
+/// Result of a hash operation
+using HashResult = util::Result<std::vector<hash_t>, HashError>;
 
 /// Encodes an hash to a string. Note that we're forcing the compiler to make
 /// "char" unsigned so a string can contain arbitrary bytes
@@ -21,7 +35,7 @@ hash_t compute_info_hash(const std::string& bencoded_info_dict);
 
 /// Takes a string with the hashes of pieces from a torrent file and parses
 /// them into a vector of "hash_t". Each hash is 20 bytes long
-std::vector<hash_t> split_piece_hashes(const std::string& pieces);
+HashResult split_piece_hashes(const std::string& pieces);
 
 /// Checks that a downloaded piece matches the provided hash
 bool verify_piece(const std::vector<uint8_t>& piece, hash_t hash);

@@ -4,24 +4,23 @@
  * @brief Tasks are the basic unit of execution for the workers
  * @version 0.1
  * @date 2022-09-05
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #pragma once
 
 #include <memory>
-
 #include <mt/sharing_queue.hpp>
 #include <policy/policy.hpp>
 
 namespace fur::mt {
 
 class ITask {
-public:
-    /// Standard wrapper type of the tasks
-    typedef std::unique_ptr<ITask> Wrapper;
+ public:
+  /// Standard wrapper type of the tasks
+  typedef std::unique_ptr<ITask> Wrapper;
 
     virtual ~ITask() = default;
 
@@ -43,4 +42,4 @@ public:
     Iterator extract(Iterator begin, Iterator end) const override;
 };
 
-} // namespace fur::mt
+}  // namespace fur::mt

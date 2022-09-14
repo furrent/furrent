@@ -1,12 +1,11 @@
 #pragma once
 
-#include <string>
+#include <atomic>
+#include <download/lender_pool.hpp>
 #include <list>
 #include <optional>
-#include <atomic>
-
 #include <peer.hpp>
-#include <download/lender_pool.hpp>
+#include <string>
 
 /// Namespace for the torrent manager. Contains the TorrentManager, every
 /// torrent file is mapped to a TorrentManager object.
@@ -75,7 +74,7 @@ public:
     /// Last time we announced ourselves to the tracker
     time_t                          _last_announce;
     /// Pool of reusable sockets
-    LenderPool<Socket>              _lender_pool;
+    download::lender_pool::LenderPool<Socket>              _lender_pool;
 
   public:
     /// Priority of the torrent
@@ -114,7 +113,7 @@ public:
     /// Function to call when a task is failed, it put back the task in the list
     void task_failed(const PieceDescriptor& t);
     /// Update the list of peers to download the file from
-    void update_peers();
+    util::Result<bool> update_peers();
     /// Function that put the state of the current object to Refresh if the time
     /// has passed the announce interval
     [[nodiscard]] bool should_announce() const;
@@ -123,7 +122,7 @@ public:
     /// Set the stategy used to pick a piece for the workers
     void set_strategy(Strategy strategy);
     /// Returns the _lender_pool of the current object
-    LenderPool<Socket>& get_lender_pool();
+    download::lender_pool::LenderPool<Socket>& get_lender_pool();
 
     /// @return True if not all pieces have been downloaded
     bool unfinished();
@@ -134,4 +133,4 @@ using TorrentManagerRef = std::reference_wrapper<TorrentManager>;
 
 #endif
 
-} // namespace fur
+}  // namespace fur

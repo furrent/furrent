@@ -91,7 +91,7 @@ void test_alice(std::vector<DownloaderError>& errors) {
   auto ben_tree = parser.decode(content);
 
   // Parse TorrentFile
-  TorrentFile torrent(*ben_tree);
+  TorrentFile torrent(*(*ben_tree));
 
   Downloader down(torrent, peer);
 
