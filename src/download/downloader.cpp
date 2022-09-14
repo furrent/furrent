@@ -67,7 +67,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
 
   // TCP connect
   auto maybe_connect =
-      socket->connect(peer.ip, peer.port, std::chrono::milliseconds(2));
+      socket->connect(peer.ip, peer.port, std::chrono::milliseconds(50));
   if (!maybe_connect.valid()) {
     destroy_socket();
     return Outcome::ERROR(from_socket_error(maybe_connect.error()));
@@ -82,7 +82,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   // `BitfieldMessage` is either the first message sent or the peer has no piece
   // to share. In the latter case, we're not interested in them and can drop the
   // connection.
-  auto maybe_message = recv_message(std::chrono::seconds(1));
+  auto maybe_message = recv_message(std::chrono::milliseconds(50));
   if (!maybe_message.valid())
     return Outcome::ERROR(DownloaderError(maybe_message.error()));
   auto message = std::unique_ptr<Message>(maybe_message->release());
@@ -98,12 +98,12 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
 
   logger->debug("{} sent its bitfield", peer.address());
 
-  auto maybe_unchoke = send_message(UnchokeMessage(), std::chrono::seconds(1));
+  auto maybe_unchoke = send_message(UnchokeMessage(), std::chrono::milliseconds(50));
   if (!maybe_unchoke.valid()) return maybe_unchoke;
   logger->debug("We unchoked {}", peer.address());
 
   auto maybe_interested =
-      send_message(InterestedMessage(), std::chrono::seconds(1));
+      send_message(InterestedMessage(), std::chrono::milliseconds(50));
   if (!maybe_interested.valid()) return maybe_interested;
   logger->debug("We are interested in {}", peer.address());
 
@@ -113,7 +113,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   // Now we need to wait to be unchoked by the peer. Only then can we start to
   // ask for pieces.
   while (choked) {
-    maybe_message = recv_message(std::chrono::seconds(UNCHOKE_TIMEOUT));
+    maybe_message = recv_message(std::chrono::milliseconds(50));
     if (!maybe_message.valid())
       return Outcome::ERROR(DownloaderError(maybe_message.error()));
     message = std::unique_ptr<Message>(maybe_message->release());
@@ -127,6 +127,14 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   logger->debug("{} unchoked us", peer.address());
 
   return Outcome::OK({});
+}
+
+const TorrentFile& Downloader::get_torrent() const {
+  return torrent;
+}
+
+const Peer& Downloader::get_peer() const {
+  return peer;
 }
 
 // 1  for the length of the protocol identifier
@@ -168,7 +176,7 @@ Outcome<DownloaderError> Downloader::handshake() {
   message.insert(message.end(), peerId.begin(), peerId.end());
 
   // The message is ready, send it to the peer
-  auto maybe_sent = socket->write(message, std::chrono::milliseconds(100));
+  auto maybe_sent = socket->write(message, std::chrono::milliseconds(50));
   if (!maybe_sent.valid()) {
     destroy_socket();
     return Outcome::ERROR(from_socket_error(maybe_sent.error()));
@@ -176,7 +184,7 @@ Outcome<DownloaderError> Downloader::handshake() {
 
   // Read the response
   auto maybe_response =
-      socket->read(HANDSHAKE_LENGTH, std::chrono::milliseconds(100));
+      socket->read(HANDSHAKE_LENGTH, std::chrono::milliseconds(50));
   if (!maybe_response.valid()) {
     destroy_socket();
     return Outcome::ERROR(from_socket_error(maybe_response.error()));
@@ -201,7 +209,7 @@ Outcome<DownloaderError> Downloader::handshake() {
   return Outcome::OK({});
 }
 
-Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
+Result<Downloaded, DownloaderError> Downloader::try_download(const PieceDescriptor& task) {
   using Result = Result<Downloaded, DownloaderError>;
 
   auto logger = spdlog::get("custom");
@@ -214,7 +222,6 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
   if (!bitfield->get(task.index))
     return Result::ERROR(DownloaderError::MissingPiece);
 
-  assert(task.index >= 0);
   assert(!torrent.piece_hashes.empty());
   assert(torrent.piece_hashes.size() - 1 <= std::numeric_limits<long>::max());
 
