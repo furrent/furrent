@@ -25,6 +25,8 @@ struct TorrentFile {
   long length;
   /// The name of the shared file
   std::string name;
+  /// Shared output file stream for results
+  std::shared_ptr<std::ofstream> stream_ptr;
 
   /// Construct an empty TorrentFile instance
   explicit TorrentFile() = default;
@@ -32,14 +34,5 @@ struct TorrentFile {
   /// Construct an instance of TorrentFile given a bencode::BencodeValue which
   /// is assumed to be the parsed .torrent file
   explicit TorrentFile(const bencode::BencodeValue& tree);
-
-  TorrentFile(const TorrentFile& o) = default;
-  TorrentFile& operator= (const TorrentFile& o) {
-    announce_url = o.announce_url;
-    info_hash = o.info_hash;
-    piece_hashes = o.piece_hashes;
-    piece_length = o.piece_length;
-    return *this;
-  }
 };
 }  // namespace fur::torrent

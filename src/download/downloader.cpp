@@ -113,7 +113,7 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   // Now we need to wait to be unchoked by the peer. Only then can we start to
   // ask for pieces.
   while (choked) {
-    maybe_message = recv_message(std::chrono::seconds(UNCHOKE_TIMEOUT));
+    maybe_message = recv_message(std::chrono::milliseconds(50));
     if (!maybe_message.valid())
       return Outcome::ERROR(DownloaderError(maybe_message.error()));
     message = std::unique_ptr<Message>(maybe_message->release());
@@ -127,6 +127,14 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
   logger->debug("{} unchoked us", peer.address());
 
   return Outcome::OK({});
+}
+
+const TorrentFile& Downloader::get_torrent() const {
+  return torrent;
+}
+
+const Peer& Downloader::get_peer() const {
+  return peer;
 }
 
 // 1  for the length of the protocol identifier
@@ -201,7 +209,7 @@ Outcome<DownloaderError> Downloader::handshake() {
   return Outcome::OK({});
 }
 
-Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
+Result<Downloaded, DownloaderError> Downloader::try_download(const PieceDescriptor& task) {
   using Result = Result<Downloaded, DownloaderError>;
 
   auto logger = spdlog::get("custom");
@@ -214,7 +222,6 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Task& task) {
   if (!bitfield->get(task.index))
     return Result::ERROR(DownloaderError::MissingPiece);
 
-  assert(task.index >= 0);
   assert(!torrent.piece_hashes.empty());
   assert(torrent.piece_hashes.size() - 1 <= std::numeric_limits<long>::max());
 
