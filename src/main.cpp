@@ -8,53 +8,55 @@
 #define GUI_FILE_DIALOG_IMPLEMENTATION
 #include "gui/file_dialog.h"
 
-enum TorrentState{
-  STOP,
-  DOWNLOAD,
-  COMPLETED,
-  ERROR
-};
+enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
 
 struct TorrentGui {
   std::string filename;
   TorrentState status;
   int progress;
-
 };
 
+struct GuiSettingsDialogState {
+  bool show;
+};
 
-void draw_list_element(TorrentGui torrent, float pos){
+void draw_list_element(TorrentGui torrent, float pos) {
   // Drawing text
-  auto name = "Name: "+ torrent.filename;
+  auto name = "Name: " + torrent.filename;
   // Cut the name if it is too long
-  if (name.size() > 20){
-      name = name.substr(0, 20) + "...";
+  if (name.size() > 20) {
+    name = name.substr(0, 20) + "...";
   }
-  GuiDrawText(name.c_str(), {20, 112+pos, 0, 20}, TEXT_ALIGN_LEFT,
-              GRAY);
+  GuiDrawText(name.c_str(), {20, 112 + pos, 0, 20}, TEXT_ALIGN_LEFT, GRAY);
   // Adding progress bar
   const char* text = (std::to_string(torrent.progress) + "% ").c_str();
-  GuiProgressBar({275, 110+pos, 300, 20}, text, NULL, torrent.progress, 0, 100);
+  GuiProgressBar({275, 110 + pos, 300, 20}, text, NULL, torrent.progress, 0,
+                 100);
   // Adding buttons actions
   GuiButton({700, 110 + pos, 20, 20}, GuiIconText(ICON_PLAYER_PLAY, NULL));
   GuiButton({730, 110 + pos, 20, 20}, GuiIconText(ICON_TOOLS, NULL));
   GuiButton({760, 110 + pos, 20, 20}, GuiIconText(ICON_BIN, NULL));
-  GuiLine({5, 145+pos, 800-10, 1}, NULL);
-
+  GuiLine({5, 145 + pos, 800 - 10, 1}, NULL);
 }
 
-void load_torrents(const std::vector<TorrentGui>&torrents ,const Vector2 scoll){
-
+void load_torrents(const std::vector<TorrentGui>& torrents,
+                   const Vector2 scoll) {
   float pos = 5;
-  for (auto t:torrents){
-    if(pos + 50 < abs(scoll.y)){
-      pos+=50;
+  for (auto t : torrents) {
+    if (pos + 50 < abs(scoll.y)) {
+      pos += 50;
       continue;
     }
-    draw_list_element(t,pos+scoll.y);
-    pos+=50;
-
+    draw_list_element(t, pos + scoll.y);
+    pos += 50;
   }
+}
+
+void settings_dialog(GuiSettingsDialogState* settings) {
+  if (!settings->show) return;
+  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
+  settings->show = !GuiWindowBox({200, 50, 400, 400}, "#198# Settings dialog");
 }
 
 int main() {
@@ -65,14 +67,10 @@ int main() {
   const int w_height = 600;
 
   std::vector<TorrentGui> torrents{
-      {"A", TorrentState::COMPLETED, 100},
-      {"B", TorrentState::DOWNLOAD, 75},
-      {"C", TorrentState::STOP, 50},
-      {"D", TorrentState::ERROR, 0},
-      {"E", TorrentState::COMPLETED, 100},
-      {"F", TorrentState::DOWNLOAD, 75},
-      {"G", TorrentState::STOP, 50},
-      {"H", TorrentState::ERROR, 0},
+      {"A", TorrentState::COMPLETED, 100}, {"B", TorrentState::DOWNLOAD, 75},
+      {"C", TorrentState::STOP, 50},       {"D", TorrentState::ERROR, 0},
+      {"E", TorrentState::COMPLETED, 100}, {"F", TorrentState::DOWNLOAD, 75},
+      {"G", TorrentState::STOP, 50},       {"H", TorrentState::ERROR, 0},
   };
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   SetConfigFlags(FLAG_WINDOW_HIGHDPI);
@@ -85,47 +83,44 @@ int main() {
   SetTargetFPS(60);
 
   int flag_true = 1;
-  //GetWorkingDirectory()
-  GuiFileDialogState file_dialog =
-      InitGuiFileDialog(550, 500, "/home/nicof/Desktop/univr/furrent/extra/", false,".torrent");
+  // GetWorkingDirectory()
+  GuiFileDialogState file_dialog = InitGuiFileDialog(
+      550, 500, "/home/nicof/Desktop/univr/furrent/extra/", false, ".torrent");
   file_dialog.fileTypeActive = true;
 
   Vector2 scroll = {0, 0};
+
+  GuiSettingsDialogState settings_state = {false};
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
+
     // Title
-    GuiDrawText("Furrent", {BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT,
-                BLACK);
+    GuiDrawText("Furrent", {BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT, BLACK);
     auto button_file_dialog =
         GuiButton({w_width - BORDER - 190, 10, 150, 30},
                   GuiIconText(ICON_FOLDER_OPEN, "Open torrent"));
 
-    GuiButton({w_width - BORDER - 30, 10, 30, 30},
-              GuiIconText(ICON_GEAR, NULL));
+    auto button_settings = GuiButton({w_width - BORDER - 30, 10, 30, 30},
+                                     GuiIconText(ICON_GEAR, NULL));
 
-
-    GuiScrollPanel({BORDER, 100, w_width - BORDER * 2, w_height-100-BORDER},
-                   NULL,
-                    {BORDER, 50, w_width - 150, static_cast<float>(50*torrents.size())},
-                   &scroll);
+    GuiScrollPanel(
+        {BORDER, 100, w_width - BORDER * 2, w_height - 100 - BORDER}, NULL,
+        {BORDER, 50, w_width - 150, static_cast<float>(50 * torrents.size())},
+        &scroll);
     load_torrents(torrents, scroll);
     // Panel header of the list
-    GuiDrawRectangle({BORDER, 61, w_width - BORDER * 2, 40},
-                     1,
-                     Fade(GetColor(GuiGetStyle(LISTVIEW, BORDER + (GuiState::STATE_FOCUSED*3))), guiAlpha),
-                     GetColor(0xc9effeff));
-    GuiDrawText("Torrents", {BORDER, 61, w_width - BORDER * 2, 40}, TEXT_ALIGN_CENTER,
-                GetColor(0x0492c7ff));
-    // White panel to cut the scroll panel list
     GuiDrawRectangle(
-        Rectangle{BORDER, w_height-BORDER, w_width, w_width},
-        1,
-        GetColor(0xf5f5f5ff),
-        GetColor(0xf5f5f5ff));
-
-
-
+        {BORDER, 61, w_width - BORDER * 2, 40}, 1,
+        Fade(GetColor(
+                 GuiGetStyle(LISTVIEW, BORDER + (GuiState::STATE_FOCUSED * 3))),
+             guiAlpha),
+        GetColor(0xc9effeff));
+    GuiDrawText("Torrents", {BORDER, 61, w_width - BORDER * 2, 40},
+                TEXT_ALIGN_CENTER, GetColor(0x0492c7ff));
+    // White panel to cut the scroll panel list
+    GuiDrawRectangle(Rectangle{BORDER, w_height - BORDER, w_width, w_width}, 1,
+                     GetColor(0xf5f5f5ff), GetColor(0xf5f5f5ff));
 
     // ------
     // Events
@@ -139,6 +134,9 @@ int main() {
     if (button_file_dialog) {
       file_dialog.fileDialogActive = true;
     }
+    if (button_settings) {
+      settings_state.show = true;
+    }
     // Action on filedialog
     if (file_dialog.SelectFilePressed) {
       logger->info("Selected file: {}", file_dialog.fileNameText);
@@ -150,6 +148,7 @@ int main() {
       }
     }
     GuiFileDialog(&file_dialog);
+    settings_dialog(&settings_state);
     EndDrawing();
   }
 
@@ -157,5 +156,3 @@ int main() {
 
   return 0;
 }
-
-
