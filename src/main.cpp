@@ -8,21 +8,44 @@
 #define GUI_FILE_DIALOG_IMPLEMENTATION
 #include "gui/file_dialog.h"
 
+enum TorrentState{
+  STOP,
+  DOWNLOAD,
+  COMPLETED,
+  ERROR
+};
 
-void draw_list_element(std::string text, float pos){
-  auto bounds = Rectangle{20, 130+pos, 0, 0};
-  GuiDrawText(text.c_str(), bounds, TEXT_ALIGN_LEFT,
-              BLACK);
-  bounds.x = 5;
-  bounds.y += 20;
-  bounds.width = 800-23;
-  GuiLine(bounds, NULL);
+struct TorrentGui {
+  std::string filename;
+  TorrentState status;
+  int progress;
+
+};
+
+
+void draw_list_element(TorrentGui torrent, float pos){
+  // Drawing text
+  auto name = "Name: "+ torrent.filename;
+  // Cut the name if it is too long
+  if (name.size() > 20){
+      name = name.substr(0, 20) + "...";
+  }
+  GuiDrawText(name.c_str(), {20, 112+pos, 0, 20}, TEXT_ALIGN_LEFT,
+              GRAY);
+  // Adding progress bar
+  const char* text = (std::to_string(torrent.progress) + "% ").c_str();
+  GuiProgressBar({275, 110+pos, 300, 20}, text, NULL, torrent.progress, 0, 100);
+  // Adding buttons actions
+  GuiButton({700, 110 + pos, 20, 20}, GuiIconText(ICON_PLAYER_PLAY, NULL));
+  GuiButton({730, 110 + pos, 20, 20}, GuiIconText(ICON_FOLDER_FILE_OPEN, NULL));
+  GuiButton({760, 110 + pos, 20, 20}, GuiIconText(ICON_INFO, NULL));
+  GuiLine({5, 145+pos, 800-10, 1}, NULL);
 
 }
 
-void load_torrents(const std::vector<std::string>&torrents ,const Vector2 scoll){
+void load_torrents(const std::vector<TorrentGui>&torrents ,const Vector2 scoll){
 
-  float pos = 0;
+  float pos = 5;
   for (auto t:torrents){
     if(pos + 50 < abs(scoll.y)){
       pos+=50;
@@ -41,8 +64,16 @@ int main() {
   const int w_width = 800;
   const int w_height = 600;
 
-  std::vector<std::string> torrents{ "A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-
+  std::vector<TorrentGui> torrents{
+      {"A", TorrentState::COMPLETED, 100},
+      {"B", TorrentState::DOWNLOAD, 75},
+      {"C", TorrentState::STOP, 50},
+      {"D", TorrentState::ERROR, 0},
+      {"E", TorrentState::COMPLETED, 100},
+      {"F", TorrentState::DOWNLOAD, 75},
+      {"G", TorrentState::STOP, 50},
+      {"H", TorrentState::ERROR, 0},
+  };
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   SetConfigFlags(FLAG_WINDOW_HIGHDPI);
   InitWindow(w_width, w_height, "Furrent");
@@ -64,31 +95,34 @@ int main() {
     BeginDrawing();
     ClearBackground(RAYWHITE);
     // Title
-    GuiDrawText("Furrent", Rectangle{BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT,
+    GuiDrawText("Furrent", {BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT,
                 BLACK);
     auto button_file_dialog =
-        GuiButton(Rectangle{w_width - BORDER - 150, 10, 150, 30},
+        GuiButton({w_width - BORDER - 150, 10, 150, 30},
                   GuiIconText(ICON_FOLDER_OPEN, "Open torrent"));
 
     // Panel header of the list
-    GuiScrollPanel(Rectangle{BORDER, 100, w_width - BORDER * 2, w_height-100-BORDER},
+
+    GuiScrollPanel({BORDER, 100, w_width - BORDER * 2, w_height-100-BORDER},
                    NULL,
-                    Rectangle{BORDER, 50, w_width - 150, static_cast<float>(50*torrents.size())},
+                    {BORDER, 50, w_width - 150, static_cast<float>(50*torrents.size())},
                    &scroll);
     load_torrents(torrents, scroll);
-    GuiDrawRectangle(
-        Rectangle{BORDER, 55, w_width - BORDER * 2, 50},
-        0,
-        DARKBLUE,
-        SKYBLUE);
-
-
+    // {BORDER, 60, w_width - BORDER * 2, 40}
+    GuiDrawRectangle({BORDER, 61, w_width - BORDER * 2, 40},
+                     1,
+                     Fade(GetColor(GuiGetStyle(LISTVIEW, BORDER + (GuiState::STATE_FOCUSED*3))), guiAlpha),
+                     GetColor(0xc9effeff));
+    GuiDrawText("Torrents", {BORDER, 61, w_width - BORDER * 2, 40}, TEXT_ALIGN_CENTER,
+                GetColor(0x0492c7ff));
     // White panel to cut the scroll panel list
     GuiDrawRectangle(
         Rectangle{BORDER, w_height-BORDER, w_width, w_width},
         1,
         GetColor(0xf5f5f5ff),
         GetColor(0xf5f5f5ff));
+
+
 
 
     // ------
