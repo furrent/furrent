@@ -23,4 +23,7 @@ IOResult touch(const std::string& filename, size_t size);
 IOResult write_bytes(const std::string& filename,
                      const std::vector<uint8_t>& bytes, size_t offset);
 
+/// Create subfolders
+IOResult create_subfolders(const std::string& subfolders);
+
 }  // namespace fur::platform::io

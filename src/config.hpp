@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace fur::config {
     
 /// Where newly downloaded files are to be stored

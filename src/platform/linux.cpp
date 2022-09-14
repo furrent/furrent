@@ -6,6 +6,8 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 namespace fur::platform::io {
 
@@ -37,6 +39,17 @@ IOResult write_bytes(const std::string& filename,
 
 error:
   close(fd);
+  return IOResult::ERROR(IOError::GenericError);
+}
+
+IOResult create_subfolders(const std::string& subfolders) {
+
+  struct stat st = { 0 };
+  if (stat(subfolders.c_str(), &st) == -1) {
+    mkdir(subfolders.c_str(), 0700);
+    return IOResult::OK({});
+  }
+
   return IOResult::ERROR(IOError::GenericError);
 }
 

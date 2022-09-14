@@ -31,6 +31,9 @@ struct TorrentDescriptor {
   /// Number of pieces written to file
   std::atomic_uint32_t pieces_saved;
 
+  /// Flag notifying that a split output task was already spawned
+  std::atomic_bool split_output_spawned;
+
   explicit TorrentDescriptor(const std::string& filename);
 
   /// Regenerate list of peers

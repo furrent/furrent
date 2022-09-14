@@ -14,7 +14,8 @@ TorrentDescriptor::TorrentDescriptor(const std::string& filename)
     : filename{filename},
       pieces_downloaded{0},
       pieces_saved{0},
-      announce_time{std::chrono::high_resolution_clock::time_point{}} {}
+      announce_time{std::chrono::high_resolution_clock::time_point{}},
+      split_output_spawned{false} {}
 
 // This task is very expensive but it is executed one time every X minutes
 bool TorrentDescriptor::regenerate_peers() {
