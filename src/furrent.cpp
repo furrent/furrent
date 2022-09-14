@@ -11,49 +11,62 @@
 namespace fur {
 
 TorrentDescriptor::TorrentDescriptor(const std::string& filename)
-    : filename{filename}, downloaded_pieces{0}, to_refresh{false} {}
+: filename{filename}, pieces_downloaded{0}, pieces_saved{0}, 
+  announce_time{std::chrono::high_resolution_clock::time_point{}} { }
 
 // This task is very expensive but it is executed one time every X minutes
 bool TorrentDescriptor::regenerate_peers() {
-  if (!torrent.has_value()) return false;
 
-  // Default global logger
-  auto logger = spdlog::get("custom");
-  std::vector<Peer> new_peers;
+    if (!torrent.has_value())
+        return false;
 
-  auto response = peer::announce(*torrent);
-  if (!response.valid()) {
-    logger->error("Furrent regenerate peers: {}",
-                  peer::error_to_string(response.error()));
-    return false;
-  }
-  interval = response->interval;
+    // Default global logger
+    auto logger = spdlog::get("custom");
+    logger->info("Regenerating list of peers for {}, may take a few seconds", filename);
 
-  logger->info("Regenerating list of peers for {}:", filename);
-  for (auto& peer : response->peers) {
-    // Check if it is a good peer
-    download::downloader::Downloader d(*torrent, peer);
-    auto result = d.ensure_connected();
-    if (!result.valid()) {
-      logger->info("\t{} REFUSED", peer.address());
-      continue;
+    auto response = peer::announce(*torrent);
+    if (!response.valid())
+      return false;
+
+    interval = response->interval;
+
+    std::stringstream log_text;
+    log_text << "Regenerated list of peers for " << filename 
+             << " (next interval " << interval << " s):\n";
+
+    std::vector<Peer> new_peers;
+    for(auto& peer : response->peers) {
+
+        // Check if it is a good peer
+        download::downloader::Downloader d(*torrent, peer);
+        auto result = d.ensure_connected();
+        if (!result.valid()) {
+            log_text << "\t" << peer.address() << " REFUSED\n";
+            continue;
+        }
+        
+        log_text << "\t" << peer.address() << " OK\n";
+        new_peers.push_back(peer);
     }
 
-    logger->info("\t{} OK", peer.address());
-    new_peers.push_back(peer);
-  }
+    // If no peer is valid then the operation failed
+    if (new_peers.empty()) 
+      return false;
 
-  // If no peer is valid then the operation failed
-  if (new_peers.empty()) return false;
-
-  downloaders.clear();
-  downloaders = new_peers;
-  return true;
+    {
+        std::unique_lock<std::shared_mutex> lock(mtx);
+        downloaders.clear();
+        downloaders = new_peers;
+    }
+    
+    logger->info(log_text.str());
+    return true;
 }
-bool TorrentDescriptor::finished() {
+
+bool TorrentDescriptor::download_finished() {
   std::shared_lock<std::shared_mutex> lock(mtx);
   const size_t total_pieces = torrent->length / torrent->piece_length;
-  return downloaded_pieces == total_pieces;
+  return pieces_downloaded == total_pieces;
 }
 
 Furrent::Furrent() {

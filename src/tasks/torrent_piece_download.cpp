@@ -41,12 +41,12 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
         const size_t piece_length = torrent.piece_length;
         const size_t pieces_count = torrent.length / piece_length;
 
-        auto downloaded = *result;
-        logger->info("Download of piece {:5}/{} from {} COMPLETED ({} bytes, {} ms)",
-                     _piece.index + 1, pieces_count, peer.address(),
-                     downloaded.content.size(), download_elapsed.count());
+        uint32_t pieces_downloaded = _descriptor.pieces_downloaded.fetch_add(1, std::memory_order_relaxed);
 
-        _descriptor.downloaded_pieces += 1;
+        auto downloaded = *result;
+        logger->info("Download n.{}: piece {:5}/{} from {} COMPLETED ({} bytes, {} ms)",
+                     pieces_downloaded, _piece.index + 1, pieces_count, peer.address(),
+                     downloaded.content.size(), download_elapsed.count());
 
         auto write_begin = std::chrono::high_resolution_clock::now();
         {
@@ -58,10 +58,13 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
             stream_ptr->seekp(_piece.offset, std::ios_base::beg);
             stream_ptr->write(reinterpret_cast<char*>(&result->content[0]), result->content.size());
         }
+
+        uint32_t pieces_saved = _descriptor.pieces_saved.fetch_add(1, std::memory_order_relaxed);
+
         auto write_end = std::chrono::high_resolution_clock::now();
         auto write_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(write_end - write_begin);
-        logger->info("Writing of piece {}/{} to file {} COMPLETED ({} ms)",
-                     _piece.index + 1, pieces_count, torrent.name, write_elapsed.count());
+        logger->info("Writing n.{}: piece {}/{} to file {} COMPLETED ({} ms)",
+                     pieces_saved, _piece.index + 1, pieces_count, torrent.name, write_elapsed.count());
     }
     // Download failed!
     else {

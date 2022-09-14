@@ -1,5 +1,7 @@
 #pragma once
 
+#include <shared_mutex>
+
 #include <download/downloader.hpp>
 #include <download/lender_pool.hpp>
 #include <mt/group.hpp>
@@ -7,35 +9,37 @@
 #include <mt/task.hpp>
 #include <shared_mutex>
 #include <torrent.hpp>
-#include <torrent_manager.hpp>
 
 namespace fur {
 
 struct TorrentDescriptor {
-  // Protects internal state, allows multiple readers but only one writer
-  std::shared_mutex mtx;
 
-  /// Name of the file where the torrent can be found
-  std::string filename;
-  /// Parsed torrent file
-  std::optional<torrent::TorrentFile> torrent;
-  /// Peers' downloaders where to ask for the pieces
-  std::vector<Peer> downloaders;
+    // Protects internal state, allows multiple readers but only one writer
+    std::shared_mutex mtx;
 
-  // Time of first announce
-  std::chrono::high_resolution_clock::time_point announce_time;
-  /// Interval to next update
-  size_t interval;
-  /// Number of pieces downloaded
-  std::atomic_uint32_t downloaded_pieces;
-  std::atomic_bool to_refresh;
+    /// Name of the file where the torrent can be found
+    std::string filename;
+    /// Parsed torrent file
+    std::optional<torrent::TorrentFile> torrent;
+    /// Peers' downloaders where to ask for the pieces
+    std::vector<Peer> downloaders;
 
-  explicit TorrentDescriptor(const std::string& filename);
+    // Time of first announce
+    std::chrono::high_resolution_clock::time_point announce_time;
+    /// Interval to next update
+    size_t interval;
 
-  /// Regenerate list of peers
-  bool regenerate_peers();
-  /// True if there are no more pieces to download
-  bool finished();
+    /// Number of pieces downloaded
+    std::atomic_uint32_t pieces_downloaded;
+    /// Number of pieces written to file
+    std::atomic_uint32_t pieces_saved;
+
+    explicit TorrentDescriptor(const std::string& filename);
+
+    /// Regenerate list of peers
+    bool regenerate_peers();
+    /// True if there are no more pieces to download
+    bool download_finished();
 };
 
 /// Main state of the program

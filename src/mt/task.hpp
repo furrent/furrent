@@ -32,9 +32,9 @@ class ITask {
     [[nodiscard]] virtual size_t priority() const = 0;
 };
 
-const size_t PRIORITY_HIGH   = 1;
+const size_t PRIORITY_HIGH   = 3;
 const size_t PRIORITY_MEDIUM = 2;
-const size_t PRIORITY_LOW    = 3;
+const size_t PRIORITY_LOW    = 1;
 
 /// Policy for extracing highest priority tasks first
 class PriorityPolicy : public policy::IPolicy<ITask::Wrapper> {

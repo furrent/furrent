@@ -17,7 +17,7 @@ public:
     explicit TorrentFileLoad(TorrentDescriptor& descriptor);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 
-    size_t priority() const { return 2; }
+    size_t priority() const { return mt::PRIORITY_HIGH; }
 };
 
 /// Download a piece of a torrent
@@ -32,7 +32,7 @@ public:
     TorrentPieceDownload(TorrentDescriptor& descr, download::PieceDescriptor piece);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 
-    size_t priority() const { return 1; }
+    size_t priority() const { return mt::PRIORITY_LOW; }
 };
 
 /// Refresh peers list of a torrent

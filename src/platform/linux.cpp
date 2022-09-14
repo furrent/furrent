@@ -1,9 +1,11 @@
 #include <platform/io.hpp>
 
-#define _POSIX_SOURCE
+#ifndef _POSIX_C_SOURCE 
+    #define _POSIX_C_SOURCE
+#endif
+
 #include <fcntl.h>
 #include <unistd.h>
-#undef _POSIX_SOURCE
 
 namespace fur::platform::io {
 
