@@ -29,8 +29,8 @@ std::string Peer::address() const {
                      (ip >> 8) & 0xFF, ip & 0xFF, port);
 }
 
+Peer::Peer() : ip{0}, port{0} {}
 Peer::Peer(uint32_t ip, uint16_t port) : ip{ip}, port{port} {}
-
 Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
   const std::regex ip_regex(R"(\s*(\d+)\.(\d+)\.(\d+)\.(\d+)\s*)");
 

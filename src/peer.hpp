@@ -16,6 +16,9 @@ struct Peer {
   uint32_t ip;
   uint16_t port;
 
+  /// Constructs an empty 'Peer'
+  explicit Peer();
+
   /// Constructs a `Peer` given an IP and a port
   Peer(uint32_t ip, uint16_t port);
 

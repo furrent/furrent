@@ -1,43 +1,44 @@
 #pragma once
 
+#include <shared_mutex>
+
+#include <torrent_manager.hpp>
+#include <torrent.hpp>
+#include <mt/sharing_queue.hpp>
 #include <mt/group.hpp>
 #include <mt/sharing_queue.hpp>
 #include <mt/task.hpp>
-#include <torrent.hpp>
-#include <torrent_manager.hpp>
+#include <download/downloader.hpp>
+#include <download/lender_pool.hpp>
 
 namespace fur {
 
 struct TorrentDescriptor {
-  /// Name of the file where the torrent can be found
-  std::string filename;
-  /// Parsed torrent file
-  std::optional<torrent::TorrentFile> torrent;
-};
 
-/// Load torrent from file and spawn all piece download tasks
-class TorrentFileLoadTask : public mt::ITask {
-  /// Reference to preallocated torrent descriptor in furrent
-  TorrentDescriptor& _descriptor;
+    // Protects internal state, allows multiple readers but only one writer
+    std::shared_mutex mtx;
 
- public:
-  explicit TorrentFileLoadTask(TorrentDescriptor& descriptor);
-  void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
-};
+    /// Name of the file where the torrent can be found
+    std::string filename;
+    /// Parsed torrent file
+    std::optional<torrent::TorrentFile> torrent;
+    /// Peers' downloaders where to ask for the pieces
+    std::vector<Peer> downloaders;
 
-/// Download a piece of a torrent
-class DownloadPieceTask : public mt::ITask {
-  /// Reference to preallocated torrent descriptor in furrent
-  TorrentDescriptor& _descriptor;
+    // Time of first announce
+    std::chrono::high_resolution_clock::time_point announce_time;
+    /// Interval to next update
+    size_t interval;
+    /// Number of pieces downloaded
+    std::atomic_uint32_t downloaded_pieces;
+    std::atomic_bool to_refresh;
 
-  size_t _index;
-  size_t _offset;
-  size_t _bytes;
+    explicit TorrentDescriptor(const std::string& filename);
 
- public:
-  DownloadPieceTask(TorrentDescriptor& descr, size_t index, size_t offset,
-                    size_t bytes);
-  void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
+    /// Regenerate list of peers
+    bool regenerate_peers();
+    /// True if there are no more pieces to download
+    bool finished();
 };
 
 /// Main state of the program

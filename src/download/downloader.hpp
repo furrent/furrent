@@ -18,19 +18,23 @@ using namespace fur::torrent;
 using namespace fur::download::socket;
 using namespace fur::download::message;
 
-/// The `TorrentFile` is not required because any given `Downloader` is already
-/// bound to a specific `TorrentFile` and has a reference to it.
-// TODO Remove once the real struct is merged
-struct Task {
-  int index;
+namespace fur::download {
+
+/// Describes a piece of a torrent
+struct PieceDescriptor {
+    size_t index;
+    size_t offset;
+    size_t attempts;
 };
 
 /// A downloaded piece for a torrent file.
 // TODO Remove once the real struct is merged
 struct Downloaded {
-  int index;
+  size_t index;
   std::vector<uint8_t> content;
 };
+
+}
 
 namespace fur::download::downloader {
 
@@ -70,7 +74,10 @@ class Downloader {
   ///  - This peer not having the requested piece available
   ///  - The connection timing out
   ///  - The downloaded piece being corrupt
-  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(const Task&);
+  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(const PieceDescriptor&);
+
+  const TorrentFile& get_torrent() const;
+  const Peer& get_peer() const;
 
  private:
   const TorrentFile& torrent;
@@ -91,10 +98,13 @@ class Downloader {
   /// `std::nullopt` when a connection drops and is later recycled.
   std::optional<Bitfield> bitfield;
 
+public:
   /// Ensures that the `socket` is present and in good health (not dropped,
   /// timed out and such). Should always call this method first, before
   /// accessing the socket.
   Outcome<DownloaderError> ensure_connected();
+  
+private:
   /// Performs the BitTorrent handshake.
   Outcome<DownloaderError> handshake();
 

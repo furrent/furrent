@@ -31,6 +31,7 @@ std::shared_ptr<spdlog::logger> initialize_custom_logger(bool do_file_sink) {
                                                  std::end(sinks));
   // TODO: Output configuration
   logger->set_pattern(FUR_LOG_FORMAT);
+  logger->set_level(spdlog::level::info);
 
   spdlog::register_logger(logger);
   return logger;

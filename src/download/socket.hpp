@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include "asio.hpp"
@@ -16,6 +17,13 @@ enum class SocketError {
   Timeout,
   /// Socket experienced some other generic error
   Other,
+};
+
+struct AsioEngine {
+  /// Asynchronous runtime. Restarted before each operation.
+  asio::io_context ctx;
+  /// The wrapped socket.
+  asio::ip::tcp::socket socket{ctx};
 };
 
 /// A `Socket` wraps an `asio::ip::tcp::socket` providing a simplified interface
@@ -39,10 +47,8 @@ class Socket {
   Outcome<SocketError> close();
 
  private:
-  /// Asynchronous runtime. Restarted before each operation.
-  asio::io_context io;
-  /// The wrapped socket.
-  asio::ip::tcp::socket socket{io};
+  /// Wraps all Asio stuff together so the whole `Socket` is movable.
+  std::unique_ptr<AsioEngine> engine = std::make_unique<AsioEngine>();
 
   /// Run any asynchronous operation scheduled on the `asio::io_context` with
   /// the specified timeout.

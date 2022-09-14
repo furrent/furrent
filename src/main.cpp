@@ -1,40 +1,22 @@
-#include "raylib.h"
-#define RAYGUI_IMPLEMENTATION
-#include "log/logger.hpp"
 
-#include "raygui.h"
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <log/logger.hpp>
+#include <sstream>
 
-int main() {
-  const int screenWidth = 800;
-  const int screenHeight = 600;
+#include <furrent.hpp>
 
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_HIGHDPI);
-  InitWindow(screenWidth, screenHeight, "Furrent");
+int main(int argc, char* argv[]) {
 
-  SetWindowPosition(0, 0);
+  fur::log::initialize_custom_logger();
+  auto logger = spdlog::get("custom");
 
-  SetTargetFPS(60);
+  fur::Furrent furrent;
+  //furrent.add_torrent("../extra/raspios-2022-09-06-raspios-bullseye-armhf.img.xz.torrent");
+  furrent.add_torrent("../extra/debian-11.5.0-amd64-i386-netinst.iso.torrent");
 
-  int counter = 0;
-
-  while (!WindowShouldClose()) {
-    BeginDrawing();
-
-    ClearBackground(RAYWHITE);
-
-    if (GuiButton(Rectangle{10, 10, screenWidth - 10, 100}, "I am Furrent!")) {
-      logger->info("button pressed");
-      counter++;
-    }
-
-    auto counter_string = std::to_string(counter);
-    DrawText(counter_string.c_str(), 10, 150, 10, GRAY);
-
-    EndDrawing();
-  }
-
-  CloseWindow();
-
+  //std::this_thread::sleep_for(std::chrono::seconds(30));
+  while(true);
   return 0;
 }
