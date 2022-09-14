@@ -37,8 +37,8 @@ void draw_list_element(TorrentGui torrent, float pos){
   GuiProgressBar({275, 110+pos, 300, 20}, text, NULL, torrent.progress, 0, 100);
   // Adding buttons actions
   GuiButton({700, 110 + pos, 20, 20}, GuiIconText(ICON_PLAYER_PLAY, NULL));
-  GuiButton({730, 110 + pos, 20, 20}, GuiIconText(ICON_FOLDER_FILE_OPEN, NULL));
-  GuiButton({760, 110 + pos, 20, 20}, GuiIconText(ICON_INFO, NULL));
+  GuiButton({730, 110 + pos, 20, 20}, GuiIconText(ICON_TOOLS, NULL));
+  GuiButton({760, 110 + pos, 20, 20}, GuiIconText(ICON_BIN, NULL));
   GuiLine({5, 145+pos, 800-10, 1}, NULL);
 
 }
@@ -98,17 +98,19 @@ int main() {
     GuiDrawText("Furrent", {BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT,
                 BLACK);
     auto button_file_dialog =
-        GuiButton({w_width - BORDER - 150, 10, 150, 30},
+        GuiButton({w_width - BORDER - 190, 10, 150, 30},
                   GuiIconText(ICON_FOLDER_OPEN, "Open torrent"));
 
-    // Panel header of the list
+    GuiButton({w_width - BORDER - 30, 10, 30, 30},
+              GuiIconText(ICON_GEAR, NULL));
+
 
     GuiScrollPanel({BORDER, 100, w_width - BORDER * 2, w_height-100-BORDER},
                    NULL,
                     {BORDER, 50, w_width - 150, static_cast<float>(50*torrents.size())},
                    &scroll);
     load_torrents(torrents, scroll);
-    // {BORDER, 60, w_width - BORDER * 2, 40}
+    // Panel header of the list
     GuiDrawRectangle({BORDER, 61, w_width - BORDER * 2, 40},
                      1,
                      Fade(GetColor(GuiGetStyle(LISTVIEW, BORDER + (GuiState::STATE_FOCUSED*3))), guiAlpha),
