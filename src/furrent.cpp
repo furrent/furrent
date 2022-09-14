@@ -1,51 +1,54 @@
 #include <bencode/bencode_parser.hpp>
-#include <policy/policy.hpp>
-#include <tasks/torrent.hpp>
+#include <fstream>
+#include <furrent.hpp>
+#include <iostream>
 #include <log/logger.hpp>
 #include <policy/policy.hpp>
 #include <random>
 #include <sstream>
+#include <tasks/torrent.hpp>
 
 namespace fur {
 
 TorrentDescriptor::TorrentDescriptor(const std::string& filename)
-: filename{filename}, downloaded_pieces{0}, to_refresh{false} { }
+    : filename{filename}, downloaded_pieces{0}, to_refresh{false} {}
 
 // This task is very expensive but it is executed one time every X minutes
 bool TorrentDescriptor::regenerate_peers() {
+  if (!torrent.has_value()) return false;
 
-    if (!torrent.has_value())
-        return false;
+  // Default global logger
+  auto logger = spdlog::get("custom");
+  std::vector<Peer> new_peers;
 
-    // Default global logger
-    auto logger = spdlog::get("custom");
-    std::vector<Peer> new_peers;
+  auto response = peer::announce(*torrent);
+  if (!response.valid()) {
+    logger->error("Furrent regenerate peers: {}",
+                  peer::error_to_string(response.error()));
+    return false;
+  }
+  interval = response->interval;
 
-    auto response = peer::announce(*torrent);
-    interval = response.interval;
-
-    logger->info("Regenerating list of peers for {}:", filename);
-    for(auto& peer : response.peers) {
-
-        // Check if it is a good peer
-        download::downloader::Downloader d(*torrent, peer);
-        auto result = d.ensure_connected();
-        if (!result.valid()) {
-            logger->info("\t{} REFUSED", peer.address());
-            continue;
-        }
-        
-        logger->info("\t{} OK", peer.address());
-        new_peers.push_back(peer);
+  logger->info("Regenerating list of peers for {}:", filename);
+  for (auto& peer : response->peers) {
+    // Check if it is a good peer
+    download::downloader::Downloader d(*torrent, peer);
+    auto result = d.ensure_connected();
+    if (!result.valid()) {
+      logger->info("\t{} REFUSED", peer.address());
+      continue;
     }
 
-    // If no peer is valid then the operation failed
-    if (new_peers.empty())
-        return false;
+    logger->info("\t{} OK", peer.address());
+    new_peers.push_back(peer);
+  }
 
-    downloaders.clear();
-    downloaders = new_peers;
-    return true;
+  // If no peer is valid then the operation failed
+  if (new_peers.empty()) return false;
+
+  downloaders.clear();
+  downloaders = new_peers;
+  return true;
 }
 bool TorrentDescriptor::finished() {
   std::shared_lock<std::shared_mutex> lock(mtx);
@@ -75,52 +78,37 @@ Furrent::~Furrent() {
 
 void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
   // TODO: custom policy per thread etc...
-  policy::LIFOPolicy<mt::ITask::Wrapper> task_policy;
-  const size_t concurrency = _workers.get_worker_count();
-
-  // TODO: custom policy per thread etc...
   mt::PriorityPolicy task_policy;
   const size_t concurrency = _workers.get_worker_count();
 
+  // Default global logger
+  auto logger = spdlog::get("custom");
+
   // How many times we have to fail stealing to go to sleep
-  const int STEALING_LIMIT = 5000;
+  const int STEALING_LIMIT = 100;
   // How many times the thread tried to steal without success
   int failed_stealing_count = 0;
 
-    // How many times we have to fail stealing to go to sleep
-    const int STEALING_LIMIT = 100;
-    // How many times the thread tried to steal without success
-    int failed_stealing_count = 0;
-
-    auto& local_queue = _local_queues[index];
-    while(runner.alive()) {
-
-        // First we check our own local queue
-        auto local_work = local_queue.try_extract(task_policy);
-        if (local_work.valid()) {
-
-            //logger->debug("thread {:02d} is executing local work", index);
-            (*local_work)->execute(local_queue);
-            failed_stealing_count = 0;
-        }
-        // If there is nothing then we steal from a random worker
-        else {
-          size_t steal_idx = rand() % concurrency;
-          if (steal_idx == index) steal_idx = (steal_idx + 1) % concurrency;
-
-            // Then we check the global queue
-            auto global_work = _global_queue.try_extract(task_policy);
-            if (global_work.valid()) {
-
-                //logger->debug("thread {:02d} is executing global work", index);
-                (*global_work)->execute(_global_queue);
-                failed_stealing_count = 0;
-            }
-            else {
-
-                logger->info("thread {:02d} is waiting for work on global queue", index);
-                _global_queue.wait_work();
-                failed_stealing_count = 0;
+  auto& local_queue = _local_queues[index];
+  while (runner.alive()) {
+    // First we check our own local queue
+    auto local_work = local_queue.try_extract(task_policy);
+    if (local_work.valid()) {
+      // logger->debug("thread {:02d} is executing local work", index);
+      (*local_work)->execute(local_queue);
+      failed_stealing_count = 0;
+    } else {
+      // Then we check the global queue
+      auto global_work = _global_queue.try_extract(task_policy);
+      if (global_work.valid()) {
+        // logger->debug("thread {:02d} is executing global work", index);
+        (*global_work)->execute(_global_queue);
+        failed_stealing_count = 0;
+      } else {
+        logger->info("thread {:02d} is waiting for work on global queue",
+                     index);
+        _global_queue.wait_work();
+        failed_stealing_count = 0;
 #if 0
                 // If there is nothing then we steal from a random worker
                 else {
@@ -140,8 +128,6 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
                     }
                 }
 #endif
-            }
-        }
       }
     }
   }
@@ -149,14 +135,10 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 
 void Furrent::add_torrent(const std::string& filename) {
   /// Allocate descriptor for the new torrent
-  _descriptors.push_front({filename, std::nullopt});
-  auto& descriptor = _descriptors.front();
-
-  /// Allocate descriptor for the new torrent 
   _descriptors.emplace_back(filename);
   auto& descriptor = _descriptors.front();
 
-  /// Begin loading task 
+  /// Begin loading task
   _global_queue.insert(std::make_unique<tasks::TorrentFileLoad>(descriptor));
 }
 
