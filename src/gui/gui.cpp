@@ -31,7 +31,7 @@ struct GuiScrollTorrentState {
   GuiTorrentDialogState torrent_dialog_state{};
 };
 
-void set_config(int width, int height){
+void set_config(int width, int height) {
   SetConfigFlags(FLAG_WINDOW_HIGHDPI);
   InitWindow(width, height, "Furrent");
   // Set larger text size
@@ -42,7 +42,8 @@ void set_config(int width, int height){
   SetTargetFPS(60);
 }
 
-void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos, fur::gui::GuiTorrentDialogState* state) {
+void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
+                       fur::gui::GuiTorrentDialogState* state) {
   // Drawing text
   auto name = "Name: " + torrent.filename;
   // Cut the name if it is too long
@@ -51,14 +52,15 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos, fur::gui:
   }
   GuiDrawText(name.c_str(), {20, 112 + pos, 0, 20}, TEXT_ALIGN_LEFT, GRAY);
   // Adding progress bar
-  GuiProgressBar({275, 110 + pos, 300, 20}, (std::to_string(torrent.progress) + "% ").c_str(), NULL, torrent.progress, 0,
-                 100);
+  GuiProgressBar({275, 110 + pos, 300, 20},
+                 (std::to_string(torrent.progress) + "% ").c_str(), NULL,
+                 torrent.progress, 0, 100);
   // Adding buttons actions
-  auto play = GuiButton({700, 110 + pos, 20, 20}, GuiIconText(ICON_PLAYER_PLAY, NULL));
-  auto show_settings = GuiButton({730, 110 + pos, 20, 20}, GuiIconText(ICON_TOOLS, NULL));
-  auto remove = GuiButton({760, 110 + pos, 20, 20}, GuiIconText(ICON_BIN, NULL));
+  auto play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
+  auto show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
+  auto remove = GuiButton({760, 110 + pos, 20, 20}, "#143#");
   // If one of the buttons is pressed, we update the state
-  if(play || show_settings || remove) {
+  if (play || show_settings || remove) {
     state->play = play;
     state->show_settings = show_settings;
     state->remove = remove;
@@ -78,14 +80,14 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
 }
 
 // Show torrent dialog and update the state
-void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent){
+void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent) {
   if (!torrent->show_settings) return;
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
-  torrent->show_settings = !GuiWindowBox({200, 50, 400, 400}, "#198# Torrent dialog");
+  torrent->show_settings =
+      !GuiWindowBox({200, 50, 400, 400}, "#198# Torrent dialog");
   // TODO: Add torrent settings
 }
-
 
 // Function to draw all the torrents
 void draw_torrents(fur::gui::GuiScrollTorrentState* state) {
@@ -96,8 +98,9 @@ void draw_torrents(fur::gui::GuiScrollTorrentState* state) {
       pos += 50;
       continue;
     }
-    draw_torrent_item(torr, pos + state->scroll.y, &state->torrent_dialog_state);
+    draw_torrent_item(torr, pos + state->scroll.y,
+                      &state->torrent_dialog_state);
     pos += 50;
   }
 }
-}
+}  // namespace fur::gui

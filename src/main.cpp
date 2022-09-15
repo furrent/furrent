@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
 #include "raygui.h"
@@ -8,22 +6,20 @@
 #include "gui/file_dialog.h"
 #define GUI_FILE_DIALOG_IMPLEMENTATION
 
-void gui_events(){
-
-}
-
-
 int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
   const int BORDER = 5;
   const int W_WIDTH = 800;
   const int W_HEIGHT = 600;
+  const Color BORDER_COLOR = GetColor(0x368BAF);
+  const Color PRIMARY_COLOR = GetColor(0xc9effeff);
+  const Color TEXT_COLOR = GetColor(0x0492c7ff);
 
   fur::gui::set_config(W_WIDTH, W_HEIGHT);
 
-  GuiFileDialogState file_state = InitGuiFileDialog(
-      550, 500, GetWorkingDirectory(), false, ".torrent");
+  GuiFileDialogState file_state =
+      InitGuiFileDialog(550, 500, GetWorkingDirectory(), false, ".torrent");
 
   fur::gui::GuiSettingsDialogState settings_state{};
   fur::gui::GuiScrollTorrentState torrents_state{
@@ -38,44 +34,43 @@ int main() {
           {"G", fur::gui::TorrentState::STOP, 50},
           {"H", fur::gui::TorrentState::ERROR, 0},
       },
-        fur::gui::GuiTorrentDialogState{}
-  };
+      fur::gui::GuiTorrentDialogState{}};
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
+    // ------
+    // Drawing the page
+    // ------
     // Title
     GuiDrawText("Furrent", {BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT, BLACK);
     auto button_file_dialog =
-        GuiButton({W_WIDTH - BORDER - 190, 10, 150, 30},
-                  GuiIconText(ICON_FOLDER_OPEN, "Open torrent"));
+        GuiButton({W_WIDTH - BORDER - 190, 10, 150, 30}, "#3# Open torrent");
 
     auto button_settings =
-        GuiButton({W_WIDTH - BORDER - 30, 10, 30, 30},
-                     GuiIconText(ICON_GEAR, NULL));
+        GuiButton({W_WIDTH - BORDER - 30, 10, 30, 30}, "#141#");
     // Scroll panel
-    GuiScrollPanel(
-        {BORDER, 100, W_WIDTH - BORDER * 2, W_HEIGHT - 100 - BORDER}, NULL,
-        {BORDER, 50, W_WIDTH - 150, static_cast<float>(50 * torrents_state.torrents.size())},
-        &torrents_state.scroll);
+    GuiScrollPanel({BORDER, 100, W_WIDTH - BORDER * 2, W_HEIGHT - 100 - BORDER},
+                   NULL,
+                   {BORDER, 50, W_WIDTH - 150,
+                    static_cast<float>(50 * torrents_state.torrents.size())},
+                   &torrents_state.scroll);
     // Drawing torrents
     fur::gui::draw_torrents(&torrents_state);
     // Scroll panel head
-    GuiDrawRectangle(
-        {BORDER, 61, W_WIDTH - BORDER * 2, 40}, 1,
-        Fade(GetColor(
-                 GuiGetStyle(LISTVIEW, BORDER + (GuiState::STATE_FOCUSED * 3))),
-             guiAlpha),
-        GetColor(0xc9effeff));
+    GuiDrawRectangle({BORDER, 61, W_WIDTH - BORDER * 2, 40}, 1, BORDER_COLOR,
+                     PRIMARY_COLOR);
     GuiDrawText("Torrents", {BORDER, 61, W_WIDTH - BORDER * 2, 40},
-                TEXT_ALIGN_CENTER, GetColor(0x0492c7ff));
+                TEXT_ALIGN_CENTER, TEXT_COLOR);
     // Scroll panel bottom
     GuiDrawRectangle(Rectangle{BORDER, W_HEIGHT - BORDER, W_WIDTH, W_WIDTH}, 1,
-                     GetColor(0xf5f5f5ff), GetColor(0xf5f5f5ff));
+                     GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)),
+                     GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
     // ------
     // Events
     // ------
+
+    // Event caught for updating the scroll panel
     float wheelMove = GetMouseWheelMove();
     if (wheelMove != 0) {
       torrents_state.scroll.y += wheelMove * 20;
