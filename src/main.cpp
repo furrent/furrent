@@ -6,17 +6,13 @@
 #include "gui/file_dialog.h"
 #define GUI_FILE_DIALOG_IMPLEMENTATION
 
+using namespace fur;
+
 int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
-  const int BORDER = 5;
-  const int W_WIDTH = 800;
-  const int W_HEIGHT = 600;
-  const Color BORDER_COLOR = GetColor(0x368BAF);
-  const Color PRIMARY_COLOR = GetColor(0xc9effeff);
-  const Color TEXT_COLOR = GetColor(0x0492c7ff);
 
-  fur::gui::set_config(W_WIDTH, W_HEIGHT);
+  fur::gui::set_config();
 
   GuiFileDialogState file_state =
       InitGuiFileDialog(550, 500, GetWorkingDirectory(), false, ".torrent");
@@ -42,29 +38,32 @@ int main() {
     // Drawing the page
     // ------
     // Title
-    GuiDrawText("Furrent", {BORDER, BORDER, 0, 50}, TEXT_ALIGN_LEFT, BLACK);
-    auto button_file_dialog =
-        GuiButton({W_WIDTH - BORDER - 190, 10, 150, 30}, "#3# Open torrent");
+    GuiDrawText("Furrent", {gui::BORDER, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT,
+                BLACK);
+    auto button_file_dialog = GuiButton(
+        {gui::W_WIDTH - gui::BORDER - 190, 10, 150, 30}, "#3# Open torrent");
 
     auto button_settings =
-        GuiButton({W_WIDTH - BORDER - 30, 10, 30, 30}, "#141#");
+        GuiButton({gui::W_WIDTH - gui::BORDER - 30, 10, 30, 30}, "#141#");
     // Scroll panel
-    GuiScrollPanel({BORDER, 100, W_WIDTH - BORDER * 2, W_HEIGHT - 100 - BORDER},
+    GuiScrollPanel({gui::BORDER, 100, gui::W_WIDTH - gui::BORDER * 2,
+                    gui::W_HEIGHT - 100 - gui::BORDER},
                    NULL,
-                   {BORDER, 50, W_WIDTH - 150,
+                   {gui::BORDER, 50, gui::W_WIDTH - 150,
                     static_cast<float>(50 * torrents_state.torrents.size())},
                    &torrents_state.scroll);
     // Drawing torrents
     fur::gui::draw_torrents(&torrents_state);
     // Scroll panel head
-    GuiDrawRectangle({BORDER, 61, W_WIDTH - BORDER * 2, 40}, 1, BORDER_COLOR,
-                     PRIMARY_COLOR);
-    GuiDrawText("Torrents", {BORDER, 61, W_WIDTH - BORDER * 2, 40},
-                TEXT_ALIGN_CENTER, TEXT_COLOR);
+    GuiDrawRectangle({gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40}, 1,
+                     gui::BORDER_COLOR, gui::PRIMARY_COLOR);
+    GuiDrawText("Torrents",
+                {gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40},
+                TEXT_ALIGN_CENTER, gui::TEXT_COLOR);
     // Scroll panel bottom
-    GuiDrawRectangle(Rectangle{BORDER, W_HEIGHT - BORDER, W_WIDTH, W_WIDTH}, 1,
-                     GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)),
-                     GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+    GuiDrawRectangle(Rectangle{gui::BORDER, gui::W_HEIGHT - gui::BORDER,
+                               gui::W_WIDTH, gui::W_WIDTH},
+                     1, gui::BACKGROUND_COLOR, gui::BACKGROUND_COLOR);
 
     // ------
     // Events

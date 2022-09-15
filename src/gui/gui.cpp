@@ -6,6 +6,15 @@
 
 namespace fur::gui {
 
+const int BORDER = 5;
+const int W_WIDTH = 800;
+const int W_HEIGHT = 600;
+const Color BORDER_COLOR = GetColor(0x368bafff);
+const Color PRIMARY_COLOR = GetColor(0xc9effeff);
+const Color TEXT_COLOR = GetColor(0x0492c7ff);
+const Color BACKGROUND_COLOR = GetColor(0xf5f5f5ff);
+const Color DIALOG_BACKGROUND_COLOR = Fade(BACKGROUND_COLOR, 0.85f);
+
 enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
 
 struct TorrentGui {
@@ -31,9 +40,9 @@ struct GuiScrollTorrentState {
   GuiTorrentDialogState torrent_dialog_state{};
 };
 
-void set_config(int width, int height) {
+void set_config() {
   SetConfigFlags(FLAG_WINDOW_HIGHDPI);
-  InitWindow(width, height, "Furrent");
+  InitWindow(W_WIDTH, W_HEIGHT, "Furrent");
   // Set larger text size
   GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
 
@@ -74,7 +83,7 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
 void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
   if (!settings->show) return;
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
+                DIALOG_BACKGROUND_COLOR);
   settings->show = !GuiWindowBox({200, 50, 400, 400}, "#198# Settings dialog");
   // TODO: Add furrent settings
 }
@@ -83,7 +92,7 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
 void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent) {
   if (!torrent->show_settings) return;
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                Fade(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)), 0.85f));
+                DIALOG_BACKGROUND_COLOR);
   torrent->show_settings =
       !GuiWindowBox({200, 50, 400, 400}, "#198# Torrent dialog");
   // TODO: Add torrent settings
