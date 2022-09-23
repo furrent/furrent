@@ -26,6 +26,8 @@ const Color DIALOG_BACKGROUND_COLOR = Fade(BACKGROUND_COLOR, 0.85f);
 enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
 
 struct TorrentGui {
+  /// The index in the vector of torrents, automatically set by the gui
+  int index{};
   std::string filename{};
   TorrentState status = STOP;
   /// Used to draw the progress bar from 0 to 100
@@ -70,9 +72,9 @@ struct GuiConfirmDialogState {
   /// Message to display in the dialog
   std::string message{};
   /// Text of the button yes
-  std::string button_yes{};
+  std::string confirm_button{};
   /// Text of the button no
-  std::string button_no{};
+  std::string cancel_button{};
 };
 
 /// Method to set the window configuration, fixed width and height, position and
@@ -141,15 +143,20 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
 /// Function to draw all the torrents based of the scroll state
 void draw_torrents(fur::gui::GuiScrollTorrentState* state) {
   float pos = 5;
-  for (const auto& torr : state->torrents) {
+  int index = 0;
+  for (auto& torr : state->torrents) {
     // If window has been scrolled down some elements are not drawn
     if (pos + 50 < abs(state->scroll.y)) {
       pos += 50;
       continue;
     }
+    // Update the torrent index
+    torr.index = index;
+    // Draw the torrent
     draw_torrent_item(torr, pos + state->scroll.y,
                       &state->torrent_dialog_state);
     pos += 50;
+    index++;
   }
 }
 
@@ -174,7 +181,7 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
   // Add text input for the download folder
   auto result = GuiTextInputBox({250, 100, 300, 200}, "#198# Settings dialog",
                                 "Change the download folder:", "Save;Dismiss",
-                                settings->input_path, 200, NULL);
+                                settings->input_path, 255, NULL);
   // Some action pressed
   if (result == 0 || result == 1 || result == 2) {
     // If save action is pressed, we update the path
@@ -213,22 +220,22 @@ void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent) {
 
 /// Given the torrent dialog state, it draws and manage the dialog
 void confirm_dialog(fur::gui::GuiConfirmDialogState* state) {
-  if (!state->show) return;
+  if (!state->show) {
+    return;
+  }
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
-  // When clicking on the button close
-  auto close = GuiWindowBox({200, 50, 400, 200}, "#198# Confirm action");
-  // Draw the message
-  GuiDrawText(state->message.c_str(), {200, 75, 400, 100}, TEXT_ALIGN_CENTER,
-              GRAY);
-  // Draw the buttons
-  auto button_yes = GuiButton({250, 175, 100, 50}, state->button_yes.c_str());
-  auto button_no = GuiButton({450, 175, 100, 50}, state->button_no.c_str());
+
+  auto response = GuiMessageBox(
+      {200, 100, 400, 200}, "#198# Confirm action", state->message.c_str(),
+      (state->confirm_button + ";" + state->cancel_button).c_str());
+
   // Se è stato cliccato un bottone chiudo la finestra e aggiorno lo stato
-  if (close || button_yes || button_no) {
+  if (response == 0 || response == 1 || response == 2) {
     state->show = false;
     state->clicked = true;
-    state->confirm = button_yes;
+    state->confirm = response == 1;
   }
 }
+
 }  // namespace fur::gui

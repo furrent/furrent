@@ -14,8 +14,8 @@ using namespace fur;
 void add_torrent(GuiFileDialogState *file_dialog_state,
                  fur::gui::GuiScrollTorrentState *scroll_state) {
   // Add the torrent to the current list of torrents
-  fur::gui::TorrentGui torrent{file_dialog_state->realFileName, fur::gui::STOP,
-                               0};
+  fur::gui::TorrentGui torrent{0, file_dialog_state->realFileName,
+                               fur::gui::STOP, 0};
   scroll_state->torrents.push_back(torrent);
   // Close the dialog
   file_dialog_state->SelectFilePressed = false;
@@ -30,16 +30,17 @@ void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
     confirm_dialog_state->clicked = false;
     confirm_dialog_state->message =
         "Are you sure you want to delete the torrent?";
-    confirm_dialog_state->button_yes = "Yes";
-    confirm_dialog_state->button_no = "No";
+    confirm_dialog_state->confirm_button = "Yes";
+    confirm_dialog_state->cancel_button = "No";
   }
   // If the user clicked on an option of the confirm dialog
   if (confirm_dialog_state->clicked) {
     // Confirm the deletion
     if (confirm_dialog_state->confirm) {
+      // Remove the torrent from the list
       scroll_state->torrents.erase(
           scroll_state->torrents.begin() +
-          scroll_state->torrent_dialog_state.torrent.progress);
+          scroll_state->torrent_dialog_state.torrent.index);
       // TODO: delete real torrent
     }
     // Close the dialog
@@ -54,7 +55,6 @@ void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
 void update_settings(fur::gui::GuiSettingsDialogState *settings_dialog_state) {
   if (settings_dialog_state->updated_path) {
     // TODO: do something with the new path
-    std::cout << "New path: " << settings_dialog_state->path << std::endl;
     settings_dialog_state->updated_path = false;
     settings_dialog_state->show = false;
   }
@@ -72,10 +72,10 @@ int main() {
       GetWorkingDirectory(), ""};
   fur::gui::GuiScrollTorrentState scroll_state{
       Vector2{},
-      {{"A", fur::gui::TorrentState::COMPLETED, 100},
-       {"B", fur::gui::TorrentState::DOWNLOAD, 75},
-       {"C", fur::gui::TorrentState::STOP, 50},
-       {"D", fur::gui::TorrentState::ERROR, 25}},
+      {{0, "A", fur::gui::TorrentState::COMPLETED, 100},
+       {0, "B", fur::gui::TorrentState::DOWNLOAD, 75},
+       {0, "C", fur::gui::TorrentState::STOP, 50},
+       {0, "D", fur::gui::TorrentState::ERROR, 25}},
       fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
   // Main loop
