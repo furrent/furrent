@@ -1,6 +1,8 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #undef RAYGUI_IMPLEMENTATION
+#include <sys/stat.h>
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -32,6 +34,7 @@ struct TorrentGui {
 
 struct GuiSettingsDialogState {
   bool show = false;
+  std::string error{};
   std::string current_path{};
   std::string path{};
 };
@@ -141,18 +144,42 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
   if (!settings->show) return;
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
-  //settings->show = !GuiWindowBox({200, 50, 400, 400}, "");
+  // If there are some errors
+  if (!settings->error.empty()) {
+    auto error_dialog =
+        GuiMessageBox({250, 100, 300, 200}, "#198# Something went wrong",
+                      settings->error.c_str(), "Ok");
+    if (error_dialog == 0 || error_dialog == 1) {
+      // Clear the error
+      settings->error = "";
+    }
+    return;
+  }
   // Add text input for the download folder
-  auto result = GuiTextInputBox({250, 100, 300, 200},"#198# Settings dialog", "Change the download folder:","Save;Dismiss", settings->current_path.data(), 200, NULL);
+  auto result = GuiTextInputBox({250, 100, 300, 200}, "#198# Settings dialog",
+                                "Change the download folder:", "Save;Dismiss",
+                                settings->current_path.data(), 200, NULL);
   // Some action pressed
-  if (result == 0 || result==1 || result == 2){
-      settings->show = false;
-      // If save action is pressed, we update the path
-      if(result==1){
-        settings->path = settings->current_path;
+  if (result == 0 || result == 1 || result == 2) {
+    // If save action is pressed, we update the path
+    if (result == 1) {
+      // Check if the path exists and it is a directory
+      struct stat info {};
+      if (stat(settings->current_path.data(), &info) != 0) {
+        settings->error = "The path does not exist";
+      } else if (info.st_mode & S_IFDIR) {
+        // It's a directory so we update the path
+        std::cout << "Updating path to " << settings->current_path.data() << std::endl;
+        settings->path = (settings->current_path.data());
+        settings->show = false;
+      } else {
+        settings->error = "The path is not a directory";
       }
-      // Reset current path
+    } else {
+      // Reset che current path
       settings->current_path = settings->path;
+      settings->show = false;
+    }
   }
 }
 
