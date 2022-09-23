@@ -62,7 +62,8 @@ int main() {
       Vector2{},
       {{"A", fur::gui::TorrentState::COMPLETED, 100},
        {"B", fur::gui::TorrentState::DOWNLOAD, 75},
-       {"C", fur::gui::TorrentState::STOP, 50}},
+       {"C", fur::gui::TorrentState::STOP, 50},
+       {"D", fur::gui::TorrentState::ERROR, 25}},
       fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
   // Main loop

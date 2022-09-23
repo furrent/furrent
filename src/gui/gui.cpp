@@ -10,7 +10,9 @@ const int BORDER = 5;
 const int W_WIDTH = 800;
 const int W_HEIGHT = 600;
 const unsigned int PRIMARY_COLOR_HEX = 0xc9effeff;
-const unsigned int SECONDARY_COLOR_HEX = 0xffaf7aff;
+const unsigned int DOWNLOADING_COLOR_HEX = 0xffaf7aff;
+const unsigned int DONE_COLOR_HEX = 0xabf7b1ff;
+const unsigned int ERROR_COLOR_HEX = 0xffa590ff;
 const unsigned int TEXT_COLOR_HEX = 0x0492c7ff;
 const unsigned int BACKGROUND_COLOR_HEX = 0xf5f5f5ff;
 const Color BORDER_COLOR = GetColor(0x368bafff);
@@ -87,11 +89,15 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
       break;
     case fur::gui::DOWNLOAD:
       play = GuiButton({700, 110 + pos, 20, 20}, "#132#");
-      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, SECONDARY_COLOR_HEX);
+      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DOWNLOADING_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
       break;
     case COMPLETED:
+      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DONE_COLOR_HEX);
+      break;
     case ERROR:
+      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, ERROR_COLOR_HEX);
+      break;
     default:
       break;
   }
@@ -132,8 +138,14 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
   if (!settings->show) return;
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
-  settings->show = !GuiWindowBox({200, 50, 400, 400}, "#198# Settings dialog");
-  // TODO: Add furrent settings
+  //settings->show = !GuiWindowBox({200, 50, 400, 400}, "");
+  // Add text input for the download folder
+  auto result = GuiTextInputBox({250, 100, 300, 200},"#198# Settings dialog", "Change the download folder:","Save;Dismiss", "/download", 200, NULL);
+  // Some action pressed
+  if (result == 0 || result==1 || result == 2){
+
+      settings->show = false;
+  }
 }
 
 /// Given the torrent dialog state, it draws and manage the dialog
