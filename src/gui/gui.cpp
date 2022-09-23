@@ -1,6 +1,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #undef RAYGUI_IMPLEMENTATION
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -31,6 +32,8 @@ struct TorrentGui {
 
 struct GuiSettingsDialogState {
   bool show = false;
+  std::string current_path{};
+  std::string path{};
 };
 
 struct GuiTorrentDialogState {
@@ -140,11 +143,16 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
                 DIALOG_BACKGROUND_COLOR);
   //settings->show = !GuiWindowBox({200, 50, 400, 400}, "");
   // Add text input for the download folder
-  auto result = GuiTextInputBox({250, 100, 300, 200},"#198# Settings dialog", "Change the download folder:","Save;Dismiss", "/download", 200, NULL);
+  auto result = GuiTextInputBox({250, 100, 300, 200},"#198# Settings dialog", "Change the download folder:","Save;Dismiss", settings->current_path.data(), 200, NULL);
   // Some action pressed
   if (result == 0 || result==1 || result == 2){
-
       settings->show = false;
+      // If save action is pressed, we update the path
+      if(result==1){
+        settings->path = settings->current_path;
+      }
+      // Reset current path
+      settings->current_path = settings->path;
   }
 }
 
