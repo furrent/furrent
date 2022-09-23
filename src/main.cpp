@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
 #include "raygui.h"
@@ -8,29 +10,33 @@
 
 using namespace fur;
 
+void add_new_torrent(GuiFileDialogState *file_dialog_state, fur::gui::GuiScrollTorrentState *scroll_state){
+  // Add the torrent to the current list of torrents
+  std::cout << "Adding new torrent: " << file_dialog_state->realFileName << std::endl;
+  fur::gui::TorrentGui torrent{file_dialog_state->realFileName, fur::gui::STOP, 0};
+  scroll_state->torrents.push_back(torrent);
+  // Reset the dialog state
+  file_dialog_state->SelectFilePressed = false;
+  file_dialog_state->fileDialogActive = false;
+
+}
+
 int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
-
-  fur::gui::set_config();
-
+  // Set the window configuration
+  fur::gui::setup_config();
+  // Create all the states
   GuiFileDialogState file_state =
       InitGuiFileDialog(550, 500, GetWorkingDirectory(), false, ".torrent");
-
   fur::gui::GuiSettingsDialogState settings_state{};
-  fur::gui::GuiScrollTorrentState torrents_state{
+  fur::gui::GuiScrollTorrentState scroll_state{
       Vector2{},
-      {
-          {"A", fur::gui::TorrentState::COMPLETED, 100},
-          {"B", fur::gui::TorrentState::DOWNLOAD, 75},
-          {"C", fur::gui::TorrentState::STOP, 50},
-          {"D", fur::gui::TorrentState::ERROR, 0},
-          {"E", fur::gui::TorrentState::COMPLETED, 100},
-          {"F", fur::gui::TorrentState::DOWNLOAD, 75},
-          {"G", fur::gui::TorrentState::STOP, 50},
-          {"H", fur::gui::TorrentState::ERROR, 0},
-      },
+      {{"A", fur::gui::TorrentState::COMPLETED, 100},
+       {"B", fur::gui::TorrentState::DOWNLOAD, 75},
+       {"C", fur::gui::TorrentState::STOP, 50}},
       fur::gui::GuiTorrentDialogState{}};
+  // Main loop
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -50,10 +56,10 @@ int main() {
                     gui::W_HEIGHT - 100 - gui::BORDER},
                    NULL,
                    {gui::BORDER, 50, gui::W_WIDTH - 150,
-                    static_cast<float>(50 * torrents_state.torrents.size())},
-                   &torrents_state.scroll);
+                    static_cast<float>(50 * scroll_state.torrents.size())},
+                   &scroll_state.scroll);
     // Drawing torrents
-    fur::gui::draw_torrents(&torrents_state);
+    fur::gui::draw_torrents(&scroll_state);
     // Scroll panel head
     GuiDrawRectangle({gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40}, 1,
                      gui::BORDER_COLOR, gui::PRIMARY_COLOR);
@@ -68,11 +74,10 @@ int main() {
     // ------
     // Events
     // ------
-
     // Event caught for updating the scroll panel
     float wheelMove = GetMouseWheelMove();
     if (wheelMove != 0) {
-      torrents_state.scroll.y += wheelMove * 20;
+      scroll_state.scroll.y += wheelMove * 20;
     }
 
     // Button add torrent
@@ -87,7 +92,7 @@ int main() {
     if (file_state.SelectFilePressed) {
       if (IsFileExtension(file_state.fileNameText, ".torrent")) {
         logger->info("Selected file: {}", file_state.fileNameText);
-        // TODO: load new torrent from path
+        add_new_torrent(&file_state, &scroll_state);
       } else {
         file_state.SelectFilePressed = false;
         file_state.fileDialogActive = true;
@@ -96,7 +101,7 @@ int main() {
     // Update dialogs
     GuiFileDialog(&file_state);
     settings_dialog(&settings_state);
-    torrent_dialog(&torrents_state.torrent_dialog_state);
+    torrent_dialog(&scroll_state.torrent_dialog_state);
     EndDrawing();
   }
 

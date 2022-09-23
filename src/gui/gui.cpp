@@ -40,17 +40,17 @@ struct GuiScrollTorrentState {
   GuiTorrentDialogState torrent_dialog_state{};
 };
 
-void set_config() {
+/// Method to set the window configuration, fixed width and height, position and
+/// text size
+void setup_config() {
   SetConfigFlags(FLAG_WINDOW_HIGHDPI);
   InitWindow(W_WIDTH, W_HEIGHT, "Furrent");
-  // Set larger text size
   GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
-
   SetWindowPosition(0, 0);
-
   SetTargetFPS(60);
 }
 
+/// Method to draw a single torrent in the scroll panel
 void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
                        fur::gui::GuiTorrentDialogState* state) {
   // Drawing text
@@ -79,26 +79,7 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
   GuiLine({5, 145 + pos, 800 - 10, 1}, NULL);
 }
 
-// Show the furrent settings dialog and update the state
-void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
-  if (!settings->show) return;
-  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                DIALOG_BACKGROUND_COLOR);
-  settings->show = !GuiWindowBox({200, 50, 400, 400}, "#198# Settings dialog");
-  // TODO: Add furrent settings
-}
-
-// Show torrent dialog and update the state
-void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent) {
-  if (!torrent->show_settings) return;
-  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                DIALOG_BACKGROUND_COLOR);
-  torrent->show_settings =
-      !GuiWindowBox({200, 50, 400, 400}, "#198# Torrent dialog");
-  // TODO: Add torrent settings
-}
-
-// Function to draw all the torrents
+/// Function to draw all the torrents based of the scroll state
 void draw_torrents(fur::gui::GuiScrollTorrentState* state) {
   float pos = 5;
   for (const auto& torr : state->torrents) {
@@ -112,4 +93,24 @@ void draw_torrents(fur::gui::GuiScrollTorrentState* state) {
     pos += 50;
   }
 }
+
+/// Given the dialog setting state, it draws and manage the dialog
+void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
+  if (!settings->show) return;
+  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                DIALOG_BACKGROUND_COLOR);
+  settings->show = !GuiWindowBox({200, 50, 400, 400}, "#198# Settings dialog");
+  // TODO: Add furrent settings
+}
+
+/// Given the torrent dialog state, it draws and manage the dialog
+void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent) {
+  if (!torrent->show_settings) return;
+  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                DIALOG_BACKGROUND_COLOR);
+  torrent->show_settings =
+      !GuiWindowBox({200, 50, 400, 400}, "#198# Torrent dialog");
+  // TODO: Add torrent settings
+}
+
 }  // namespace fur::gui
