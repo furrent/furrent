@@ -9,10 +9,14 @@ namespace fur::gui {
 const int BORDER = 5;
 const int W_WIDTH = 800;
 const int W_HEIGHT = 600;
+const unsigned int PRIMARY_COLOR_HEX = 0xc9effeff;
+const unsigned int SECONDARY_COLOR_HEX = 0xffaf7aff;
+const unsigned int TEXT_COLOR_HEX = 0x0492c7ff;
+const unsigned int BACKGROUND_COLOR_HEX = 0xf5f5f5ff;
 const Color BORDER_COLOR = GetColor(0x368bafff);
-const Color PRIMARY_COLOR = GetColor(0xc9effeff);
-const Color TEXT_COLOR = GetColor(0x0492c7ff);
-const Color BACKGROUND_COLOR = GetColor(0xf5f5f5ff);
+const Color PRIMARY_COLOR = GetColor(PRIMARY_COLOR_HEX);
+const Color TEXT_COLOR = GetColor(TEXT_COLOR_HEX);
+const Color BACKGROUND_COLOR = GetColor(BACKGROUND_COLOR_HEX);
 const Color DIALOG_BACKGROUND_COLOR = Fade(BACKGROUND_COLOR, 0.85f);
 
 enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
@@ -59,14 +63,30 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
   if (name.size() > 20) {
     name = name.substr(0, 20) + "...";
   }
+  // Draw the name
   GuiDrawText(name.c_str(), {20, 112 + pos, 0, 20}, TEXT_ALIGN_LEFT, GRAY);
-  // Adding progress bar
-  GuiProgressBar({275, 110 + pos, 300, 20},
-                 (std::to_string(torrent.progress) + "% ").c_str(), NULL,
-                 torrent.progress, 0, 100);
+
   // Adding buttons actions
-  auto play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
-  auto show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
+  bool play = false;
+  bool show_settings = false;
+  switch(torrent.status){
+    case fur::gui::STOP:
+      play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
+      // Set the color of the progress bar orange
+      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, PRIMARY_COLOR_HEX);
+      show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
+      break;
+    case fur::gui::DOWNLOAD:
+      play = GuiButton({700, 110 + pos, 20, 20}, "#132#");
+      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, SECONDARY_COLOR_HEX);
+      show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
+      break;
+    case COMPLETED:
+    case ERROR:
+    default:
+      break;
+  }
+
   auto remove = GuiButton({760, 110 + pos, 20, 20}, "#143#");
   // If one of the buttons is pressed, we update the state
   if (play || show_settings || remove) {
@@ -75,6 +95,10 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
     state->remove = remove;
     state->torrent = torrent;
   }
+  // Adding progress bar
+  GuiProgressBar({275, 110 + pos, 300, 20},
+                 (std::to_string(torrent.progress) + "% ").c_str(), NULL,
+                 torrent.progress, 0, 100);
 
   GuiLine({5, 145 + pos, 800 - 10, 1}, NULL);
 }

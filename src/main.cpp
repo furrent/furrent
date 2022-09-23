@@ -12,14 +12,15 @@ using namespace fur;
 
 void add_new_torrent(GuiFileDialogState *file_dialog_state, fur::gui::GuiScrollTorrentState *scroll_state){
   // Add the torrent to the current list of torrents
-  std::cout << "Adding new torrent: " << file_dialog_state->realFileName << std::endl;
   fur::gui::TorrentGui torrent{file_dialog_state->realFileName, fur::gui::STOP, 0};
   scroll_state->torrents.push_back(torrent);
-  // Reset the dialog state
+  // Close the dialog
   file_dialog_state->SelectFilePressed = false;
   file_dialog_state->fileDialogActive = false;
 
 }
+
+
 
 int main() {
   fur::log::initialize_custom_logger();
