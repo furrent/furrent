@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
 #include "raygui.h"
@@ -49,6 +51,13 @@ void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
   }
 }
 
+void update_settings(fur::gui::GuiSettingsDialogState *settings_dialog_state) {
+  if(settings_dialog_state->updated_path){
+    // TODO: do something with the new path
+    settings_dialog_state->updated_path = false;
+    settings_dialog_state->show = false;
+  }
+}
 int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
@@ -126,9 +135,15 @@ int main() {
         file_state.fileDialogActive = true;
       }
     }
+    // Action on torrent dialog
     if (scroll_state.torrent_dialog_state.delete_torrent) {
       remove_torrent(&scroll_state, &confirm_dialog_state);
     }
+    // Action on settings dialog
+    if (settings_state.show) {
+      update_settings(&settings_state);
+    }
+
     // Update dialogs
     GuiFileDialog(&file_state);
     settings_dialog(&settings_state);

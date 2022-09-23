@@ -3,7 +3,6 @@
 #undef RAYGUI_IMPLEMENTATION
 #include <sys/stat.h>
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -29,19 +28,29 @@ enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
 struct TorrentGui {
   std::string filename{};
   TorrentState status = STOP;
+  /// Used to draw the progress bar from 0 to 100
   int progress{};
 };
 
+/// State of the settings dialog
 struct GuiSettingsDialogState {
   bool show = false;
-  std::string error{};
-  std::string current_path{};
+  /// True if the path has been updated and the dialog should be closed
+  /// used in the main loop to retrieve the new path
+  bool updated_path = false;
+  /// The path that is currently displayed in the dialog
+  std::string input_path{};
+  /// The real path that is used by the program
   std::string path{};
+  /// If the error is initialized it will be displayed in a new dialog
+  std::string error{};
 };
 
 struct GuiTorrentDialogState {
-  bool play = false;
   bool show_settings = false;
+  /// True if the button play has been pressed
+  bool play = false;
+  /// True if the button stop has been pressed
   bool delete_torrent = false;
   TorrentGui torrent{};
 };
@@ -54,10 +63,15 @@ struct GuiScrollTorrentState {
 
 struct GuiConfirmDialogState {
   bool show = false;
+  /// True if the user clicked on the confirm button
   bool confirm = false;
+  /// True if the user has clicked on a button (confirm, cancel of exit)
   bool clicked = false;
+  /// Message to display in the dialog
   std::string message{};
+  /// Text of the button yes
   std::string button_yes{};
+  /// Text of the button no
   std::string button_no{};
 };
 
@@ -141,7 +155,9 @@ void draw_torrents(fur::gui::GuiScrollTorrentState* state) {
 
 /// Given the dialog setting state, it draws and manage the dialog
 void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
-  if (!settings->show) return;
+  if (!settings->show || settings->updated_path) {
+    return;
+  }
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
   // If there are some errors
@@ -158,26 +174,28 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
   // Add text input for the download folder
   auto result = GuiTextInputBox({250, 100, 300, 200}, "#198# Settings dialog",
                                 "Change the download folder:", "Save;Dismiss",
-                                settings->current_path.data(), 200, NULL);
+                                settings->input_path.data(), 200, NULL);
   // Some action pressed
   if (result == 0 || result == 1 || result == 2) {
     // If save action is pressed, we update the path
     if (result == 1) {
       // Check if the path exists and it is a directory
       struct stat info {};
-      if (stat(settings->current_path.data(), &info) != 0) {
+      if (stat(settings->input_path.data(), &info) != 0) {
         settings->error = "The path does not exist";
       } else if (info.st_mode & S_IFDIR) {
-        // It's a directory so we update the path
-        std::cout << "Updating path to " << settings->current_path.data() << std::endl;
-        settings->path = (settings->current_path.data());
-        settings->show = false;
+        // It's a directory, try to update the path
+        // TODO: check this operation
+        strcpy(settings->path.data(), settings->input_path.data());
+        settings->updated_path = true;
+        // The dialog now is closed on main loop
       } else {
         settings->error = "The path is not a directory";
       }
     } else {
-      // Reset che current path
-      settings->current_path = settings->path;
+      // Close or dismiss action
+      // TODO: check this operation
+      strcpy(settings->input_path.data(), settings->path.data());
       settings->show = false;
     }
   }
