@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
 #include "raygui.h"
@@ -10,17 +8,46 @@
 
 using namespace fur;
 
-void add_new_torrent(GuiFileDialogState *file_dialog_state, fur::gui::GuiScrollTorrentState *scroll_state){
+// Function to add a new torrent, it is called when the user clicks on the add
+void add_torrent(GuiFileDialogState *file_dialog_state,
+                 fur::gui::GuiScrollTorrentState *scroll_state) {
   // Add the torrent to the current list of torrents
-  fur::gui::TorrentGui torrent{file_dialog_state->realFileName, fur::gui::STOP, 0};
+  fur::gui::TorrentGui torrent{file_dialog_state->realFileName, fur::gui::STOP,
+                               0};
   scroll_state->torrents.push_back(torrent);
   // Close the dialog
   file_dialog_state->SelectFilePressed = false;
   file_dialog_state->fileDialogActive = false;
-
 }
 
-
+void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
+                    fur::gui::GuiConfirmDialogState *confirm_dialog_state) {
+  // Open the confirm dialog if it is not already open or have been clicked
+  if (!confirm_dialog_state->show && !confirm_dialog_state->clicked) {
+    confirm_dialog_state->show = true;
+    confirm_dialog_state->clicked = false;
+    confirm_dialog_state->message =
+        "Are you sure you want to delete the torrent?";
+    confirm_dialog_state->button_yes = "Yes";
+    confirm_dialog_state->button_no = "No";
+  }
+  // If the user clicked on an option of the confirm dialog
+  if (confirm_dialog_state->clicked) {
+    // Confirm the deletion
+    if (confirm_dialog_state->confirm) {
+      scroll_state->torrents.erase(
+          scroll_state->torrents.begin() +
+          scroll_state->torrent_dialog_state.torrent.progress);
+      // TODO: delete real torrent
+    }
+    // Close the dialog
+    confirm_dialog_state->show = false;
+    confirm_dialog_state->confirm = false;
+    confirm_dialog_state->clicked = false;
+    // Close the torrent dialog
+    scroll_state->torrent_dialog_state.delete_torrent = false;
+  }
+}
 
 int main() {
   fur::log::initialize_custom_logger();
@@ -37,6 +64,7 @@ int main() {
        {"B", fur::gui::TorrentState::DOWNLOAD, 75},
        {"C", fur::gui::TorrentState::STOP, 50}},
       fur::gui::GuiTorrentDialogState{}};
+  fur::gui::GuiConfirmDialogState confirm_dialog_state{};
   // Main loop
   while (!WindowShouldClose()) {
     BeginDrawing();
@@ -80,7 +108,6 @@ int main() {
     if (wheelMove != 0) {
       scroll_state.scroll.y += wheelMove * 20;
     }
-
     // Button add torrent
     if (button_file_dialog) {
       file_state.fileDialogActive = true;
@@ -92,17 +119,20 @@ int main() {
     // Action on filedialog
     if (file_state.SelectFilePressed) {
       if (IsFileExtension(file_state.fileNameText, ".torrent")) {
-        logger->info("Selected file: {}", file_state.fileNameText);
-        add_new_torrent(&file_state, &scroll_state);
+        add_torrent(&file_state, &scroll_state);
       } else {
         file_state.SelectFilePressed = false;
         file_state.fileDialogActive = true;
       }
     }
+    if (scroll_state.torrent_dialog_state.delete_torrent) {
+      remove_torrent(&scroll_state, &confirm_dialog_state);
+    }
     // Update dialogs
     GuiFileDialog(&file_state);
     settings_dialog(&settings_state);
     torrent_dialog(&scroll_state.torrent_dialog_state);
+    confirm_dialog(&confirm_dialog_state);
     EndDrawing();
   }
 

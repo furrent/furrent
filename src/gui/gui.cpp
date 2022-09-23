@@ -34,7 +34,7 @@ struct GuiSettingsDialogState {
 struct GuiTorrentDialogState {
   bool play = false;
   bool show_settings = false;
-  bool remove = false;
+  bool delete_torrent = false;
   TorrentGui torrent{};
 };
 
@@ -42,6 +42,15 @@ struct GuiScrollTorrentState {
   Vector2 scroll{};
   std::vector<TorrentGui> torrents{};
   GuiTorrentDialogState torrent_dialog_state{};
+};
+
+struct GuiConfirmDialogState {
+  bool show = false;
+  bool confirm = false;
+  bool clicked = false;
+  std::string message{};
+  std::string button_yes{};
+  std::string button_no{};
 };
 
 /// Method to set the window configuration, fixed width and height, position and
@@ -69,7 +78,7 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
   // Adding buttons actions
   bool play = false;
   bool show_settings = false;
-  switch(torrent.status){
+  switch (torrent.status) {
     case fur::gui::STOP:
       play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
       // Set the color of the progress bar orange
@@ -87,12 +96,12 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
       break;
   }
 
-  auto remove = GuiButton({760, 110 + pos, 20, 20}, "#143#");
+  auto delete_torrent = GuiButton({760, 110 + pos, 20, 20}, "#143#");
   // If one of the buttons is pressed, we update the state
-  if (play || show_settings || remove) {
+  if (play || show_settings || delete_torrent) {
     state->play = play;
     state->show_settings = show_settings;
-    state->remove = remove;
+    state->delete_torrent = delete_torrent;
     state->torrent = torrent;
   }
   // Adding progress bar
@@ -137,4 +146,24 @@ void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent) {
   // TODO: Add torrent settings
 }
 
+/// Given the torrent dialog state, it draws and manage the dialog
+void confirm_dialog(fur::gui::GuiConfirmDialogState* state) {
+  if (!state->show) return;
+  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                DIALOG_BACKGROUND_COLOR);
+  // When clicking on the button close
+  auto close = GuiWindowBox({200, 50, 400, 200}, "#198# Confirm action");
+  // Draw the message
+  GuiDrawText(state->message.c_str(), {200, 75, 400, 100}, TEXT_ALIGN_CENTER,
+              GRAY);
+  // Draw the buttons
+  auto button_yes = GuiButton({250, 175, 100, 50}, state->button_yes.c_str());
+  auto button_no = GuiButton({450, 175, 100, 50}, state->button_no.c_str());
+  // Se è stato cliccato un bottone chiudo la finestra e aggiorno lo stato
+  if (close || button_yes || button_no) {
+    state->show = false;
+    state->clicked = true;
+    state->confirm = button_yes;
+  }
+}
 }  // namespace fur::gui
