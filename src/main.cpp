@@ -52,8 +52,9 @@ void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
 }
 
 void update_settings(fur::gui::GuiSettingsDialogState *settings_dialog_state) {
-  if(settings_dialog_state->updated_path){
+  if (settings_dialog_state->updated_path) {
     // TODO: do something with the new path
+    std::cout << "New path: " << settings_dialog_state->path << std::endl;
     settings_dialog_state->updated_path = false;
     settings_dialog_state->show = false;
   }
@@ -66,7 +67,9 @@ int main() {
   // Create all the states
   GuiFileDialogState file_state =
       InitGuiFileDialog(550, 500, GetWorkingDirectory(), false, ".torrent");
-  fur::gui::GuiSettingsDialogState settings_state{};
+  fur::gui::GuiSettingsDialogState settings_state{
+      false, false, const_cast<char *>(GetWorkingDirectory()),
+      GetWorkingDirectory(), ""};
   fur::gui::GuiScrollTorrentState scroll_state{
       Vector2{},
       {{"A", fur::gui::TorrentState::COMPLETED, 100},

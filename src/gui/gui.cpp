@@ -39,7 +39,7 @@ struct GuiSettingsDialogState {
   /// used in the main loop to retrieve the new path
   bool updated_path = false;
   /// The path that is currently displayed in the dialog
-  std::string input_path{};
+  char* input_path{};
   /// The real path that is used by the program
   std::string path{};
   /// If the error is initialized it will be displayed in a new dialog
@@ -174,19 +174,19 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
   // Add text input for the download folder
   auto result = GuiTextInputBox({250, 100, 300, 200}, "#198# Settings dialog",
                                 "Change the download folder:", "Save;Dismiss",
-                                settings->input_path.data(), 200, NULL);
+                                settings->input_path, 200, NULL);
   // Some action pressed
   if (result == 0 || result == 1 || result == 2) {
     // If save action is pressed, we update the path
     if (result == 1) {
       // Check if the path exists and it is a directory
       struct stat info {};
-      if (stat(settings->input_path.data(), &info) != 0) {
+      if (stat(settings->input_path, &info) != 0) {
         settings->error = "The path does not exist";
       } else if (info.st_mode & S_IFDIR) {
         // It's a directory, try to update the path
         // TODO: check this operation
-        strcpy(settings->path.data(), settings->input_path.data());
+        settings->path = std::string{settings->input_path};
         settings->updated_path = true;
         // The dialog now is closed on main loop
       } else {
@@ -195,7 +195,7 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
     } else {
       // Close or dismiss action
       // TODO: check this operation
-      strcpy(settings->input_path.data(), settings->path.data());
+      settings->input_path = settings->path.data();
       settings->show = false;
     }
   }
