@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
 #include "raygui.h"
@@ -13,10 +11,17 @@ using namespace fur;
 // Function to add a new torrent, it is called when the user clicks on the add
 void add_torrent(GuiFileDialogState *file_dialog_state,
                  fur::gui::GuiScrollTorrentState *scroll_state) {
+  // If the file selected is not a torrent do nothing
+  if (!IsFileExtension(file_dialog_state->fileNameText, ".torrent")) {
+    file_dialog_state->SelectFilePressed = false;
+    file_dialog_state->fileDialogActive = true;
+    return;
+  }
   // Add the torrent to the current list of torrents
-  fur::gui::TorrentGui torrent{0, file_dialog_state->realFileName,
+  fur::gui::TorrentGui torrent{0, 0, file_dialog_state->realFileName,
                                fur::gui::STOP, 0};
   scroll_state->torrents.push_back(torrent);
+  // TODO: add real torrent
   // Close the dialog
   file_dialog_state->SelectFilePressed = false;
   file_dialog_state->fileDialogActive = false;
@@ -41,7 +46,7 @@ void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
       scroll_state->torrents.erase(
           scroll_state->torrents.begin() +
           scroll_state->torrent_dialog_state.torrent.index);
-      // TODO: delete real torrent
+      // TODO: remove the real torrent
     }
     // Close the dialog
     confirm_dialog_state->show = false;
@@ -54,16 +59,15 @@ void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
 
 void update_settings(fur::gui::GuiSettingsDialogState *settings_dialog_state) {
   if (settings_dialog_state->updated_path) {
-    // TODO: do something with the new path
     settings_dialog_state->updated_path = false;
     settings_dialog_state->show = false;
+    // TODO: update the real settings
   }
 }
 
 void update_torrent_state(fur::gui::GuiScrollTorrentState *scroll_state) {
   auto &torrent =
       scroll_state->torrents[scroll_state->torrent_dialog_state.torrent.index];
-  // TODO: update the torrent state
   switch (torrent.status) {
     case fur::gui::STOP:
       torrent.status = fur::gui::DOWNLOAD;
@@ -74,9 +78,20 @@ void update_torrent_state(fur::gui::GuiScrollTorrentState *scroll_state) {
     default:
       break;
   }
+  // TODO: update the torrent state
   // Reset the action
   scroll_state->torrent_dialog_state.play = false;
 }
+
+void update_torrent_priority(fur::gui::GuiScrollTorrentState *scroll_state) {
+  auto &torrent =
+      scroll_state->torrents[scroll_state->torrent_dialog_state.torrent.index];
+  torrent.priority = scroll_state->torrent_dialog_state.input_priority;
+  // TODO: update the torrent priority
+  // Reset the action
+  scroll_state->torrent_dialog_state.update_priority = false;
+}
+
 int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
@@ -90,10 +105,10 @@ int main() {
       GetWorkingDirectory(), ""};
   fur::gui::GuiScrollTorrentState scroll_state{
       Vector2{},
-      {{0, "A", fur::gui::TorrentState::COMPLETED, 100},
-       {0, "B", fur::gui::TorrentState::DOWNLOAD, 75},
-       {0, "C", fur::gui::TorrentState::STOP, 50},
-       {0, "D", fur::gui::TorrentState::ERROR, 25}},
+      {{0, 0, "A", fur::gui::TorrentState::COMPLETED, 100},
+       {0, 0, "B", fur::gui::TorrentState::DOWNLOAD, 75},
+       {0, 0, "C", fur::gui::TorrentState::STOP, 50},
+       {0, 0, "D", fur::gui::TorrentState::ERROR, 25}},
       fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
   // Main loop
@@ -149,24 +164,23 @@ int main() {
     }
     // Action on filedialog
     if (file_state.SelectFilePressed) {
-      if (IsFileExtension(file_state.fileNameText, ".torrent")) {
-        add_torrent(&file_state, &scroll_state);
-      } else {
-        file_state.SelectFilePressed = false;
-        file_state.fileDialogActive = true;
-      }
+      add_torrent(&file_state, &scroll_state);
     }
-    // Action on torrent dialog
-    if (scroll_state.torrent_dialog_state.delete_torrent) {
-      remove_torrent(&scroll_state, &confirm_dialog_state);
-    }
-    // Action on settings dialog
+    // Furrent settings dialog
     if (settings_state.show) {
       update_settings(&settings_state);
     }
     // Button play/pause on torrent
     if (scroll_state.torrent_dialog_state.play) {
       update_torrent_state(&scroll_state);
+    }
+    // Button settings on torrent
+    if (scroll_state.torrent_dialog_state.update_priority) {
+      update_torrent_priority(&scroll_state);
+    }
+    // Button remove torrent
+    if (scroll_state.torrent_dialog_state.delete_torrent) {
+      remove_torrent(&scroll_state, &confirm_dialog_state);
     }
 
     // Update dialogs

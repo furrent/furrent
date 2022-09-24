@@ -28,6 +28,8 @@ enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
 struct TorrentGui {
   /// The index in the vector of torrents, automatically set by the gui
   int index{};
+  /// The priority of the torrent
+  int priority{};
   std::string filename{};
   TorrentState status = STOP;
   /// Used to draw the progress bar from 0 to 100
@@ -54,6 +56,10 @@ struct GuiTorrentDialogState {
   bool play = false;
   /// True if the button stop has been pressed
   bool delete_torrent = false;
+  /// True if the button save on change has been pressed
+  bool update_priority = false;
+  /// The priority during the change
+  int input_priority{};
   TorrentGui torrent{};
 };
 
@@ -209,13 +215,32 @@ void settings_dialog(fur::gui::GuiSettingsDialogState* settings) {
 }
 
 /// Given the torrent dialog state, it draws and manage the dialog
-void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent) {
-  if (!torrent->show_settings) return;
+void torrent_dialog(fur::gui::GuiTorrentDialogState* torrent_dialog) {
+  if (!torrent_dialog->show_settings) return;
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
-  torrent->show_settings =
-      !GuiWindowBox({200, 50, 400, 400}, "#198# Torrent dialog");
-  // TODO: Add torrent settings
+  // If torrent_settings is set, we draw a dialog with a slider to change the
+  // priority
+  auto result = GuiMessageBox({250, 100, 300, 200}, "#198# Torrent settings",
+                              "Change the priority:", "Save;Dismiss");
+  GuiSpinner({300, 210, 200, 30}, NULL, &torrent_dialog->input_priority, 0, 10,
+             false);
+  if (torrent_dialog->input_priority < 0) {
+    torrent_dialog->input_priority = 0;
+  }
+  if (torrent_dialog->input_priority > 10) {
+    torrent_dialog->input_priority = 10;
+  }
+  if (result == 0 || result == 1 || result == 2) {
+    if (result == 1) {
+      // Button save
+      torrent_dialog->update_priority = true;
+    } else {
+      // Button close or dismiss
+      torrent_dialog->input_priority = torrent_dialog->torrent.priority;
+    }
+    torrent_dialog->show_settings = false;
+  }
 }
 
 /// Given the torrent dialog state, it draws and manage the dialog
