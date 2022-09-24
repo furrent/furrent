@@ -59,6 +59,24 @@ void update_settings(fur::gui::GuiSettingsDialogState *settings_dialog_state) {
     settings_dialog_state->show = false;
   }
 }
+
+void update_torrent_state(fur::gui::GuiScrollTorrentState *scroll_state) {
+  auto &torrent =
+      scroll_state->torrents[scroll_state->torrent_dialog_state.torrent.index];
+  // TODO: update the torrent state
+  switch (torrent.status) {
+    case fur::gui::STOP:
+      torrent.status = fur::gui::DOWNLOAD;
+      break;
+    case fur::gui::DOWNLOAD:
+      torrent.status = fur::gui::STOP;
+      break;
+    default:
+      break;
+  }
+  // Reset the action
+  scroll_state->torrent_dialog_state.play = false;
+}
 int main() {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
@@ -145,6 +163,10 @@ int main() {
     // Action on settings dialog
     if (settings_state.show) {
       update_settings(&settings_state);
+    }
+    // Button play/pause on torrent
+    if (scroll_state.torrent_dialog_state.play) {
+      update_torrent_state(&scroll_state);
     }
 
     // Update dialogs

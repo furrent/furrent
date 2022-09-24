@@ -104,13 +104,13 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
   bool show_settings = false;
   switch (torrent.status) {
     case fur::gui::STOP:
-      play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
+      play = GuiButton({700, 110 + pos, 20, 20}, "#132#");
       // Set the color of the progress bar orange
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, PRIMARY_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
       break;
     case fur::gui::DOWNLOAD:
-      play = GuiButton({700, 110 + pos, 20, 20}, "#132#");
+      play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DOWNLOADING_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
       break;
