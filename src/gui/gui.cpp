@@ -16,12 +16,14 @@ const unsigned int DOWNLOADING_COLOR_HEX = 0xffaf7aff;
 const unsigned int DONE_COLOR_HEX = 0xabf7b1ff;
 const unsigned int ERROR_COLOR_HEX = 0xffa590ff;
 const unsigned int TEXT_COLOR_HEX = 0x0492c7ff;
-const unsigned int BACKGROUND_COLOR_HEX = 0xf5f5f5ff;
+const unsigned int BACKGROUND_COLOR_HEX = 0xEDE9E0FF;
+const unsigned int LOGO_COLOR_HEX = 0xd8bd74FF;
 const Color BORDER_COLOR = GetColor(0x368bafff);
 const Color PRIMARY_COLOR = GetColor(PRIMARY_COLOR_HEX);
 const Color TEXT_COLOR = GetColor(TEXT_COLOR_HEX);
-const Color BACKGROUND_COLOR = GetColor(BACKGROUND_COLOR_HEX);
-const Color DIALOG_BACKGROUND_COLOR = Fade(BACKGROUND_COLOR, 0.85f);
+const Color BG_COLOR = GetColor(BACKGROUND_COLOR_HEX);
+const Color LOGO_COLOR = GetColor(LOGO_COLOR_HEX);
+const Color DIALOG_BACKGROUND_COLOR = Fade(BG_COLOR, 0.85f);
 
 enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
 
@@ -89,6 +91,7 @@ void setup_config() {
   SetConfigFlags(FLAG_WINDOW_HIGHDPI);
   InitWindow(W_WIDTH, W_HEIGHT, "Furrent");
   GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
+  GuiSetStyle(DEFAULT, BACKGROUND_COLOR, BACKGROUND_COLOR_HEX);
   SetWindowPosition(0, 0);
   SetTargetFPS(60);
 }

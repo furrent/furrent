@@ -111,6 +111,9 @@ int main() {
        {0, 0, "D", fur::gui::TorrentState::ERROR, 25}},
       fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
+  auto furrent_logo = LoadTexture("../assets/Furrent.png");
+  auto font = LoadFont("../assets/Righteous-Regular.ttf");
+  GuiSetFont(font);
   // Main loop
   while (!WindowShouldClose()) {
     BeginDrawing();
@@ -118,14 +121,20 @@ int main() {
     // ------
     // Drawing the page
     // ------
+    // Add furrent image
+
+    DrawTexture(furrent_logo, gui::BORDER, gui::BORDER, gui::LOGO_COLOR);
     // Title
-    GuiDrawText("Furrent", {gui::BORDER, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT,
-                BLACK);
+    // Increase the font for the title
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 30);
+    GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT, BLACK);
+    // Reset the font
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     auto button_file_dialog = GuiButton(
-        {gui::W_WIDTH - gui::BORDER - 190, 10, 150, 30}, "#3# Open torrent");
+        {gui::W_WIDTH - gui::BORDER - 190, 15, 150, 30}, "#3# Open torrent");
 
     auto button_settings =
-        GuiButton({gui::W_WIDTH - gui::BORDER - 30, 10, 30, 30}, "#141#");
+        GuiButton({gui::W_WIDTH - gui::BORDER - 30, 15, 30, 30}, "#141#");
     // Scroll panel
     GuiScrollPanel({gui::BORDER, 100, gui::W_WIDTH - gui::BORDER * 2,
                     gui::W_HEIGHT - 100 - gui::BORDER},
@@ -144,7 +153,7 @@ int main() {
     // Scroll panel bottom
     GuiDrawRectangle(Rectangle{gui::BORDER, gui::W_HEIGHT - gui::BORDER,
                                gui::W_WIDTH, gui::W_WIDTH},
-                     1, gui::BACKGROUND_COLOR, gui::BACKGROUND_COLOR);
+                     1, gui::BG_COLOR, gui::BG_COLOR);
 
     // ------
     // Events
