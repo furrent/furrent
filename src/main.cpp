@@ -114,6 +114,13 @@ int main() {
   auto furrent_logo = LoadTexture("../assets/Furrent.png");
   auto font = LoadFont("../assets/Righteous-Regular.ttf");
   GuiSetFont(font);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, 0x876645FF);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, 0x876645FF);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, 0x876645FF);
+  GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, 0x876645FF);
+  GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, 0x876645FF);
+  GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0xeee6ddff);
+  GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, 0xf6f2eeff);
   // Main loop
   while (!WindowShouldClose()) {
     BeginDrawing();
@@ -123,11 +130,11 @@ int main() {
     // ------
     // Add furrent image
 
-    DrawTexture(furrent_logo, gui::BORDER, gui::BORDER, gui::LOGO_COLOR);
+    DrawTexture(furrent_logo, gui::BORDER, gui::BORDER, WHITE);
     // Title
     // Increase the font for the title
     GuiSetStyle(DEFAULT, TEXT_SIZE, 30);
-    GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT, BLACK);
+    GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT, GetColor(0x876645FF));
     // Reset the font
     GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     auto button_file_dialog = GuiButton(
@@ -146,10 +153,10 @@ int main() {
     fur::gui::draw_torrents(&scroll_state);
     // Scroll panel head
     GuiDrawRectangle({gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40}, 1,
-                     gui::BORDER_COLOR, gui::PRIMARY_COLOR);
+                     GetColor(0x876645ff), GetColor(0xba9978ff));
     GuiDrawText("Torrents",
                 {gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40},
-                TEXT_ALIGN_CENTER, gui::TEXT_COLOR);
+                TEXT_ALIGN_CENTER, GetColor(0x876645FF));
     // Scroll panel bottom
     GuiDrawRectangle(Rectangle{gui::BORDER, gui::W_HEIGHT - gui::BORDER,
                                gui::W_WIDTH, gui::W_WIDTH},
