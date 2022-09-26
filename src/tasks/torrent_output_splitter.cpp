@@ -13,13 +13,15 @@ TorrentOutputSplitter::TorrentOutputSplitter(TorrentDescriptor& descr)
 
 void TorrentOutputSplitter::execute(
     mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
-  
+
   // No need for the output stream now
   // TODO: Move elsewhere
   _descriptor.torrent->stream_ptr->close();
 
-  std::string output_filename =
+  std::string temp_filename =
     config::DOWNLOAD_FOLDER + _descriptor.torrent->name;
+
+
 
   auto& torrent = *_descriptor.torrent;
   if (torrent.files.size() == 0) {
@@ -28,26 +30,19 @@ void TorrentOutputSplitter::execute(
   }
   else {
     // Multi file not so much
-    
-    /*
-    std::ifstream input_stream(input_filename, ifstream::binary);
-    for (auto& file : torrent.files) {
 
-      const size_t path_size = file.filepath.size();
+    size_t offset = 0;
+    for(auto& file : torrent.files)
+      auto filepath = fur::platform::io::create_subfolders(
+        config::DOWNLOAD_FOLDER, file.filepath);
 
-      std::stringstream ss;
-      for (int i = 0; i < path_size i++) {
-        ss << file.filepath[i];
-        if (i < path_size - 1)
-          ss << "/";
-        else if (i == path_size - 1)
-          platform::io::create_subfolders(ss.str());
-      } 
+      if (!filepath.valid()) {
+        // TODO
+        break;
+      }
 
-      std::ofstream output_stream(ss.str());
-      */
-
-
+      fur::platform::io::transfer_bytes(temp_filename, filepath.value(), offset, file.length);
+      offset += file.length;
     }
 
 
