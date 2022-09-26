@@ -3,10 +3,11 @@
 #include <fstream>
 
 #include <config.hpp>
+#include <platform/io.hpp>
 
 namespace fur::tasks {
 
-TorrentPieceDownload::TorrentPieceDownload(TorrentDescriptor& desc, download::PieceDescriptor piece)
+TorrentPieceDownload::TorrentPieceDownload(TorrentDescriptor& desc, download::Piece piece)
 : _descriptor{desc}, _piece{piece} { }
 
 void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
@@ -47,22 +48,25 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
 
         auto write_begin = std::chrono::high_resolution_clock::now();
         {
-            // Write bytes to memory
-            std::unique_lock<std::shared_mutex> lock(_descriptor.mtx);
+            std::shared_lock<std::shared_mutex> lock(_descriptor.mtx);
 
-            // Create output file on system and open an handle
-            auto& stream_ptr = _descriptor.torrent->stream_ptr;
-            stream_ptr->seekp(_piece.offset, std::ios_base::beg);
-            stream_ptr->write(reinterpret_cast<char*>(&result->content[0]), result->content.size());
+            // Write every subpiece
+            size_t piece_offset = 0;
+            for(auto& subpiece: _piece.subpieces) {
+                
+                const auto& file = _descriptor.torrent->files[subpiece.file_index];
+                const std::string filepath = config::DOWNLOAD_FOLDER + std::string("/") + file.filename();
 
-            // Spawn output splitter task if all pieces have been downloaded
-            auto pieces_saved = _descriptor.pieces_saved.fetch_add(1, std::memory_order_relaxed);
-            if (pieces_saved >= torrent.pieces_count && !_descriptor.split_output_spawned) {
-                _descriptor.split_output_spawned = true;
-
-                logger->info("Created output splitter for {}", torrent.name);
-                local_queue.insert(std::make_unique<TorrentOutputSplitter>(_descriptor));
+                const std::vector<uint8_t> file_data(
+                    downloaded.content.begin() + piece_offset, 
+                    downloaded.content.begin() + piece_offset + subpiece.len
+                );
+                fur::platform::io::write_bytes(filepath, downloaded.content, subpiece.file_offset);
+                piece_offset += subpiece.len;
             }
+
+            // This must be true, otherwise there has been a corruption
+            assert(downloaded.content.size() == piece_offset);
         }
 
         auto write_end = std::chrono::high_resolution_clock::now();

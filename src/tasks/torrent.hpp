@@ -26,10 +26,10 @@ class TorrentPieceDownload : public mt::ITask {
     /// Reference to preallocated torrent descriptor in furrent
     TorrentDescriptor& _descriptor;
     /// Contains all information relative to the piece to download
-    download::PieceDescriptor _piece;
+    download::Piece _piece;
 
 public:
-    TorrentPieceDownload(TorrentDescriptor& descr, download::PieceDescriptor piece);
+    TorrentPieceDownload(TorrentDescriptor& descr, download::Piece piece);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 
     size_t priority() const override { return mt::PRIORITY_LOW; }

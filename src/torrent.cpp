@@ -5,9 +5,23 @@
 #include "hash.hpp"
 #include "spdlog/spdlog.h"
 
+#include <sstream>
+
 using namespace fur::bencode;
 
 namespace fur::torrent {
+ 
+std::string File::filename() const {
+  std::stringstream sstream;
+  for(int i = 0; i < filepath.size(); i++) {
+    sstream << filepath[i];
+    if (i != filepath.size() - 1)
+      sstream << "/";
+  }
+  return sstream.str();
+}
+
+
 TorrentFile::TorrentFile(const BencodeValue& tree) {
   // This function receives a const reference and rightfully so: we don't need
   // to mutate the bencode tree but `BencodeValue::value()` (which we need to

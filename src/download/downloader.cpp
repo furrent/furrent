@@ -209,7 +209,7 @@ Outcome<DownloaderError> Downloader::handshake() {
   return Outcome::OK({});
 }
 
-Result<Downloaded, DownloaderError> Downloader::try_download(const PieceDescriptor& task) {
+Result<Downloaded, DownloaderError> Downloader::try_download(const Piece& task) {
   using Result = Result<Downloaded, DownloaderError>;
 
   auto logger = spdlog::get("custom");

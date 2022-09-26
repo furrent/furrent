@@ -13,9 +13,14 @@ namespace fur::torrent {
 struct File {
   /// Name of the file relative to the download folder,
   /// contains all subfolders
-  std::vector<std::string> filepath;
+  std::vector<std::string> filepath;   
   /// Number of bytes in the file
   size_t length;
+
+  // =======================================================
+
+  /// @return filename in string form without base 
+  std::string filename() const;
 };
 
 /// Represents a parsed .torrent file
@@ -37,8 +42,6 @@ struct TorrentFile {
   /// The name of the shared file
   std::string name;
 
-  /// Shared output file stream for results
-  std::shared_ptr<std::ofstream> stream_ptr;
   /// Name of the folder containing all torrent files
   std::string folder_name;
   /// Describe the structure of the file

@@ -19,11 +19,23 @@ using namespace fur::download::socket;
 using namespace fur::download::message;
 
 namespace fur::download {
+ 
+struct Subpiece {
+  /// Index of the file this subpiece belongs to
+  size_t file_index;
+  /// Offset from the beginning of the file
+  size_t file_offset;
+  /// Size in bytes
+  size_t len;
+};
 
 /// Describes a piece of a torrent
-struct PieceDescriptor {
+struct Piece {
+  /// Global download index  
   size_t index;
-  size_t offset;
+  /// Mapping piece-files
+  std::vector<Subpiece> subpieces;
+  /// Attempts at downloading this piece
   size_t attempts;
 };
 
@@ -75,7 +87,7 @@ class Downloader {
   ///  - The connection timing out
   ///  - The downloaded piece being corrupt
   [[nodiscard]] Result<Downloaded, DownloaderError> try_download(
-      const PieceDescriptor&);
+      const Piece&);
 
   const TorrentFile& get_torrent() const;
   const Peer& get_peer() const;
