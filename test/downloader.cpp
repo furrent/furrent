@@ -65,8 +65,10 @@ TEST_CASE("[Downloader] Download one piece, same size as a block") {
 
   Downloader down(torrent, peer);
 
+  std::vector<Subpiece> subpieces = { Subpiece{ 0, 0, torrent.piece_length } };
   auto maybe_downloaded = TestingFriend::Downloader_try_download(down, Piece{
-    0u, static_cast<size_t>(torrent.piece_length), 0u});
+    0u, subpieces, 0u});
+
   REQUIRE(maybe_downloaded.valid());
   auto downloaded = *maybe_downloaded;
 
@@ -102,9 +104,11 @@ void test_alice(std::vector<DownloaderError>& errors) {
     // Must not mutate original array while iterating
     auto pieces_left_copy = pieces_left;
     for (auto idx : pieces_left_copy) {
+
+      std::vector<Subpiece> subpieces = { Subpiece{ 0, 0, torrent.piece_length } };
       auto maybe_downloaded =
           TestingFriend::Downloader_try_download(down, Piece{
-            static_cast<size_t>(idx), static_cast<size_t>(torrent.piece_length), 0});
+            static_cast<size_t>(idx), subpieces, 0});
       if (!maybe_downloaded.valid()) {
         spdlog::get("custom")->error(
             "error in downloader: {}",
