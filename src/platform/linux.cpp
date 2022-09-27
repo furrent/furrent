@@ -81,17 +81,24 @@ IOResult<Empty> transfer_bytes(const std::string& source, const std::string& des
 }
 
 IOResult<std::string> create_subfolders(const std::string& base, const std::vector<std::string>& subfolders) {
-  std::stringstream result(base);
-  for(auto& subfolder : subfolders) {
-    result << subfolder << "/";
+  
+  std::string real_base = (base.back() == '/') ? base : base + '/';
+  std::stringstream sstream(real_base);
+
+  for(int i = 0; i < subfolders.size() - 1; i++) {
+    sstream << subfolders[i];
+    if (i != subfolders.size() - 2)
+      sstream << '/';
 
     // Try to create subfolder
-    if (mkdir(result.str().c_str(), 0666) == -1) {
+    if (mkdir(sstream.str().c_str(), 0666) == -1) {
       // TODO
       return IOResult<std::string>::ERROR(IOError::GenericError);
     }
   }
-  return IOResult<std::string>::OK(result.str());
+
+  std::string result = sstream.str() + subfolders.back();
+  return IOResult<std::string>::OK(std::move(result));
 }
 
 }  // namespace fur::platform::io

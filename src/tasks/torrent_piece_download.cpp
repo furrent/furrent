@@ -17,12 +17,13 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
 
     fur::torrent::TorrentFile torrent;
     fur::peer::Peer peer;
-
     {
         // Allows multiple readers, extract peer information and torrent file
         std::shared_lock<std::shared_mutex> lock(_descriptor.mtx);
 
         const size_t count = _descriptor.downloaders.size();
+        assert(count != 0);
+
         const size_t index = (_piece.index + _piece.attempts) % count;
         peer = _descriptor.downloaders[index];
         torrent = *_descriptor.torrent;
@@ -48,12 +49,14 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
 
         auto write_begin = std::chrono::high_resolution_clock::now();
         {
+            // The operating system will protect the writing on the files
             std::shared_lock<std::shared_mutex> lock(_descriptor.mtx);
 
             // Write every subpiece
             size_t piece_offset = 0;
-            for(auto& subpiece: _piece.subpieces) {
+            for(int i = 0; i < _piece.subpieces.size(); i++) {
                 
+                const auto& subpiece = _piece.subpieces[i];
                 const auto& file = _descriptor.torrent->files[subpiece.file_index];
                 const std::string filepath = config::DOWNLOAD_FOLDER + std::string("/") + file.filename();
 
@@ -61,7 +64,13 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
                     downloaded.content.begin() + piece_offset, 
                     downloaded.content.begin() + piece_offset + subpiece.len
                 );
-                fur::platform::io::write_bytes(filepath, downloaded.content, subpiece.file_offset);
+                if (!fur::platform::io::write_bytes(filepath, downloaded.content, subpiece.file_offset).valid()) {
+                    logger->error("Unable to write to file (piece: {}, subpiece: {}) of {}", 
+                        _piece.index, i, _descriptor.filename);
+
+                    // TODO: Corruption? Hard Exit
+                }
+
                 piece_offset += subpiece.len;
             }
 

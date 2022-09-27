@@ -50,7 +50,10 @@ bool TorrentDescriptor::regenerate_peers() {
   }
 
   // If no peer is valid then the operation failed
-  if (new_peers.empty()) return false;
+  if (new_peers.empty()) {
+    logger->info(log_text.str());
+    return false;
+  }
 
   {
     std::unique_lock<std::shared_mutex> lock(mtx);

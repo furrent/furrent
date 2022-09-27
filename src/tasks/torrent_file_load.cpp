@@ -42,6 +42,8 @@ void TorrentFileLoad::execute(
   // From now on the descriptor is available to all
   _descriptor.torrent =
       std::make_optional<fur::torrent::TorrentFile>(*(*b_tree));
+
+  // Find trackers
   while (!_descriptor.regenerate_peers())
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -104,6 +106,7 @@ void TorrentFileLoad::execute(
           size_t offset = cur_file_tot_size - cur_file_rem_size;
           subpieces.push_back({cur_file, offset, piece_rem_len});
           cur_file_rem_size -= piece_rem_len;
+          piece_rem_len = 0;
         }
       }
     }
@@ -116,7 +119,7 @@ void TorrentFileLoad::execute(
     }
 
     // Create piece download task
-    download::Piece piece{index, subpieces};
+    download::Piece piece{index, subpieces, 0};
     local_queue.insert(
       std::make_unique<TorrentPieceDownload>(_descriptor, piece));
   }
