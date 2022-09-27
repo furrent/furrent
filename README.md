@@ -1,5 +1,26 @@
-# Furrent
+![banner](banner.png)
+
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/furrent/furrent/CMake?style=for-the-badge&labelColor=ede9e0)
+![GitHub contributors](https://img.shields.io/github/contributors/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
+![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
+![GitHub closed issues](https://img.shields.io/github/issues-closed/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
+![GitHub repo size](https://img.shields.io/github/repo-size/furrent/furrent?style=for-the-badge&color=007EFF&labelColor=ede9e0)
+
 Furrent is a tiny BitTorrent client
+
+## Known limitations
+- No [DHT](https://en.wikipedia.org/wiki/BitTorrent#Distributed_trackers) support (tracker-less torrents with decentralized peer discovery)
+- No [web-seeding](https://en.wikipedia.org/wiki/BitTorrent#Web_seeding) support (seeding via HTTP to bootstrap a new torrent and speed up download)
+- No [multi-tracker](https://en.wikipedia.org/wiki/BitTorrent#Multitrackers) support (although this is an extension to the original protocol, a basic implementation shouldn't prove too hard)
+- No [UDP tracker](https://en.wikipedia.org/wiki/UDP_tracker) support (although popular and, for certain torrents, the sole option, this is also an extension
+to the original protocol and requires implementing [a whole new wire protocol](http://xbtt.sourceforge.net/udp_tracker_protocol.html))
+- No multi-file support (work in progress, fixed in the near future)
+
+All of these combined unfortunately result in many torrents being undownloadable by Furrent. e.g.:
+- [ArchLinux](https://archlinux.org/download/) uses web-seeding and provides no tracker
+- [Manjaro](https://manjaro.org/download/) uses a single web-seeder plus an UDP tracker
+
+[Debian](https://www.debian.org/CD/torrent-cd/index.it.html) and [Ubuntu](https://ubuntu.com/download/alternative-downloads) should work fine instead.
 
 ## Building
 The requirements are:
