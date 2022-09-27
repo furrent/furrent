@@ -11,18 +11,17 @@ namespace fur::gui {
 const int BORDER = 5;
 const int W_WIDTH = 800;
 const int W_HEIGHT = 600;
-const unsigned int PRIMARY_COLOR_HEX = 0xc9effeff;
-const unsigned int DOWNLOADING_COLOR_HEX = 0xffaf7aff;
-const unsigned int DONE_COLOR_HEX = 0xabf7b1ff;
-const unsigned int ERROR_COLOR_HEX = 0xffa590ff;
-const unsigned int TEXT_COLOR_HEX = 0x0492c7ff;
+const unsigned int PRIMARY_COLOR_HEX = 0x876645FF;
+const unsigned int PRIMARY_UNFOCUS_COLOR_HEX = 0xF6F2EEFF;
+const unsigned int PRIMARY_BACKGROUND_COLOR_HEX = 0xBA9978FF;
+const unsigned int DOWNLOADING_COLOR_HEX = 0xC9EFFEFF;
+const unsigned int STOP_COLOR_HEX = 0xFFAF7AFF;
+const unsigned int DONE_COLOR_HEX = 0xABF7B1FF;
+const unsigned int ERROR_COLOR_HEX = 0xFFA590FF;
 const unsigned int BACKGROUND_COLOR_HEX = 0xEDE9E0FF;
-const unsigned int LOGO_COLOR_HEX = 0xd8bd74FF;
-const Color BORDER_COLOR = GetColor(0x368bafff);
 const Color PRIMARY_COLOR = GetColor(PRIMARY_COLOR_HEX);
-const Color TEXT_COLOR = GetColor(TEXT_COLOR_HEX);
+const Color PRIMARY_BACKGROUND_COLOR = GetColor(PRIMARY_BACKGROUND_COLOR_HEX);
 const Color BG_COLOR = GetColor(BACKGROUND_COLOR_HEX);
-const Color LOGO_COLOR = GetColor(LOGO_COLOR_HEX);
 const Color DIALOG_BACKGROUND_COLOR = Fade(BG_COLOR, 0.85f);
 
 enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
@@ -94,6 +93,14 @@ void setup_config() {
   GuiSetStyle(DEFAULT, BACKGROUND_COLOR, BACKGROUND_COLOR_HEX);
   SetWindowPosition(0, 0);
   SetTargetFPS(60);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, PRIMARY_COLOR_HEX);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, PRIMARY_COLOR_HEX);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, PRIMARY_COLOR_HEX);
+  GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, PRIMARY_COLOR_HEX);
+  GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, PRIMARY_COLOR_HEX);
+  GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, PRIMARY_UNFOCUS_COLOR_HEX);
+  GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, PRIMARY_UNFOCUS_COLOR_HEX);
+  GuiSetFont(LoadFont("../assets/Righteous-Regular.ttf"));
 }
 
 /// Method to draw a single torrent in the scroll panel
@@ -115,7 +122,7 @@ void draw_torrent_item(const fur::gui::TorrentGui& torrent, float pos,
     case fur::gui::STOP:
       play = GuiButton({700, 110 + pos, 20, 20}, "#132#");
       // Set the color of the progress bar orange
-      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, PRIMARY_COLOR_HEX);
+      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, STOP_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
       break;
     case fur::gui::DOWNLOAD:

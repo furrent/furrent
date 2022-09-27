@@ -22,6 +22,7 @@ void add_torrent(GuiFileDialogState *file_dialog_state,
                                fur::gui::STOP, 0};
   scroll_state->torrents.push_back(torrent);
   // TODO: add real torrent
+
   // Close the dialog
   file_dialog_state->SelectFilePressed = false;
   file_dialog_state->fileDialogActive = false;
@@ -47,6 +48,7 @@ void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
           scroll_state->torrents.begin() +
           scroll_state->torrent_dialog_state.torrent.index);
       // TODO: remove the real torrent
+
     }
     // Close the dialog
     confirm_dialog_state->show = false;
@@ -112,15 +114,7 @@ int main() {
       fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
   auto furrent_logo = LoadTexture("../assets/Furrent.png");
-  auto font = LoadFont("../assets/Righteous-Regular.ttf");
-  GuiSetFont(font);
-  GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, 0x876645FF);
-  GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, 0x876645FF);
-  GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, 0x876645FF);
-  GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, 0x876645FF);
-  GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, 0x876645FF);
-  GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0xeee6ddff);
-  GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, 0xf6f2eeff);
+
   // Main loop
   while (!WindowShouldClose()) {
     BeginDrawing();
@@ -134,7 +128,7 @@ int main() {
     // Title
     // Increase the font for the title
     GuiSetStyle(DEFAULT, TEXT_SIZE, 30);
-    GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT, GetColor(0x876645FF));
+    GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT, fur::gui::PRIMARY_COLOR);
     // Reset the font
     GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     auto button_file_dialog = GuiButton(
@@ -153,10 +147,10 @@ int main() {
     fur::gui::draw_torrents(&scroll_state);
     // Scroll panel head
     GuiDrawRectangle({gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40}, 1,
-                     GetColor(0x876645ff), GetColor(0xba9978ff));
+                     fur::gui::PRIMARY_COLOR, fur::gui::PRIMARY_BACKGROUND_COLOR);
     GuiDrawText("Torrents",
                 {gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40},
-                TEXT_ALIGN_CENTER, GetColor(0x876645FF));
+                TEXT_ALIGN_CENTER, fur::gui::PRIMARY_COLOR);
     // Scroll panel bottom
     GuiDrawRectangle(Rectangle{gui::BORDER, gui::W_HEIGHT - gui::BORDER,
                                gui::W_WIDTH, gui::W_WIDTH},
