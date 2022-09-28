@@ -10,22 +10,25 @@
 #include <vector>
 
 namespace fur::gui {
-
+// Config
 const int BORDER = 5;
 const int W_WIDTH = 800;
 const int W_HEIGHT = 600;
-const unsigned int PRIMARY_COLOR_HEX = 0x876645FF;
-const unsigned int PRIMARY_UNFOCUS_COLOR_HEX = 0xF6F2EEFF;
-const unsigned int PRIMARY_BACKGROUND_COLOR_HEX = 0xBA9978FF;
-const unsigned int DOWNLOADING_COLOR_HEX = 0xC9EFFEFF;
-const unsigned int STOP_COLOR_HEX = 0xFFAF7AFF;
-const unsigned int DONE_COLOR_HEX = 0xABF7B1FF;
-const unsigned int ERROR_COLOR_HEX = 0xFFA590FF;
-const unsigned int BACKGROUND_COLOR_HEX = 0xEDE9E0FF;
-const Color PRIMARY_COLOR = GetColor(PRIMARY_COLOR_HEX);
-const Color PRIMARY_BACKGROUND_COLOR = GetColor(PRIMARY_BACKGROUND_COLOR_HEX);
-const Color BG_COLOR = GetColor(BACKGROUND_COLOR_HEX);
-const Color DIALOG_BACKGROUND_COLOR = Fade(BG_COLOR, 0.85f);
+// Colors
+const int DARK_BROWN_HEX = static_cast<int>(0x876645FF);
+const int ORANGE_HEX = static_cast<int>(0xD27607FF);
+const int LIGHT_BACKGROUND_HEX = static_cast<int>(0xF6F2EEFF);
+const int DARK_BACKGROUND_HEX = static_cast<int>(0xBA9978FF);
+const int PRESSED_BACKGROUND_HEX = static_cast<int>(0xEDE9E0FF);
+const int DOWNLOADING_COLOR_HEX = static_cast<int>(0xC9EFFEFF);
+const int STOP_COLOR_HEX = static_cast<int>(0xFFAF7AFF);
+const int DONE_COLOR_HEX = static_cast<int>(0xABF7B1FF);
+const int ERROR_COLOR_HEX = static_cast<int>(0xFFA590FF);
+// Raygui colors
+const Color DARK_BROWN_COLOR = GetColor(DARK_BROWN_HEX);
+const Color DARK_BACKGROUND_COLOR = GetColor(DARK_BACKGROUND_HEX);
+const Color PRESSED_BACKGROUND_COLOR = GetColor(PRESSED_BACKGROUND_HEX);
+const Color DIALOG_BACKGROUND_COLOR = Fade(PRESSED_BACKGROUND_COLOR, 0.85f);
 
 enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
 
@@ -87,29 +90,43 @@ struct GuiConfirmDialogState {
   std::string cancel_button{};
 };
 
+struct GuiErrorDialogState {
+  bool show = false;
+  /// Message to display in the dialog
+  std::string error{};
+};
+
 /// Method to set the window configuration, fixed width and height, position and
 /// text size
 void setup_config() {
-  SetConfigFlags(FLAG_WINDOW_HIGHDPI);
   InitWindow(W_WIDTH, W_HEIGHT, "Furrent");
   GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
-  GuiSetStyle(DEFAULT, BACKGROUND_COLOR, BACKGROUND_COLOR_HEX);
+  GuiSetStyle(DEFAULT, BACKGROUND_COLOR, PRESSED_BACKGROUND_HEX);
   SetWindowPosition(0, 0);
   SetTargetFPS(60);
-  GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, PRIMARY_COLOR_HEX);
-  GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, PRIMARY_COLOR_HEX);
-  GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, PRIMARY_COLOR_HEX);
-  GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, PRIMARY_COLOR_HEX);
-  GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, PRIMARY_COLOR_HEX);
-  GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, PRIMARY_UNFOCUS_COLOR_HEX);
-  GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, PRIMARY_UNFOCUS_COLOR_HEX);
-  GuiSetStyle(DEFAULT, LINE_COLOR, PRIMARY_BACKGROUND_COLOR_HEX);
+  GuiSetStyle(DEFAULT, LINE_COLOR, DARK_BACKGROUND_HEX);
+  // Default color
+  GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, LIGHT_BACKGROUND_HEX);
+  GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, DARK_BROWN_HEX);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, DARK_BROWN_HEX);
+  // Pressed
+  GuiSetStyle(DEFAULT, BASE_COLOR_PRESSED, PRESSED_BACKGROUND_HEX);
+  GuiSetStyle(DEFAULT, TEXT_COLOR_PRESSED, ORANGE_HEX);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_PRESSED, DARK_BROWN_HEX);
+  // Focused
+  GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, LIGHT_BACKGROUND_HEX);
+  GuiSetStyle(DEFAULT, TEXT_COLOR_FOCUSED, ORANGE_HEX);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, DARK_BROWN_HEX);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, DARK_BROWN_HEX);
+  // Disabled
+  GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, DARK_BROWN_HEX);
+  GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, DARK_BROWN_HEX);
   GuiSetFont(LoadFont("../assets/Righteous-Regular.ttf"));
 }
 
 /// Method to draw a single torrent in the scroll panel
-void draw_torrent_item(const fur::gui::TorrentGui &torrent, float pos,
-                       fur::gui::GuiTorrentDialogState *state) {
+void draw_torrent_item(const TorrentGui &torrent, float pos,
+                       GuiTorrentDialogState &state) {
   // Drawing text
   auto name = "Name: " + torrent.filename;
   // Cut the name if it is too long
@@ -123,21 +140,21 @@ void draw_torrent_item(const fur::gui::TorrentGui &torrent, float pos,
   bool play = false;
   bool show_settings = false;
   switch (torrent.status) {
-    case fur::gui::STOP:
+    case TorrentState::STOP:
       play = GuiButton({700, 110 + pos, 20, 20}, "#132#");
       // Set the color of the progress bar orange
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, STOP_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
       break;
-    case fur::gui::DOWNLOAD:
+    case TorrentState::DOWNLOAD:
       play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DOWNLOADING_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
       break;
-    case COMPLETED:
+    case TorrentState::COMPLETED:
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DONE_COLOR_HEX);
       break;
-    case ERROR:
+    case TorrentState::ERROR:
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, ERROR_COLOR_HEX);
       break;
     default:
@@ -147,10 +164,10 @@ void draw_torrent_item(const fur::gui::TorrentGui &torrent, float pos,
   auto delete_torrent = GuiButton({760, 110 + pos, 20, 20}, "#143#");
   // If one of the buttons is pressed, we update the state
   if (play || show_settings || delete_torrent) {
-    state->play = play;
-    state->show_settings = show_settings;
-    state->delete_torrent = delete_torrent;
-    state->torrent = torrent;
+    state.play = play;
+    state.show_settings = show_settings;
+    state.delete_torrent = delete_torrent;
+    state.torrent = torrent;
   }
   // Adding progress bar
   GuiProgressBar({275, 110 + pos, 300, 20},
@@ -161,119 +178,122 @@ void draw_torrent_item(const fur::gui::TorrentGui &torrent, float pos,
 }
 
 /// Function to draw all the torrents based of the scroll state
-void draw_torrents(fur::gui::GuiScrollTorrentState *state) {
+void draw_torrents(GuiScrollTorrentState &state) {
   float pos = 5;
   int index = 0;
-  for (auto &torr : state->torrents) {
+  for (auto &torr : state.torrents) {
     // If window has been scrolled down some elements are not drawn
-    if (pos + 50 < abs(state->scroll.y)) {
+    if (pos + 50 < abs(state.scroll.y)) {
       pos += 50;
       continue;
     }
     // Update the torrent index
     torr.index = index;
     // Draw the torrent
-    draw_torrent_item(torr, pos + state->scroll.y,
-                      &state->torrent_dialog_state);
+    draw_torrent_item(torr, pos + state.scroll.y, state.torrent_dialog_state);
     pos += 50;
     index++;
   }
 }
 
 /// Given the dialog setting state, it draws and manage the dialog
-void settings_dialog(fur::gui::GuiSettingsDialogState *settings) {
-  if (!settings->show || settings->updated_path) {
+void settings_dialog(GuiSettingsDialogState &settings,
+                     GuiErrorDialogState &dialog_error) {
+  // If there are some errors don't do anything or the dialog is not open do
+  // anything
+  if (!settings.show || settings.updated_path) {
     return;
   }
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
-  // If there are some errors
-  if (!settings->error.empty()) {
-    auto error_dialog =
-        GuiMessageBox({250, 100, 300, 200}, "#198# Something went wrong",
-                      settings->error.c_str(), "Ok");
-    if (error_dialog == 0 || error_dialog == 1) {
-      // Clear the error
-      settings->error = "";
-    }
-    return;
-  }
   // Add text input for the download folder
   auto result = GuiTextInputBox({250, 100, 300, 200}, "#198# Settings dialog",
                                 "Change the download folder:", "Save;Dismiss",
-                                settings->input_path, 255, NULL);
+                                settings.input_path, 255, NULL);
   // Some action pressed
   if (result == 0 || result == 1 || result == 2) {
     // If save action is pressed, we update the path
     if (result == 1) {
       // Check if the path exists and it is a directory
       struct stat info {};
-      if (stat(settings->input_path, &info) != 0) {
-        settings->error = "The path does not exist";
+      if (stat(settings.input_path, &info) != 0) {
+        dialog_error.error = "The path does not exist";
       } else if (info.st_mode & S_IFDIR) {
         // It's a directory, try to update the path
         // TODO: check this operation
-        settings->path = std::string{settings->input_path};
-        settings->updated_path = true;
+        settings.path = std::string{settings.input_path};
+        settings.updated_path = true;
         // The dialog now is closed on main loop
       } else {
-        settings->error = "The path is not a directory";
+        dialog_error.error = "The path is not a directory";
       }
     } else {
       // Close or dismiss action
       // TODO: check this operation
-      settings->input_path = settings->path.data();
-      settings->show = false;
+      settings.input_path = settings.path.data();
+      settings.show = false;
     }
   }
 }
 
 /// Given the torrent dialog state, it draws and manage the dialog
-void torrent_dialog(fur::gui::GuiTorrentDialogState *torrent_dialog) {
-  if (!torrent_dialog->show_settings) return;
+void torrent_dialog(GuiTorrentDialogState &torrent_dialog) {
+  if (!torrent_dialog.show_settings) return;
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
   // If torrent_settings is set, we draw a dialog with a slider to change the
   // priority
   auto result = GuiMessageBox({250, 100, 300, 200}, "#198# Torrent settings",
                               "Change the priority:", "Save;Dismiss");
-  GuiSpinner({300, 210, 200, 30}, NULL, &torrent_dialog->input_priority, 0, 10,
+  GuiSpinner({300, 210, 200, 30}, NULL, &torrent_dialog.input_priority, 0, 10,
              false);
-  if (torrent_dialog->input_priority < 0) {
-    torrent_dialog->input_priority = 0;
+  if (torrent_dialog.input_priority < 0) {
+    torrent_dialog.input_priority = 0;
   }
-  if (torrent_dialog->input_priority > 10) {
-    torrent_dialog->input_priority = 10;
+  if (torrent_dialog.input_priority > 10) {
+    torrent_dialog.input_priority = 10;
   }
   if (result == 0 || result == 1 || result == 2) {
     if (result == 1) {
       // Button save
-      torrent_dialog->update_priority = true;
+      torrent_dialog.update_priority = true;
     } else {
       // Button close or dismiss
-      torrent_dialog->input_priority = torrent_dialog->torrent.priority;
+      torrent_dialog.input_priority = torrent_dialog.torrent.priority;
     }
-    torrent_dialog->show_settings = false;
+    torrent_dialog.show_settings = false;
   }
 }
 
 /// Given the torrent dialog state, it draws and manage the dialog
-void confirm_dialog(fur::gui::GuiConfirmDialogState *state) {
-  if (!state->show) {
+void confirm_dialog(GuiConfirmDialogState &state) {
+  if (!state.show) {
     return;
   }
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
 
   auto response = GuiMessageBox(
-      {200, 100, 400, 200}, "#198# Confirm action", state->message.c_str(),
-      (state->confirm_button + ";" + state->cancel_button).c_str());
+      {200, 100, 400, 200}, "#198# Confirm action", state.message.c_str(),
+      (state.confirm_button + ";" + state.cancel_button).c_str());
 
   // Se è stato cliccato un bottone chiudo la finestra e aggiorno lo stato
   if (response == 0 || response == 1 || response == 2) {
-    state->show = false;
-    state->clicked = true;
-    state->confirm = response == 1;
+    state.show = false;
+    state.clicked = true;
+    state.confirm = response == 1;
+  }
+}
+
+void error_dialog(GuiErrorDialogState &state) {
+  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                DIALOG_BACKGROUND_COLOR);
+  auto error_dialog =
+      GuiMessageBox({250, 100, 300, 200}, "#198# Something went wrong",
+                    state.error.c_str(), "Ok");
+  if (error_dialog == 0 || error_dialog == 1) {
+    // Clear the error
+    state.error = "";
   }
 }
 
@@ -282,119 +302,124 @@ void confirm_dialog(fur::gui::GuiConfirmDialogState *state) {
 // ------
 
 /// Function to add a new torrent, it is called when the user clicks on the add
-void add_torrent(GuiFileDialogState *file_dialog_state,
-                 fur::gui::GuiScrollTorrentState *scroll_state,
+void add_torrent(GuiFileDialogState &file_dialog_state,
+                 GuiScrollTorrentState &scroll_state,
+                 GuiErrorDialogState &dialog_error,
                  bool (*add_torrent_callback)(const std::string &)) {
+  // If there are some errors don't do anything
+  if (!dialog_error.error.empty()) {
+    return;
+  }
   // If the file selected is not a torrent do nothing
-  if (!IsFileExtension(file_dialog_state->fileNameText, ".torrent")) {
-    file_dialog_state->SelectFilePressed = false;
-    file_dialog_state->fileDialogActive = true;
+  if (!IsFileExtension(file_dialog_state.fileNameText, ".torrent")) {
+    file_dialog_state.SelectFilePressed = false;
+    file_dialog_state.fileDialogActive = true;
     return;
   }
   // Call the callback to add the torrent to the list of torrents
-  auto result = add_torrent_callback(file_dialog_state->realFileName);
+  auto result = add_torrent_callback(file_dialog_state.realFileName);
   if (!result) {
-    // TODO: Show error message
+    dialog_error.error = "Error adding the torrent";
     return;
   }
   // If the torrent was added successfully, we add it to the scroll state
-  fur::gui::TorrentGui torrent{0, 0, file_dialog_state->realFileName,
-                               fur::gui::STOP, 0};
-  scroll_state->torrents.push_back(torrent);
+  TorrentGui torrent{0, 0, file_dialog_state.realFileName, STOP, 0};
+  scroll_state.torrents.push_back(torrent);
   // Close the dialog
-  file_dialog_state->SelectFilePressed = false;
-  file_dialog_state->fileDialogActive = false;
+  file_dialog_state.SelectFilePressed = false;
+  file_dialog_state.fileDialogActive = false;
 }
 
-void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
-                    fur::gui::GuiConfirmDialogState *confirm_dialog_state,
+void remove_torrent(GuiScrollTorrentState &scroll_state,
+                    GuiConfirmDialogState &confirm_dialog_state,
                     bool (*remove_torrent_callback)(const gui::TorrentGui &)) {
   // Open the confirm dialog if it is not already open or have been clicked
-  if (!confirm_dialog_state->show && !confirm_dialog_state->clicked) {
-    confirm_dialog_state->show = true;
-    confirm_dialog_state->clicked = false;
-    confirm_dialog_state->message =
+  if (!confirm_dialog_state.show && !confirm_dialog_state.clicked) {
+    confirm_dialog_state.show = true;
+    confirm_dialog_state.clicked = false;
+    confirm_dialog_state.message =
         "Are you sure you want to delete the torrent?";
-    confirm_dialog_state->confirm_button = "Yes";
-    confirm_dialog_state->cancel_button = "No";
+    confirm_dialog_state.confirm_button = "Yes";
+    confirm_dialog_state.cancel_button = "No";
   }
   // If the user clicked on an option of the confirm dialog
-  if (confirm_dialog_state->clicked) {
+  if (confirm_dialog_state.clicked) {
     // Confirm the deletion
-    if (confirm_dialog_state->confirm) {
+    if (confirm_dialog_state.confirm) {
       // Call the callback to remove the torrent
       auto result =
-          remove_torrent_callback(scroll_state->torrent_dialog_state.torrent);
+          remove_torrent_callback(scroll_state.torrent_dialog_state.torrent);
       if (!result) {
         // TODO: Show error message
-        confirm_dialog_state->clicked = false;
-        confirm_dialog_state->confirm = false;
+        confirm_dialog_state.clicked = false;
+        confirm_dialog_state.confirm = false;
         return;
       }
       // Remove the torrent from the list
-      scroll_state->torrents.erase(
-          scroll_state->torrents.begin() +
-          scroll_state->torrent_dialog_state.torrent.index);
+      scroll_state.torrents.erase(
+          scroll_state.torrents.begin() +
+          scroll_state.torrent_dialog_state.torrent.index);
     }
     // Close the dialog
-    confirm_dialog_state->show = false;
-    confirm_dialog_state->confirm = false;
-    confirm_dialog_state->clicked = false;
+    confirm_dialog_state.show = false;
+    confirm_dialog_state.confirm = false;
+    confirm_dialog_state.clicked = false;
     // Close the torrent dialog
-    scroll_state->torrent_dialog_state.delete_torrent = false;
+    scroll_state.torrent_dialog_state.delete_torrent = false;
   }
 }
 
-void update_settings(fur::gui::GuiSettingsDialogState *settings_dialog_state,
+void update_settings(GuiSettingsDialogState &settings_dialog_state,
+                     GuiErrorDialogState &dialog_error,
                      bool (*update_settings_callback)(const std::string &)) {
-  if (settings_dialog_state->updated_path) {
-    auto callback = update_settings_callback(settings_dialog_state->path);
+  if (settings_dialog_state.updated_path) {
+    auto callback = update_settings_callback(settings_dialog_state.path);
     if (!callback) {
-      // TODO: Show error message
+      dialog_error.error = "Error updating the path";
       return;
     }
-    settings_dialog_state->updated_path = false;
-    settings_dialog_state->show = false;
+    settings_dialog_state.updated_path = false;
+    settings_dialog_state.show = false;
   }
 }
 
 void update_torrent_state(
-    fur::gui::GuiScrollTorrentState *scroll_state,
+    GuiScrollTorrentState &scroll_state, GuiErrorDialogState &dialog_error,
     bool (*update_torrent_state_callback)(const gui::TorrentGui &)) {
   auto &torrent =
-      scroll_state->torrents[scroll_state->torrent_dialog_state.torrent.index];
+      scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.index];
   switch (torrent.status) {
-    case fur::gui::STOP:
-      torrent.status = fur::gui::DOWNLOAD;
+    case TorrentState::STOP:
+      torrent.status = TorrentState::DOWNLOAD;
       break;
-    case fur::gui::DOWNLOAD:
-      torrent.status = fur::gui::STOP;
+    case TorrentState::DOWNLOAD:
+      torrent.status = TorrentState::STOP;
       break;
     default:
       break;
   }
   auto callback = update_torrent_state_callback(torrent);
   if (!callback) {
-    // TODO: show error message
+    dialog_error.error = "Error updating the torrent state";
     return;
   }
   // Reset the action
-  scroll_state->torrent_dialog_state.play = false;
+  scroll_state.torrent_dialog_state.play = false;
 }
 
 void update_torrent_priority(
-    fur::gui::GuiScrollTorrentState *scroll_state,
+    GuiScrollTorrentState &scroll_state, GuiErrorDialogState &dialog_error,
     bool (*update_torrent_priority_callback)(const gui::TorrentGui &)) {
   auto &torrent =
-      scroll_state->torrents[scroll_state->torrent_dialog_state.torrent.index];
-  torrent.priority = scroll_state->torrent_dialog_state.input_priority;
+      scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.index];
+  torrent.priority = scroll_state.torrent_dialog_state.input_priority;
   auto callback = update_torrent_priority_callback(torrent);
   if (!callback) {
-    // TODO: show error message
+    dialog_error.error = "Error updating the torrent priority";
     return;
   }
   // Reset the action
-  scroll_state->torrent_dialog_state.update_priority = false;
+  scroll_state.torrent_dialog_state.update_priority = false;
 }
 
 }  // namespace fur::gui

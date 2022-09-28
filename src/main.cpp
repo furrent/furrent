@@ -49,6 +49,7 @@ int main() {
        {0, 0, "D", fur::gui::TorrentState::ERROR, 50}},
       fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
+  fur::gui::GuiErrorDialogState error_dialog_state{};
   auto furrent_logo = LoadTexture("../assets/Furrent.png");
 
   // Main loop
@@ -65,7 +66,7 @@ int main() {
     // Increase the font for the title
     GuiSetStyle(DEFAULT, TEXT_SIZE, 30);
     GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT,
-                fur::gui::PRIMARY_COLOR);
+                fur::gui::DARK_BROWN_COLOR);
     // Reset the font
     GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     auto button_file_dialog = GuiButton(
@@ -81,18 +82,18 @@ int main() {
                     static_cast<float>(50 * scroll_state.torrents.size())},
                    &scroll_state.scroll);
     // Drawing torrents
-    fur::gui::draw_torrents(&scroll_state);
+    fur::gui::draw_torrents(scroll_state);
     // Scroll panel head
     GuiDrawRectangle({gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40}, 1,
-                     fur::gui::PRIMARY_COLOR,
-                     fur::gui::PRIMARY_BACKGROUND_COLOR);
+                     fur::gui::DARK_BROWN_COLOR,
+                     fur::gui::DARK_BACKGROUND_COLOR);
     GuiDrawText("Torrents",
                 {gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40},
-                TEXT_ALIGN_CENTER, fur::gui::PRIMARY_COLOR);
+                TEXT_ALIGN_CENTER, fur::gui::DARK_BROWN_COLOR);
     // Scroll panel bottom
     GuiDrawRectangle(Rectangle{gui::BORDER, gui::W_HEIGHT - gui::BORDER,
                                gui::W_WIDTH, gui::W_WIDTH},
-                     1, gui::BG_COLOR, gui::BG_COLOR);
+                     1, gui::PRESSED_BACKGROUND_COLOR, gui::PRESSED_BACKGROUND_COLOR);
 
     // ------
     // Events
@@ -112,31 +113,40 @@ int main() {
     }
     // Action on filedialog
     if (file_state.SelectFilePressed) {
-      fur::gui::add_torrent(&file_state, &scroll_state, &add_torrent_callback);
+      fur::gui::add_torrent(file_state, scroll_state, error_dialog_state,
+                            &add_torrent_callback);
     }
     // Furrent settings dialog
     if (settings_state.show) {
-      fur::gui::update_settings(&settings_state, &update_settings_callback);
+      fur::gui::update_settings(settings_state, error_dialog_state,
+                                &update_settings_callback);
     }
     // Button play/pause on torrent
     if (scroll_state.torrent_dialog_state.play) {
-      fur::gui::update_torrent_state(&scroll_state, &update_torrent_callback);
+      fur::gui::update_torrent_state(scroll_state, error_dialog_state,
+                                     &update_torrent_callback);
     }
     // Button settings on torrent
     if (scroll_state.torrent_dialog_state.update_priority) {
-      fur::gui::update_torrent_priority(&scroll_state,
+      fur::gui::update_torrent_priority(scroll_state, error_dialog_state,
                                         &update_torrent_callback);
     }
     // Button remove torrent
     if (scroll_state.torrent_dialog_state.delete_torrent) {
-      fur::gui::remove_torrent(&scroll_state, &confirm_dialog_state,
+      fur::gui::remove_torrent(scroll_state, confirm_dialog_state,
                                &remove_torrent_callback);
     }
     // Update dialogs
+
     GuiFileDialog(&file_state);
-    settings_dialog(&settings_state);
-    torrent_dialog(&scroll_state.torrent_dialog_state);
-    confirm_dialog(&confirm_dialog_state);
+    if (!error_dialog_state.error.empty()) {
+      error_dialog(error_dialog_state);
+    } else {
+      torrent_dialog(scroll_state.torrent_dialog_state);
+      settings_dialog(settings_state, error_dialog_state);
+      confirm_dialog(confirm_dialog_state);
+    }
+
     EndDrawing();
   }
 
