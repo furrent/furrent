@@ -93,7 +93,8 @@ int main() {
     // Scroll panel bottom
     GuiDrawRectangle(Rectangle{gui::BORDER, gui::W_HEIGHT - gui::BORDER,
                                gui::W_WIDTH, gui::W_WIDTH},
-                     1, gui::PRESSED_BACKGROUND_COLOR, gui::PRESSED_BACKGROUND_COLOR);
+                     1, gui::PRESSED_BACKGROUND_COLOR,
+                     gui::PRESSED_BACKGROUND_COLOR);
 
     // ------
     // Events
@@ -134,7 +135,7 @@ int main() {
     // Button remove torrent
     if (scroll_state.torrent_dialog_state.delete_torrent) {
       fur::gui::remove_torrent(scroll_state, confirm_dialog_state,
-                               &remove_torrent_callback);
+                               error_dialog_state, &remove_torrent_callback);
     }
     // Update dialogs
 

@@ -285,6 +285,7 @@ void confirm_dialog(GuiConfirmDialogState &state) {
   }
 }
 
+/// Given the error dialog state, it draws and manage the dialog
 void error_dialog(GuiErrorDialogState &state) {
   DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
                 DIALOG_BACKGROUND_COLOR);
@@ -306,10 +307,6 @@ void add_torrent(GuiFileDialogState &file_dialog_state,
                  GuiScrollTorrentState &scroll_state,
                  GuiErrorDialogState &dialog_error,
                  bool (*add_torrent_callback)(const std::string &)) {
-  // If there are some errors don't do anything
-  if (!dialog_error.error.empty()) {
-    return;
-  }
   // If the file selected is not a torrent do nothing
   if (!IsFileExtension(file_dialog_state.fileNameText, ".torrent")) {
     file_dialog_state.SelectFilePressed = false;
@@ -317,9 +314,12 @@ void add_torrent(GuiFileDialogState &file_dialog_state,
     return;
   }
   // Call the callback to add the torrent to the list of torrents
-  auto result = add_torrent_callback(file_dialog_state.realFileName);
+  auto result = add_torrent_callback(file_dialog_state.fileNameText);
   if (!result) {
-    dialog_error.error = "Error adding the torrent";
+    dialog_error.error = "Some error occurred";
+    // Remove the action on the button
+    file_dialog_state.SelectFilePressed = false;
+    file_dialog_state.fileDialogActive = true;
     return;
   }
   // If the torrent was added successfully, we add it to the scroll state
@@ -330,8 +330,10 @@ void add_torrent(GuiFileDialogState &file_dialog_state,
   file_dialog_state.fileDialogActive = false;
 }
 
+/// Function to remove a torrent, it is called when the user clicks on the trash
 void remove_torrent(GuiScrollTorrentState &scroll_state,
                     GuiConfirmDialogState &confirm_dialog_state,
+                    GuiErrorDialogState &dialog_error,
                     bool (*remove_torrent_callback)(const gui::TorrentGui &)) {
   // Open the confirm dialog if it is not already open or have been clicked
   if (!confirm_dialog_state.show && !confirm_dialog_state.clicked) {
@@ -350,8 +352,7 @@ void remove_torrent(GuiScrollTorrentState &scroll_state,
       auto result =
           remove_torrent_callback(scroll_state.torrent_dialog_state.torrent);
       if (!result) {
-        // TODO: Show error message
-        confirm_dialog_state.clicked = false;
+        dialog_error.error = "Some error occurred";
         confirm_dialog_state.confirm = false;
         return;
       }
@@ -369,13 +370,16 @@ void remove_torrent(GuiScrollTorrentState &scroll_state,
   }
 }
 
+/// Function to update the furrent settings, it is called when the user clicks
+/// on the settings icon
 void update_settings(GuiSettingsDialogState &settings_dialog_state,
                      GuiErrorDialogState &dialog_error,
                      bool (*update_settings_callback)(const std::string &)) {
   if (settings_dialog_state.updated_path) {
     auto callback = update_settings_callback(settings_dialog_state.path);
     if (!callback) {
-      dialog_error.error = "Error updating the path";
+      dialog_error.error = "Some error occurred";
+      settings_dialog_state.updated_path = false;
       return;
     }
     settings_dialog_state.updated_path = false;
@@ -383,11 +387,19 @@ void update_settings(GuiSettingsDialogState &settings_dialog_state,
   }
 }
 
+/// Function to update the torrent priority, it is called when the user clicks
+/// on the play/pause button
 void update_torrent_state(
     GuiScrollTorrentState &scroll_state, GuiErrorDialogState &dialog_error,
     bool (*update_torrent_state_callback)(const gui::TorrentGui &)) {
   auto &torrent =
       scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.index];
+  auto callback = update_torrent_state_callback(torrent);
+  if (!callback) {
+    dialog_error.error = "Some error occurred";
+    scroll_state.torrent_dialog_state.play = false;
+    return;
+  }
   switch (torrent.status) {
     case TorrentState::STOP:
       torrent.status = TorrentState::DOWNLOAD;
@@ -398,26 +410,25 @@ void update_torrent_state(
     default:
       break;
   }
-  auto callback = update_torrent_state_callback(torrent);
-  if (!callback) {
-    dialog_error.error = "Error updating the torrent state";
-    return;
-  }
   // Reset the action
   scroll_state.torrent_dialog_state.play = false;
 }
 
+/// Function to update the torrent priority, it is called when the user clicks
+/// on the tools icon
 void update_torrent_priority(
     GuiScrollTorrentState &scroll_state, GuiErrorDialogState &dialog_error,
     bool (*update_torrent_priority_callback)(const gui::TorrentGui &)) {
   auto &torrent =
       scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.index];
-  torrent.priority = scroll_state.torrent_dialog_state.input_priority;
   auto callback = update_torrent_priority_callback(torrent);
   if (!callback) {
-    dialog_error.error = "Error updating the torrent priority";
+    dialog_error.error = "Some error occurred";
+    scroll_state.torrent_dialog_state.update_priority = false;
+    scroll_state.torrent_dialog_state.show_settings = true;
     return;
   }
+  torrent.priority = scroll_state.torrent_dialog_state.input_priority;
   // Reset the action
   scroll_state.torrent_dialog_state.update_priority = false;
 }
