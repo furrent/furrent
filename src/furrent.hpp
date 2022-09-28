@@ -7,7 +7,6 @@
 #include <mt/task.hpp>
 #include <shared_mutex>
 #include <torrent.hpp>
-#include <torrent_manager.hpp>
 
 namespace fur {
 
@@ -26,16 +25,21 @@ struct TorrentDescriptor {
   std::chrono::high_resolution_clock::time_point announce_time;
   /// Interval to next update
   size_t interval;
+
   /// Number of pieces downloaded
-  std::atomic_uint32_t downloaded_pieces;
-  std::atomic_bool to_refresh;
+  std::atomic_uint32_t pieces_downloaded;
+  /// Number of pieces written to file
+  std::atomic_uint32_t pieces_saved;
+
+  /// Flag notifying that a split output task was already spawned
+  std::atomic_bool split_output_spawned;
 
   explicit TorrentDescriptor(const std::string& filename);
 
   /// Regenerate list of peers
   bool regenerate_peers();
   /// True if there are no more pieces to download
-  bool finished();
+  bool download_finished();
 };
 
 /// Main state of the program
