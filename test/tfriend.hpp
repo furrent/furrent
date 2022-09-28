@@ -24,7 +24,7 @@ struct TestingFriend {
   }
 
   static Result<Downloaded, DownloaderError> Downloader_try_download(
-      Downloader& down, const PieceDescriptor& task) {
+      Downloader& down, const Piece& task) {
     return down.try_download(task);
   }
 

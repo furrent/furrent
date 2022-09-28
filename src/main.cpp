@@ -147,7 +147,6 @@ int main() {
       settings_dialog(settings_state, error_dialog_state);
       confirm_dialog(confirm_dialog_state);
     }
-
     EndDrawing();
   }
 

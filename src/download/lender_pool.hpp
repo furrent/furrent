@@ -94,7 +94,10 @@ class LenderPool {
       if (!draining) {
         // We're using pointers here but for a good cause: the strategy cannot
         // always return a slot (think about the scenario in which all objects
-        // are currently borrowed), so a `nullptr` value is used to represent this specific failure. `std::optional` cannot be used for reference types. But then: how is a `std::optional<T&>` any different from `T*`?
+        // are currently borrowed), so a `nullptr` value is used to represent
+        // this specific failure. `std::optional` cannot be used for reference
+        // types. But then: how is a `std::optional<T&>` any different from
+        // `T*`?
         SlotPtr<T>* maybeSlot = strategy(storage);
 
         if (maybeSlot != nullptr) {

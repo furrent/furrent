@@ -17,7 +17,7 @@ public:
     explicit TorrentFileLoad(TorrentDescriptor& descriptor);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 
-    size_t priority() const { return 2; }
+    size_t priority() const override { return mt::PRIORITY_HIGH; }
 };
 
 /// Download a piece of a torrent
@@ -26,13 +26,13 @@ class TorrentPieceDownload : public mt::ITask {
     /// Reference to preallocated torrent descriptor in furrent
     TorrentDescriptor& _descriptor;
     /// Contains all information relative to the piece to download
-    download::PieceDescriptor _piece;
+    download::Piece _piece;
 
 public:
-    TorrentPieceDownload(TorrentDescriptor& descr, download::PieceDescriptor piece);
+    TorrentPieceDownload(TorrentDescriptor& descr, download::Piece piece);
     void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
 
-    size_t priority() const { return 1; }
+    size_t priority() const override { return mt::PRIORITY_LOW; }
 };
 
 /// Refresh peers list of a torrent
@@ -48,5 +48,17 @@ public:
     size_t priority() const override;
 };
 
-    
+/// Split downloaded binary blob into the correct files described in the torrent file
+class TorrentOutputSplitter : public mt::ITask {
+
+    /// Reference to preallocated torrent descriptor in furrent
+    TorrentDescriptor& _descriptor;
+
+public:
+    explicit TorrentOutputSplitter(TorrentDescriptor& descr);
+    void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
+
+    size_t priority() const override { return mt::PRIORITY_HIGH; }
+};
+
 } // namespace fur::task
