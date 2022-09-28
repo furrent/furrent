@@ -95,8 +95,6 @@ typedef struct {
 
   bool saveFileMode;
 
-  std::shared_ptr<spdlog::logger> logger;
-
 } GuiFileDialogState;
 
 #ifdef __cplusplus
@@ -121,7 +119,7 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-GuiFileDialogState InitGuiFileDialog(int width, int height, const char *initPath, bool active, std::shared_ptr<spdlog::logger> logger);
+GuiFileDialogState InitGuiFileDialog(int width, int height, const char *initPath, bool active);
 void GuiFileDialog(GuiFileDialogState *state);
 
 #ifdef __cplusplus

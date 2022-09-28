@@ -1,97 +1,33 @@
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
-#include "raygui.h"
 #include "raylib.h"
-#define GUI_FILE_DIALOG_IMPLEMENTATION
-#include "gui/file_dialog.h"
-#define GUI_FILE_DIALOG_IMPLEMENTATION
 
 using namespace fur;
 
-// Function to add a new torrent, it is called when the user clicks on the add
-void add_torrent(GuiFileDialogState *file_dialog_state,
-                 fur::gui::GuiScrollTorrentState *scroll_state) {
-  // If the file selected is not a torrent do nothing
-  if (!IsFileExtension(file_dialog_state->fileNameText, ".torrent")) {
-    file_dialog_state->SelectFilePressed = false;
-    file_dialog_state->fileDialogActive = true;
-    return;
-  }
-  // Add the torrent to the current list of torrents
-  fur::gui::TorrentGui torrent{0, 0, file_dialog_state->realFileName,
-                               fur::gui::STOP, 0};
-  scroll_state->torrents.push_back(torrent);
-  // TODO: add real torrent
-
-  // Close the dialog
-  file_dialog_state->SelectFilePressed = false;
-  file_dialog_state->fileDialogActive = false;
+/// Function to handle a add new torrent, this will be called when the user
+/// clicks the add new torrent button inside the file chooser dialog.
+bool add_torrent_callback(const std::string &path) {
+  auto logger = spdlog::get("custom");
+  logger->info("Adding new torrent: {}", path);
+  return true;
 }
 
-void remove_torrent(fur::gui::GuiScrollTorrentState *scroll_state,
-                    fur::gui::GuiConfirmDialogState *confirm_dialog_state) {
-  // Open the confirm dialog if it is not already open or have been clicked
-  if (!confirm_dialog_state->show && !confirm_dialog_state->clicked) {
-    confirm_dialog_state->show = true;
-    confirm_dialog_state->clicked = false;
-    confirm_dialog_state->message =
-        "Are you sure you want to delete the torrent?";
-    confirm_dialog_state->confirm_button = "Yes";
-    confirm_dialog_state->cancel_button = "No";
-  }
-  // If the user clicked on an option of the confirm dialog
-  if (confirm_dialog_state->clicked) {
-    // Confirm the deletion
-    if (confirm_dialog_state->confirm) {
-      // Remove the torrent from the list
-      scroll_state->torrents.erase(
-          scroll_state->torrents.begin() +
-          scroll_state->torrent_dialog_state.torrent.index);
-      // TODO: remove the real torrent
-
-    }
-    // Close the dialog
-    confirm_dialog_state->show = false;
-    confirm_dialog_state->confirm = false;
-    confirm_dialog_state->clicked = false;
-    // Close the torrent dialog
-    scroll_state->torrent_dialog_state.delete_torrent = false;
-  }
+bool remove_torrent_callback(const gui::TorrentGui &torrent) {
+  auto logger = spdlog::get("custom");
+  logger->info("Removing torrent: {}", torrent.filename);
+  return true;
 }
 
-void update_settings(fur::gui::GuiSettingsDialogState *settings_dialog_state) {
-  if (settings_dialog_state->updated_path) {
-    settings_dialog_state->updated_path = false;
-    settings_dialog_state->show = false;
-    // TODO: update the real settings
-  }
+bool update_settings_callback(const std::string &path) {
+  auto logger = spdlog::get("custom");
+  logger->info("Updating settings: {}", path);
+  return true;
 }
 
-void update_torrent_state(fur::gui::GuiScrollTorrentState *scroll_state) {
-  auto &torrent =
-      scroll_state->torrents[scroll_state->torrent_dialog_state.torrent.index];
-  switch (torrent.status) {
-    case fur::gui::STOP:
-      torrent.status = fur::gui::DOWNLOAD;
-      break;
-    case fur::gui::DOWNLOAD:
-      torrent.status = fur::gui::STOP;
-      break;
-    default:
-      break;
-  }
-  // TODO: update the torrent state
-  // Reset the action
-  scroll_state->torrent_dialog_state.play = false;
-}
-
-void update_torrent_priority(fur::gui::GuiScrollTorrentState *scroll_state) {
-  auto &torrent =
-      scroll_state->torrents[scroll_state->torrent_dialog_state.torrent.index];
-  torrent.priority = scroll_state->torrent_dialog_state.input_priority;
-  // TODO: update the torrent priority
-  // Reset the action
-  scroll_state->torrent_dialog_state.update_priority = false;
+bool update_torrent_callback(const gui::TorrentGui &torrent) {
+  auto logger = spdlog::get("custom");
+  logger->info("Updating torrent: {}", torrent.filename);
+  return true;
 }
 
 int main() {
@@ -108,9 +44,9 @@ int main() {
   fur::gui::GuiScrollTorrentState scroll_state{
       Vector2{},
       {{0, 0, "A", fur::gui::TorrentState::COMPLETED, 100},
-       {0, 0, "B", fur::gui::TorrentState::DOWNLOAD, 75},
+       {0, 0, "B", fur::gui::TorrentState::DOWNLOAD, 50},
        {0, 0, "C", fur::gui::TorrentState::STOP, 50},
-       {0, 0, "D", fur::gui::TorrentState::ERROR, 25}},
+       {0, 0, "D", fur::gui::TorrentState::ERROR, 50}},
       fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
   auto furrent_logo = LoadTexture("../assets/Furrent.png");
@@ -128,7 +64,8 @@ int main() {
     // Title
     // Increase the font for the title
     GuiSetStyle(DEFAULT, TEXT_SIZE, 30);
-    GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT, fur::gui::PRIMARY_COLOR);
+    GuiDrawText("Furrent", {65, gui::BORDER, 0, 50}, TEXT_ALIGN_LEFT,
+                fur::gui::PRIMARY_COLOR);
     // Reset the font
     GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     auto button_file_dialog = GuiButton(
@@ -147,7 +84,8 @@ int main() {
     fur::gui::draw_torrents(&scroll_state);
     // Scroll panel head
     GuiDrawRectangle({gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40}, 1,
-                     fur::gui::PRIMARY_COLOR, fur::gui::PRIMARY_BACKGROUND_COLOR);
+                     fur::gui::PRIMARY_COLOR,
+                     fur::gui::PRIMARY_BACKGROUND_COLOR);
     GuiDrawText("Torrents",
                 {gui::BORDER, 61, gui::W_WIDTH - gui::BORDER * 2, 40},
                 TEXT_ALIGN_CENTER, fur::gui::PRIMARY_COLOR);
@@ -174,25 +112,26 @@ int main() {
     }
     // Action on filedialog
     if (file_state.SelectFilePressed) {
-      add_torrent(&file_state, &scroll_state);
+      fur::gui::add_torrent(&file_state, &scroll_state, &add_torrent_callback);
     }
     // Furrent settings dialog
     if (settings_state.show) {
-      update_settings(&settings_state);
+      fur::gui::update_settings(&settings_state, &update_settings_callback);
     }
     // Button play/pause on torrent
     if (scroll_state.torrent_dialog_state.play) {
-      update_torrent_state(&scroll_state);
+      fur::gui::update_torrent_state(&scroll_state, &update_torrent_callback);
     }
     // Button settings on torrent
     if (scroll_state.torrent_dialog_state.update_priority) {
-      update_torrent_priority(&scroll_state);
+      fur::gui::update_torrent_priority(&scroll_state,
+                                        &update_torrent_callback);
     }
     // Button remove torrent
     if (scroll_state.torrent_dialog_state.delete_torrent) {
-      remove_torrent(&scroll_state, &confirm_dialog_state);
+      fur::gui::remove_torrent(&scroll_state, &confirm_dialog_state,
+                               &remove_torrent_callback);
     }
-
     // Update dialogs
     GuiFileDialog(&file_state);
     settings_dialog(&settings_state);
