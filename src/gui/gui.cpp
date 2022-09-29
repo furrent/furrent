@@ -30,7 +30,7 @@ const Color DARK_BACKGROUND_COLOR = GetColor(DARK_BACKGROUND_HEX);
 const Color PRESSED_BACKGROUND_COLOR = GetColor(PRESSED_BACKGROUND_HEX);
 const Color DIALOG_BACKGROUND_COLOR = Fade(PRESSED_BACKGROUND_COLOR, 0.85f);
 
-enum TorrentState { STOP, DOWNLOAD, COMPLETED, ERROR };
+enum TorrentState { INDEXING, STOP, DOWNLOAD, COMPLETED, ERROR };
 
 struct TorrentGui {
   /// The index in the vector of torrents, automatically set by the gui
@@ -141,21 +141,42 @@ void draw_torrent_item(const TorrentGui &torrent, float pos,
   bool show_settings = false;
   switch (torrent.status) {
     case TorrentState::STOP:
-      play = GuiButton({700, 110 + pos, 20, 20}, "#132#");
-      // Set the color of the progress bar orange
+      play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
+      // Set the color of the progress bar orangeLINK
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, STOP_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
+      // Adding progress bar
+      GuiProgressBar({275, 110 + pos, 300, 20},
+                     (std::to_string(torrent.progress) + "% ").c_str(), "#132#Stopped",
+                     torrent.progress, 0, 100);
       break;
     case TorrentState::DOWNLOAD:
       play = GuiButton({700, 110 + pos, 20, 20}, "#131#");
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DOWNLOADING_COLOR_HEX);
       show_settings = GuiButton({730, 110 + pos, 20, 20}, "#140#");
+      // Adding progress bar
+      GuiProgressBar({275, 110 + pos, 300, 20},
+                     (std::to_string(torrent.progress) + "% ").c_str(), "#6#Downloading",
+                     torrent.progress, 0, 100);
+      break;
+    case TorrentState::INDEXING:
+      GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, STOP_COLOR_HEX);
+      // Adding progress bar
+      GuiProgressBar({275, 110 + pos, 300, 20},
+                     (std::to_string(torrent.progress) + "% ").c_str(), "#173#Indexing",
+                     torrent.progress, 0, 100);
       break;
     case TorrentState::COMPLETED:
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DONE_COLOR_HEX);
+      GuiProgressBar({275, 110 + pos, 300, 20},
+                     (std::to_string(torrent.progress) + "% ").c_str(), "#112#Downloaded",
+                     torrent.progress, 0, 100);
       break;
     case TorrentState::ERROR:
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, ERROR_COLOR_HEX);
+      GuiProgressBar({275, 110 + pos, 300, 20},
+                     (std::to_string(torrent.progress) + "% ").c_str(), "#113#Error",
+                     torrent.progress, 0, 100);
       break;
     default:
       break;
@@ -169,10 +190,7 @@ void draw_torrent_item(const TorrentGui &torrent, float pos,
     state.delete_torrent = delete_torrent;
     state.torrent = torrent;
   }
-  // Adding progress bar
-  GuiProgressBar({275, 110 + pos, 300, 20},
-                 (std::to_string(torrent.progress) + "% ").c_str(), NULL,
-                 torrent.progress, 0, 100);
+
 
   GuiLine({5, 145 + pos, 800 - 10, 1}, NULL);
 }

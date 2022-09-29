@@ -5,7 +5,7 @@
 
 using namespace fur;
 
-Furrent* furrent;
+//Furrent* furrent;
 
 /// Function to handle a add new torrent, this will be called when the user
 /// clicks the add new torrent button inside the file chooser dialog.
@@ -14,10 +14,13 @@ bool add_torrent_callback(gui::GuiScrollTorrentState &scroll_state,
                           const std::string &file_path) {
   auto logger = spdlog::get("custom");
   logger->info("Adding new torrent: {}", file_path);
-  furrent->add_torrent(file_path);
+  // furrent->add_torrent(file_path);
   //  Add the torrent to the UI
-  gui::TorrentGui torrent{0, 0, fine_name, gui::TorrentState::DOWNLOAD, 0};
-  scroll_state.torrents.push_back(torrent);
+  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::INDEXING, 0});
+  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::DOWNLOAD, 0});
+  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::COMPLETED, 0});
+  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::STOP, 0});
+  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::ERROR, 0});
   return true;
 }
 
@@ -57,12 +60,13 @@ int main() {
 
   auto furrent_logo = LoadTexture("../assets/Furrent.png");
 
-  furrent = new Furrent();
+  //furrent = new Furrent();
 
   // Main loop
   while (!WindowShouldClose()) {
 
     // Update furrent status
+    /*
     scroll_state.torrents.clear();
     int index = 0;
 
@@ -78,7 +82,7 @@ int main() {
 
       index++;
     }
-
+    */
     BeginDrawing();
     ClearBackground(RAYWHITE);
     // ------
