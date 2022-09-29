@@ -1,14 +1,23 @@
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
 #include "raylib.h"
+#include "furrent.hpp"
 
 using namespace fur;
 
+Furrent* furrent;
+
 /// Function to handle a add new torrent, this will be called when the user
 /// clicks the add new torrent button inside the file chooser dialog.
-bool add_torrent_callback(const std::string &path) {
+bool add_torrent_callback(gui::GuiScrollTorrentState &scroll_state,
+                          const std::string &fine_name,
+                          const std::string &file_path) {
   auto logger = spdlog::get("custom");
-  logger->info("Adding new torrent: {}", path);
+  logger->info("Adding new torrent: {}", file_path);
+  furrent->add_torrent(file_path);
+  //  Add the torrent to the UI
+  gui::TorrentGui torrent{0, 0, fine_name, gui::TorrentState::DOWNLOAD, 0};
+  scroll_state.torrents.push_back(torrent);
   return true;
 }
 
@@ -42,18 +51,34 @@ int main() {
       false, false, const_cast<char *>(GetWorkingDirectory()),
       GetWorkingDirectory(), ""};
   fur::gui::GuiScrollTorrentState scroll_state{
-      Vector2{},
-      {{0, 0, "A", fur::gui::TorrentState::COMPLETED, 100},
-       {0, 0, "B", fur::gui::TorrentState::DOWNLOAD, 50},
-       {0, 0, "C", fur::gui::TorrentState::STOP, 50},
-       {0, 0, "D", fur::gui::TorrentState::ERROR, 50}},
-      fur::gui::GuiTorrentDialogState{}};
+      Vector2{}, {}, fur::gui::GuiTorrentDialogState{}};
   fur::gui::GuiConfirmDialogState confirm_dialog_state{};
   fur::gui::GuiErrorDialogState error_dialog_state{};
+
   auto furrent_logo = LoadTexture("../assets/Furrent.png");
+
+  furrent = new Furrent();
 
   // Main loop
   while (!WindowShouldClose()) {
+
+    // Update furrent status
+    scroll_state.torrents.clear();
+    int index = 0;
+
+    for(auto& info : furrent->get_torrents_info()) {
+      // Try to lock descriptor mutex for reading
+      if (info.pieces_count != 0) {
+        int percent =
+              static_cast<int>((static_cast<float>(info.pieces_processed) / info.pieces_count) * 100);
+        scroll_state.torrents.push_back({index, 0, "ciao",
+                                           fur::gui::TorrentState::DOWNLOAD,
+                                           percent});
+      }
+
+      index++;
+    }
+
     BeginDrawing();
     ClearBackground(RAYWHITE);
     // ------

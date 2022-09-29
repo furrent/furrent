@@ -39,13 +39,21 @@ void TorrentFileLoad::execute(
     return;
   }
 
-  // From now on the descriptor is available to all
-  _descriptor.torrent =
-      std::make_optional<fur::torrent::TorrentFile>(*(*b_tree));
+  // Lock descriptor for write
+  {
+    std::unique_lock<std::shared_mutex> lock(_descriptor.mtx);
 
-  // Find trackers
-  while (!_descriptor.regenerate_peers())
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // From now on the descriptor is available to all
+    _descriptor.torrent =
+        std::make_optional<fur::torrent::TorrentFile>(*(*b_tree));
+
+    // Find trackers
+    while(!_descriptor.regenerate_peers())
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  // Lock for read
+  std::shared_lock<std::shared_mutex> lock(_descriptor.mtx);
 
   // Create output files
   for(auto& file : _descriptor.torrent->files) {

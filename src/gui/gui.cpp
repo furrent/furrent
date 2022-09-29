@@ -306,7 +306,7 @@ void error_dialog(GuiErrorDialogState &state) {
 void add_torrent(GuiFileDialogState &file_dialog_state,
                  GuiScrollTorrentState &scroll_state,
                  GuiErrorDialogState &dialog_error,
-                 bool (*add_torrent_callback)(const std::string &)) {
+                 bool (*add_torrent_callback)(GuiScrollTorrentState &,const std::string &, const std::string &)) {
   // If the file selected is not a torrent do nothing
   if (!IsFileExtension(file_dialog_state.fileNameText, ".torrent")) {
     file_dialog_state.SelectFilePressed = false;
@@ -314,7 +314,7 @@ void add_torrent(GuiFileDialogState &file_dialog_state,
     return;
   }
   // Call the callback to add the torrent to the list of torrents
-  auto result = add_torrent_callback(file_dialog_state.fileNameText);
+  auto result = add_torrent_callback(scroll_state, file_dialog_state.realFileName, file_dialog_state.fileNameText);
   if (!result) {
     dialog_error.error = "Some error occurred";
     // Remove the action on the button
@@ -322,9 +322,9 @@ void add_torrent(GuiFileDialogState &file_dialog_state,
     file_dialog_state.fileDialogActive = true;
     return;
   }
-  // If the torrent was added successfully, we add it to the scroll state
-  TorrentGui torrent{0, 0, file_dialog_state.realFileName, STOP, 0};
-  scroll_state.torrents.push_back(torrent);
+  // (Menaged in the callback )If the torrent was added successfully, we add it to the scroll state
+  // TorrentGui torrent{0, 0, file_dialog_state.realFileName, STOP, 0};
+  // scroll_state.torrents.push_back(torrent);
   // Close the dialog
   file_dialog_state.SelectFilePressed = false;
   file_dialog_state.fileDialogActive = false;

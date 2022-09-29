@@ -56,7 +56,6 @@ bool TorrentDescriptor::regenerate_peers() {
   }
 
   {
-    std::unique_lock<std::shared_mutex> lock(mtx);
     downloaders.clear();
     downloaders = new_peers;
   }
@@ -149,6 +148,8 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 }
 
 void Furrent::add_torrent(const std::string& filename) {
+  std::unique_lock<std::shared_mutex> lock(_mtx);
+
   /// Allocate descriptor for the new torrent
   _descriptors.emplace_back(filename);
   auto& descriptor = _descriptors.front();
@@ -157,8 +158,19 @@ void Furrent::add_torrent(const std::string& filename) {
   _global_queue.insert(std::make_unique<tasks::TorrentFileLoad>(descriptor));
 }
 
-const std::list<TorrentDescriptor>& Furrent::get_descriptors() const {
-  return _descriptors;
+std::vector<TorrentInfo> Furrent::get_torrents_info() const {
+  std::shared_lock<std::shared_mutex> lock(_mtx);
+
+  std::vector<TorrentInfo> result;
+  for (auto& descriptor : _descriptors) {
+    TorrentInfo info = { };
+    if (descriptor.torrent.has_value()) {
+      info.pieces_processed = descriptor.pieces_downloaded;
+      info.pieces_count = descriptor.torrent->pieces_count;
+    }
+    result.push_back(info);
+  }
+  return result;
 }
 
 }  // namespace fur

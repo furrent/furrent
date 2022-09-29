@@ -12,7 +12,7 @@ namespace fur {
 
 struct TorrentDescriptor {
   // Protects internal state, allows multiple readers but only one writer
-  std::shared_mutex mtx;
+  mutable std::shared_mutex mtx;
 
   /// Name of the file where the torrent can be found
   std::string filename;
@@ -42,6 +42,16 @@ struct TorrentDescriptor {
   bool download_finished();
 };
 
+enum TorrentState {
+  Running, Paused, Cancelled
+};
+
+struct TorrentInfo {
+  //TorrentState state;
+  size_t pieces_processed;
+  size_t pieces_count;
+};
+
 /// Main state of the program
 class Furrent {
   typedef mt::SharingQueue<mt::ITask::Wrapper> TaskSharingQueue;
@@ -49,6 +59,8 @@ class Furrent {
   /// State of the worker threads
   struct WorkerState {};
 
+  /// Mutex protecting furrent state
+  mutable std::shared_mutex _mtx;
   /// List of torrents to download
   std::list<TorrentDescriptor> _descriptors;
   /// Global work queue
@@ -61,6 +73,7 @@ class Furrent {
   mt::ThreadGroup<WorkerState> _workers;
 
  public:
+
   Furrent();
   virtual ~Furrent();
 
@@ -68,7 +81,7 @@ class Furrent {
   void add_torrent(const std::string& filename);
 
   /// @return all loaded descriptors
-  const std::list<TorrentDescriptor>& get_descriptors() const;
+  std::vector<TorrentInfo> get_torrents_info() const;
 
  private:
   /// Main function of all workers
