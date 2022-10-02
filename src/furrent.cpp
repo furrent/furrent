@@ -6,19 +6,22 @@
 #include <policy/policy.hpp>
 #include <random>
 #include <sstream>
-#include <tasks/torrent.hpp>
+#include <tasks/torrent_task.hpp>
 
 namespace fur {
 
-TorrentDescriptor::TorrentDescriptor(const std::string& filename)
+TorrentHandle::TorrentHandle(size_t uid, const std::string& filename)
     : filename{filename},
-      pieces_downloaded{0},
-      pieces_saved{0},
-      announce_time{std::chrono::high_resolution_clock::time_point{}},
-      split_output_spawned{false} {}
+      pieces_processed{0},
+      last_announce_time{{}},
+      uid{uid}
+{ 
+  // At the beginning the announce time is the creation time
+  last_announce_time = std::chrono::high_resolution_clock::now();
+}
 
 // This task is very expensive but it is executed one time every X minutes
-bool TorrentDescriptor::regenerate_peers() {
+bool TorrentHandle::regenerate_peers() {
   if (!torrent.has_value()) return false;
 
   // Default global logger
@@ -29,13 +32,15 @@ bool TorrentDescriptor::regenerate_peers() {
   auto response = peer::announce(*torrent);
   if (!response.valid()) return false;
 
-  interval = response->interval;
+  // New peer discovery interval
+  announce_interval.exchange(response->interval);
 
   std::stringstream log_text;
   log_text << "Regenerated list of peers for " << filename << " (next interval "
-           << interval << " s):\n";
+           << announce_interval << " s):\n";
 
   std::vector<Peer> new_peers;
+#if 1
   for (auto& peer : response->peers) {
     // Check if it is a good peer
     download::downloader::Downloader d(*torrent, peer);
@@ -48,6 +53,9 @@ bool TorrentDescriptor::regenerate_peers() {
     log_text << "\t" << peer.address() << " OK\n";
     new_peers.push_back(peer);
   }
+#else
+  new_peers = response->peers;
+#endif
 
   // If no peer is valid then the operation failed
   if (new_peers.empty()) {
@@ -56,38 +64,52 @@ bool TorrentDescriptor::regenerate_peers() {
   }
 
   {
-    downloaders.clear();
-    downloaders = new_peers;
+    // Update peers list
+    std::unique_lock<std::shared_mutex> lock(mtx);
+    peers.clear();
+    peers = new_peers;
   }
 
   logger->info(log_text.str());
   return true;
 }
 
-bool TorrentDescriptor::download_finished() {
-  std::shared_lock<std::shared_mutex> lock(mtx);
-  const size_t total_pieces = torrent->length / torrent->piece_length;
-  return pieces_downloaded == total_pieces;
+TorrentSnapshot TorrentHandle::snapshot() const {
+
+  // Allow only concurrent reads of the handle
+  std::shared_lock<std::shared_mutex> read_lock(mtx);
+  TorrentSnapshot snapshot;
+
+  // Constant data
+  snapshot.uid = uid;
+  snapshot.filename = filename;
+  snapshot.torrent = torrent;
+  snapshot.peers = peers;
+
+  // Loading is relaxed because read_lock is already a memory fence
+  snapshot.state = state.load(std::memory_order_relaxed);
+  snapshot.priority = priority.load(std::memory_order_relaxed);
+  snapshot.pieces_processed = pieces_processed.load(std::memory_order_relaxed);
+
+  return snapshot;
 }
 
 Furrent::Furrent() {
-  /// Local queues of all workers
-  const size_t concurrency = std::thread::hardware_concurrency();
-  _local_queues = new TaskSharingQueue[concurrency];
 
   using std::placeholders::_1;
   using std::placeholders::_2;
   using std::placeholders::_3;
 
   /// This is the core of all workers
-  _workers.launch(std::bind(&Furrent::thread_main, this, _1, _2, _3));
+  const size_t concurrency = std::thread::hardware_concurrency();
+  const size_t threads_cnt = (concurrency > 1) ? concurrency - 1 : 1; 
+
+  _workers.launch(std::bind(&Furrent::thread_main, this, _1, _2, _3), threads_cnt);
 }
 
 Furrent::~Furrent() {
   _global_queue.begin_skip_waiting();
   _workers.terminate();
-
-  delete[] _local_queues;
 }
 
 void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
@@ -98,79 +120,86 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
   // Default global logger
   auto logger = spdlog::get("custom");
 
-  // How many times we have to fail stealing to go to sleep
-  const int STEALING_LIMIT = 100;
-  // How many times the thread tried to steal without success
-  int failed_stealing_count = 0;
-
-  auto& local_queue = _local_queues[index];
-  while (runner.alive()) {
-    // First we check our own local queue
-    auto local_work = local_queue.try_extract(task_policy);
-    if (local_work.valid()) {
-      // logger->debug("thread {:02d} is executing local work", index);
-      (*local_work)->execute(local_queue);
-      failed_stealing_count = 0;
-    } else {
-      // Then we check the global queue
-      auto global_work = _global_queue.try_extract(task_policy);
-      if (global_work.valid()) {
-        // logger->debug("thread {:02d} is executing global work", index);
+  while(runner.alive()) {
+    
+    auto global_work = _global_queue.try_extract(task_policy);
+    if (global_work.valid()) {
         (*global_work)->execute(_global_queue);
-        failed_stealing_count = 0;
-      } else {
-        logger->info("thread {:02d} is waiting for work on global queue",
-                     index);
-        _global_queue.wait_work();
-        failed_stealing_count = 0;
-#if 0
-                // If there is nothing then we steal from a random worker
-                else {
-                    size_t steal_idx = rand() % concurrency;
-                    if (steal_idx == index) steal_idx = (steal_idx + 1) % concurrency;
-
-                    auto steal_work = _local_queues[steal_idx].steal();
-                    if (steal_work.valid()) {
-
-                        //logger->info("thread {:02d} is executing stolen work from {:02d}", index, steal_idx);
-                        (*steal_work)->execute(local_queue);
-                        failed_stealing_count = 0;
-                    }
-                    else {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                        failed_stealing_count += 1;
-                    }
-                }
-#endif
-      }
+    } else {
+      logger->info("thread {:02d} is waiting for work on global queue", index);
+      _global_queue.wait_work();
     }
   }
 }
 
-void Furrent::add_torrent(const std::string& filename) {
+size_t Furrent::add_torrent(const std::string& filename) {
   std::unique_lock<std::shared_mutex> lock(_mtx);
 
   /// Allocate descriptor for the new torrent
-  _descriptors.emplace_back(filename);
-  auto& descriptor = _descriptors.front();
+  auto descriptor = std::make_shared<TorrentHandle>(descriptor_next_uid, filename);
+  descriptor_next_uid += 1;
+
+  _descriptors.emplace_back(descriptor);
 
   /// Begin loading task
   _global_queue.insert(std::make_unique<tasks::TorrentFileLoad>(descriptor));
+  return descriptor->uid;
 }
 
-std::vector<TorrentInfo> Furrent::get_torrents_info() const {
+std::vector<TorrentSnapshot> Furrent::get_torrents_snapshot() const {
   std::shared_lock<std::shared_mutex> lock(_mtx);
 
-  std::vector<TorrentInfo> result;
-  for (auto& descriptor : _descriptors) {
-    TorrentInfo info = { };
-    if (descriptor.torrent.has_value()) {
-      info.pieces_processed = descriptor.pieces_downloaded;
-      info.pieces_count = descriptor.torrent->pieces_count;
-    }
-    result.push_back(info);
-  }
+  std::vector<TorrentSnapshot> result;
+  for (auto& descriptor : _descriptors)
+    result.push_back(descriptor->snapshot());
   return result;
+}
+
+std::optional<TorrentSnapshot> Furrent::get_snapshot(size_t uid) {
+  std::shared_lock<std::shared_mutex> lock(_mtx);
+  for (auto& descriptor : _descriptors)
+    if (descriptor->uid == uid)
+      return std::make_optional(descriptor->snapshot());
+  return std::nullopt;
+}
+
+std::optional<TorrentSnapshot> Furrent::remove_torrent(size_t uid) {
+
+  // Removes descriptor from list and set it to the stopped state
+  std::unique_lock<std::shared_mutex> lock(_mtx);
+  for(auto it = _descriptors.begin(); it != _descriptors.end(); ++it) {
+    std::shared_ptr<TorrentHandle>& descriptor = *it;
+    if (descriptor->uid == uid) {
+      TorrentSnapshot snapshot = descriptor->snapshot();
+
+      // Write lock, all snapshot must be completed
+      std::unique_lock<std::shared_mutex> write_lock(descriptor->mtx);
+      descriptor->state.exchange(TorrentState::Stopped);
+      _descriptors.erase(it);
+
+      return std::make_optional(snapshot);
+    }
+  }
+  return std::nullopt;
+}
+
+void Furrent::pause_torrent(size_t uid) {
+  std::shared_lock<std::shared_mutex> lock(_mtx);
+  for (auto& descriptor : _descriptors)
+    if (descriptor->uid == uid) {
+      descriptor->state.exchange(TorrentState::Paused, std::memory_order_relaxed);
+      return;
+    }
+}
+
+void Furrent::resume_torrent(size_t uid) {
+  std::shared_lock<std::shared_mutex> lock(_mtx);
+  for (auto& descriptor : _descriptors)
+    if (descriptor->uid == uid) {
+      descriptor->state.exchange(TorrentState::Paused, std::memory_order_relaxed);
+      _global_queue.force_wakeup();
+      return;
+    }
 }
 
 }  // namespace fur

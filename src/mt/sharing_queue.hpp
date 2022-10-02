@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <optional>
+#include <functional>
 #include <policy/queue.hpp>
 
 namespace fur::mt {
@@ -48,8 +49,16 @@ class SharingQueue {
   /// @param work Work to be inserted
   void insert(Work&& work);
 
+  /// Removes all elements satisying the filter
+  /// @param filter function used to remove elements, returns true 
+  /// if the elements should be removed, false otherwise
+  void remove(std::function<bool(Work&)> filter);
+
   /// Steal work from the queue
   [[nodiscard]] Result steal();
+
+  /// Wake up all waiting threads
+  void force_wakeup();
 
   /// Wait for a new item in the queue
   void wait_work() const;
@@ -57,7 +66,8 @@ class SharingQueue {
   /// Wait for the queue to be empty
   void wait_empty() const;
 
-  /// Wake up all waiting threads
+  /// Wake up all waiting threads and begins
+  /// skipping work
   void begin_skip_waiting();
 };
 

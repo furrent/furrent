@@ -17,6 +17,16 @@
 
 namespace fur::mt {
 
+/// All accepted piority levels:
+/// levels from low to high are considered active
+/// level none will not be considered
+enum Priority : size_t {
+  PRIORITY_HIGH   = 30000,
+  PRIORITY_MEDIUM = 20000,
+  PRIORITY_LOW    = 10000,
+  PRIORITY_NONE   = 0   
+};
+
 class ITask {
  public:
   /// Standard wrapper type of the tasks
@@ -31,10 +41,6 @@ class ITask {
   /// @return priority of the task, used for scheduling
   [[nodiscard]] virtual size_t priority() const = 0;
 };
-
-const size_t PRIORITY_HIGH = 3;
-const size_t PRIORITY_MEDIUM = 2;
-const size_t PRIORITY_LOW = 1;
 
 /// Policy for extracing highest priority tasks first
 class PriorityPolicy : public policy::IPolicy<ITask::Wrapper> {

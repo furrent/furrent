@@ -1,32 +1,13 @@
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
-#include "raylib.h"
+#include <raylib/raylib.h>
 #include "furrent.hpp"
 
 using namespace fur;
 
-//Furrent* furrent;
-
-/// Function to handle a add new torrent, this will be called when the user
-/// clicks the add new torrent button inside the file chooser dialog.
-bool add_torrent_callback(gui::GuiScrollTorrentState &scroll_state,
-                          const std::string &fine_name,
-                          const std::string &file_path) {
+bool remove_torrent_callback(const TorrentSnapshot& snapshot) {
   auto logger = spdlog::get("custom");
-  logger->info("Adding new torrent: {}", file_path);
-  // furrent->add_torrent(file_path);
-  //  Add the torrent to the UI
-  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::INDEXING, 0});
-  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::DOWNLOAD, 0});
-  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::COMPLETED, 0});
-  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::STOP, 0});
-  scroll_state.torrents.push_back({0, 0, fine_name, gui::TorrentState::ERROR, 0});
-  return true;
-}
-
-bool remove_torrent_callback(const gui::TorrentGui &torrent) {
-  auto logger = spdlog::get("custom");
-  logger->info("Removing torrent: {}", torrent.filename);
+  logger->info("Removing torrent: {}", snapshot.filename);
   return true;
 }
 
@@ -36,53 +17,50 @@ bool update_settings_callback(const std::string &path) {
   return true;
 }
 
-bool update_torrent_callback(const gui::TorrentGui &torrent) {
+bool update_torrent_callback(const TorrentSnapshot& snapshot) {
   auto logger = spdlog::get("custom");
-  logger->info("Updating torrent: {}", torrent.filename);
+  logger->info("Updating torrent: {}", snapshot.filename);
   return true;
 }
 
 int main() {
+
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
+
+  Furrent furrent;
+  //furrent.add_torrent("../extra/debian-11.5.0-amd64-i386-netinst.iso.torrent");
+  //while(true);
+
+#if 1
+
   // Set the window configuration
   fur::gui::setup_config();
+  
   // Create all the states
   GuiFileDialogState file_state =
       InitGuiFileDialog(550, 500, GetWorkingDirectory(), false, ".torrent");
+  
   fur::gui::GuiSettingsDialogState settings_state{
       false, false, const_cast<char *>(GetWorkingDirectory()),
       GetWorkingDirectory(), ""};
-  fur::gui::GuiScrollTorrentState scroll_state{
-      Vector2{}, {}, fur::gui::GuiTorrentDialogState{}};
-  fur::gui::GuiConfirmDialogState confirm_dialog_state{};
-  fur::gui::GuiErrorDialogState error_dialog_state{};
+
+  fur::gui::GuiScrollTorrentState scroll_state;
+  fur::gui::GuiConfirmDialogState confirm_dialog_state;
+  fur::gui::GuiErrorDialogState error_dialog_state;
 
   auto furrent_logo = LoadTexture("../assets/Furrent.png");
-
-  //furrent = new Furrent();
 
   // Main loop
   while (!WindowShouldClose()) {
 
     // Update furrent status
-    /*
-    scroll_state.torrents.clear();
-    int index = 0;
-
-    for(auto& info : furrent->get_torrents_info()) {
-      // Try to lock descriptor mutex for reading
-      if (info.pieces_count != 0) {
-        int percent =
-              static_cast<int>((static_cast<float>(info.pieces_processed) / info.pieces_count) * 100);
-        scroll_state.torrents.push_back({index, 0, "ciao",
-                                           fur::gui::TorrentState::DOWNLOAD,
-                                           percent});
-      }
-
-      index++;
+    for(auto& snapshot : furrent.get_torrents_snapshot()) {
+      auto it = scroll_state.torrents.find(snapshot.uid);
+      if (it != scroll_state.torrents.end())
+        it->second = snapshot;
     }
-    */
+    
     BeginDrawing();
     ClearBackground(RAYWHITE);
     // ------
@@ -128,24 +106,49 @@ int main() {
     // ------
     // Events
     // ------
+
     // Event caught for updating the scroll panel
     float wheelMove = GetMouseWheelMove();
     if (wheelMove != 0) {
       scroll_state.scroll.y += wheelMove * 20;
     }
+
     // Button add torrent
     if (button_file_dialog) {
       file_state.fileDialogActive = true;
     }
+
     // Button furrent settings
     if (button_settings) {
       settings_state.show = true;
     }
+
     // Action on filedialog
     if (file_state.SelectFilePressed) {
       fur::gui::add_torrent(file_state, scroll_state, error_dialog_state,
-                            &add_torrent_callback);
+        [&] (const std::string &fine_name, const std::string &file_path) -> bool {
+          logger->info("Adding new torrent: {}", file_path);
+          
+          size_t uid = furrent.add_torrent(file_path);
+          scroll_state.torrents.emplace(uid, *furrent.get_snapshot(uid));
+          
+          return true;
+        });
     }
+
+    // Button remove torrent
+    if (scroll_state.torrent_dialog_state.delete_torrent) {
+      fur::gui::remove_torrent(scroll_state, confirm_dialog_state, error_dialog_state, 
+        [&] (const TorrentSnapshot& snapshot) -> bool {
+          logger->info("Removing torrent: {}", snapshot.filename);
+          
+          furrent.remove_torrent(snapshot.uid);
+          scroll_state.torrents.erase(snapshot.uid);
+          
+          return true;
+        });
+    }
+
     // Furrent settings dialog
     if (settings_state.show) {
       fur::gui::update_settings(settings_state, error_dialog_state,
@@ -161,11 +164,8 @@ int main() {
       fur::gui::update_torrent_priority(scroll_state, error_dialog_state,
                                         &update_torrent_callback);
     }
-    // Button remove torrent
-    if (scroll_state.torrent_dialog_state.delete_torrent) {
-      fur::gui::remove_torrent(scroll_state, confirm_dialog_state,
-                               error_dialog_state, &remove_torrent_callback);
-    }
+
+    
     // Update dialogs
 
     GuiFileDialog(&file_state);
@@ -180,4 +180,6 @@ int main() {
   }
 
   CloseWindow();
+#endif
+
 }

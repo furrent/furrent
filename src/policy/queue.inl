@@ -7,6 +7,12 @@ void Queue<T>::insert(T&& item) {
   _items.push_back(std::forward<T>(item));
 }
 
+
+template <typename T>
+std::list<T>& Queue<T>::items() {
+  return _items;
+}
+
 template <typename T>
 auto Queue<T>::extract(const IPolicy<T>& policy) -> Result {
   if (_items.empty()) return Result::ERROR(Error::Empty);

@@ -45,6 +45,9 @@ class Queue {
   /// @param policy custom logic used to select the element
   [[nodiscard]] Result extract(const IPolicy<T>& policy);
 
+  /// @return inner list of items
+  std::list<T>& items();
+
   /// @return Number of items present
   [[nodiscard]] size_t size() const;
 };

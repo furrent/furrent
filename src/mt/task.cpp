@@ -7,8 +7,13 @@ auto PriorityPolicy::extract(Iterator begin, Iterator end) const -> Iterator {
   Iterator result = end;
   while (begin != end) {
     ITask::Wrapper& item = *begin;
-    const size_t priority = item->priority();
+    size_t priority = item->priority();
+    
+    // Sleeping tasks
+    if (priority == mt::Priority::PRIORITY_NONE)
+      continue;
 
+    // Check if best
     if (priority > priority_best) {
       priority_best = priority;
       result = begin;

@@ -2,34 +2,43 @@
 #include <config.hpp>
 #include <fstream>
 #include <platform/io.hpp>
-#include <tasks/torrent.hpp>
+#include <tasks/torrent_task.hpp>
 
 namespace fur::tasks {
 
-TorrentFileLoad::TorrentFileLoad(TorrentDescriptor& desc) : _descriptor(desc) {}
+TorrentFileLoad::TorrentFileLoad(std::shared_ptr<TorrentHandle> desc) 
+: TorrentTask(desc) {}
 
 void TorrentFileLoad::execute(
     mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
-  // Default global logger
-  auto logger = spdlog::get("custom");
+      
+  // ===================================================================
+  // Loading torrent file
+
+  descriptor->state.exchange(TorrentState::Loading);
 
   std::string content;
-  std::ifstream file(_descriptor.filename);
+  std::ifstream file(descriptor->filename);
   if (file.good()) {
-    logger->info("Loading torrent file from {}", _descriptor.filename);
+    logger->info("Loading torrent file from {}", descriptor->filename);
 
     std::ostringstream ss;
     ss << file.rdbuf();
     content = ss.str();
 
   } else {
-    logger->error("Error loading torrent from {}", _descriptor.filename);
+    logger->error("Error loading torrent from {}", descriptor->filename);
     file.close();
     return;
   }
 
+  // ===================================================================
+  // Parsing torrent file
+
+  descriptor->state.exchange(TorrentState::Parsing);
+
   // Create torrent_manager for the file
-  logger->info("Parsing torrent file {}", _descriptor.filename);
+  logger->info("Parsing torrent file {}", descriptor->filename);
   auto parser = fur::bencode::BencodeParser();
   auto b_tree = parser.decode(content);
 
@@ -39,24 +48,33 @@ void TorrentFileLoad::execute(
     return;
   }
 
-  // Lock descriptor for write
+  // ===================================================================
+  // Generating peers
+
+  descriptor->state.exchange(TorrentState::Indexing);
+
   {
-    std::unique_lock<std::shared_mutex> lock(_descriptor.mtx);
+    std::unique_lock<std::shared_mutex> lock(descriptor->mtx);
 
     // From now on the descriptor is available to all
-    _descriptor.torrent =
+    descriptor->torrent =
         std::make_optional<fur::torrent::TorrentFile>(*(*b_tree));
-
-    // Find trackers
-    while(!_descriptor.regenerate_peers())
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
+  // Find trackers
+#if 1
+  while(!descriptor->regenerate_peers())
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+#endif
+
+  // ===================================================================
+  // Creating output folders and files
+
   // Lock for read
-  std::shared_lock<std::shared_mutex> lock(_descriptor.mtx);
+  std::shared_lock<std::shared_mutex> lock(descriptor->mtx);
 
   // Create output files
-  for(auto& file : _descriptor.torrent->files) {
+  for(auto& file : descriptor->torrent->files) {
     auto filepath = fur::platform::io::create_subfolders(
       config::DOWNLOAD_FOLDER, file.filepath);
     
@@ -66,19 +84,24 @@ void TorrentFileLoad::execute(
     }
 
     if (!fur::platform::io::touch(*filepath, file.length).valid()) {
-      logger->error("Error creating file for torrent {}", _descriptor.filename);
+      logger->error("Error creating file for torrent {}", descriptor->filename);
       return;
     } 
   }
 
-  const size_t piece_length = _descriptor.torrent->piece_length;
-  const size_t pieces_count = _descriptor.torrent->length / piece_length;
+  // ===================================================================
+  // Creating download piece tasks 
+
+  descriptor->state.exchange(TorrentState::Downloading);
+
+  const size_t piece_length = descriptor->torrent->piece_length;
+  const size_t pieces_count = descriptor->torrent->length / piece_length;
 
   // Generate all downloading tasks
   logger->info("Generating {} pieces torrent file {}", pieces_count,
-               _descriptor.filename);
+               descriptor->filename);
 
-  auto& torrent = *_descriptor.torrent;
+  auto& torrent = *descriptor->torrent;
 
   size_t cur_file = 0;
   size_t cur_file_tot_size = torrent.files[cur_file].length;
@@ -129,11 +152,12 @@ void TorrentFileLoad::execute(
     // Create piece download task
     download::Piece piece{index, subpieces, 0};
     local_queue.insert(
-      std::make_unique<TorrentPieceDownload>(_descriptor, piece));
+      std::make_unique<TorrentPieceDownload>(descriptor, piece));
   }
 
   // Generate refresh peers task
-  local_queue.insert(std::make_unique<TorrentPeerRefresh>(_descriptor));
+  // BUG: Starvation using high_performance_clock
+  //local_queue.insert(std::make_unique<TorrentPeerRefresh>(descriptor));
   file.close();
 }
 
