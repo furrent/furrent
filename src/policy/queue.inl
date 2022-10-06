@@ -28,8 +28,15 @@ auto Queue<T>::extract(const IPolicy<T>& policy) -> Result {
 
 template<typename T>
 void Queue<T>::mutate(MutateFn mutation) {
-  for(T& item : _items)
-    mutation(item);
+  auto it = _items.begin();
+  while (it != _items.end()) {
+
+    bool keep = mutation(*it);
+    if (!keep) 
+      it = _items.erase(it);
+    else 
+      ++it;
+  }
 }
 
 template <typename T>

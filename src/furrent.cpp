@@ -166,6 +166,21 @@ std::optional<TorrentSnapshot> Furrent::get_snapshot(TorrentHandleID uid) {
 
 std::optional<TorrentSnapshot> Furrent::remove_torrent(TorrentHandleID uid) {
 
+  // Remove all tasks refering to the removed torrent 
+  _global_queue.mutate([&](mt::ITask::Wrapper& wrapper) -> bool {
+
+    // Mutate only if it is a TorrentTask
+    auto task = dynamic_cast<mt::TorrentTask*>(wrapper.get());
+    if (task == nullptr)
+      return true;
+
+    if (task->descriptor->uid == uid)
+      return false;
+
+    return true;
+  });
+
+  // Remove the torrent handle descriptor from furrent
   std::unique_lock<std::shared_mutex> lock(_mtx);
   auto it = _torrents.find(uid);
   if (it != _torrents.end()) {
@@ -185,28 +200,32 @@ std::optional<TorrentSnapshot> Furrent::remove_torrent(TorrentHandleID uid) {
 }
 
 void Furrent::pause_torrent(TorrentHandleID uid) {
-  _global_queue.mutate([&](mt::ITask::Wrapper& wrapper) {
+  _global_queue.mutate([&](mt::ITask::Wrapper& wrapper) -> bool {
     
     // Mutate only if it is a TorrentTask
     auto task = dynamic_cast<mt::TorrentTask*>(wrapper.get());
     if (task == nullptr)
-      return;
+      return true;
 
     if (task->descriptor->uid == uid)
       task->state = mt::TaskState::Paused;
+
+    return true;
   });
 }
 
 void Furrent::resume_torrent(TorrentHandleID uid) {
-  _global_queue.mutate([&](mt::ITask::Wrapper& wrapper) {
+  _global_queue.mutate([&](mt::ITask::Wrapper& wrapper) -> bool {
 
     // Mutate only if it is a TorrentTask
     auto task = dynamic_cast<mt::TorrentTask*>(wrapper.get());
     if (task == nullptr)
-      return;
+      return true;
 
     if (task->descriptor->uid == uid)
       task->state = mt::TaskState::Running;
+
+    return true;
   });
 }
 

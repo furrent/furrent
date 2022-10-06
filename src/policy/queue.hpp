@@ -37,7 +37,8 @@ class Queue {
   typedef util::Result<T, Error> Result;
 
   // Function used to mutate the internal collection
-  typedef std::function<void(T&)> MutateFn;
+  // returns true if the element should be kept, false otherwise
+  typedef std::function<bool(T&)> MutateFn;
 
  public:
   /// Insert a new element
