@@ -1,5 +1,6 @@
 #include "gui/gui.cpp"
 #include "log/logger.hpp"
+#include <platform/io.hpp>
 #include <raylib/raylib.h>
 #include "furrent.hpp"
 
@@ -23,7 +24,7 @@ bool update_torrent_callback(const TorrentSnapshot& snapshot) {
   return true;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
@@ -33,6 +34,13 @@ int main() {
   //while(true);
 
 #if 1
+
+  const std::string argv_0(argv[0]);
+  auto last_slash = argv_0.find_last_of('/');
+  const std::string path_base = argv_0.substr(0, last_slash + 1);
+
+  // Create output directory
+  fur::platform::io::create_subfolders(path_base, { "output" });
 
   // Set the window configuration
   fur::gui::setup_config();
