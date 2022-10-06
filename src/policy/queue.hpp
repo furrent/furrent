@@ -36,6 +36,9 @@ class Queue {
   /// Custom queue result type
   typedef util::Result<T, Error> Result;
 
+  // Function used to mutate the internal collection
+  typedef std::function<void(T&)> MutateFn;
+
  public:
   /// Insert a new element
   /// @param item element to be inserted
@@ -44,6 +47,9 @@ class Queue {
   /// Tries to extract an element using a policy
   /// @param policy custom logic used to select the element
   [[nodiscard]] Result extract(const IPolicy<T>& policy);
+
+  /// Mutate the internal list of items
+  void mutate(MutateFn mutation);
 
   /// @return inner list of items
   std::list<T>& items();

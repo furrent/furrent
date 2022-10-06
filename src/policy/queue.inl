@@ -26,6 +26,12 @@ auto Queue<T>::extract(const IPolicy<T>& policy) -> Result {
   return Result::OK(std::move(result));
 }
 
+template<typename T>
+void Queue<T>::mutate(MutateFn mutation) {
+  for(T& item : _items)
+    mutation(item);
+}
+
 template <typename T>
 size_t Queue<T>::size() const {
   return _items.size();

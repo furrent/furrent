@@ -1,17 +1,23 @@
 #include <tasks/torrent_task.hpp>
 
 #include <fstream>
+#include <cassert>
 
 #include <config.hpp>
 #include <platform/io.hpp>
+#include <furrent.hpp>
 
-namespace fur::tasks {
+namespace fur::mt {
 
-TorrentPieceDownload::TorrentPieceDownload(std::shared_ptr<TorrentHandle> desc, download::Piece piece)
-: TorrentTask(desc), piece{piece} { }
+TorrentPieceDownload::TorrentPieceDownload(std::shared_ptr<TorrentHandle> descr, download::Piece piece)
+: TorrentTask(descr), piece{piece} { }
+
+TorrentPieceDownload::TorrentPieceDownload(SharedQueue<Wrapper>* spawn_queue, std::shared_ptr<TorrentHandle> descr, download::Piece piece)
+: TorrentTask(spawn_queue, descr), piece{piece} { }
 
 size_t TorrentPieceDownload::priority() const {
 
+    /*
     auto state = descriptor->state.load(std::memory_order_relaxed);
     auto priority = descriptor->priority.load(std::memory_order_relaxed);
 
@@ -22,9 +28,12 @@ size_t TorrentPieceDownload::priority() const {
     // Priority is normal by default but becomes none when the torrent is paused
     return (state == TorrentState::Downloading) ? mt::Priority::PRIORITY_LOW + priority
                                                 : mt::Priority::PRIORITY_NONE;
+    */
+
+   return mt::Priority::PRIORITY_LOW;
 }
 
-void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
+void TorrentPieceDownload::execute() {
 
     // Copy the state of the torrent handle in thread local memory 
     TorrentSnapshot snapshot = descriptor->snapshot();
@@ -118,8 +127,7 @@ void TorrentPieceDownload::execute(mt::SharingQueue<mt::ITask::Wrapper>& local_q
         */
 
         // Retry operation by creating a new DownloadPieceTask
-        local_queue.insert(std::make_unique<TorrentPieceDownload>(
-            descriptor, piece));
+        spawn(std::make_unique<TorrentPieceDownload>(descriptor, piece));
     }
 }
 

@@ -1,33 +1,36 @@
 #pragma once
 
 #include <mt/task.hpp>
-#include <furrent.hpp>
 #include <download/downloader.hpp>
 #include <log/logger.hpp>
 
-namespace fur::tasks {
+namespace fur {
+    class TorrentHandle;
+}
 
-class TorrentTask : public mt::ITask {
+namespace fur::mt {
+
+class TorrentTask : public ITask {
 protected:
     /// Default logger for the tasks
     std::shared_ptr<spdlog::logger> logger;
 
 public:
     /// Reference to preallocated torrent descriptor in furrent
-    const std::shared_ptr<TorrentHandle> descriptor;
+    std::shared_ptr<TorrentHandle> descriptor;
 
 public:
-    /// Constructs a new torrent task
-    /// @param descriptor shared pointer to torrent descriptor  
-    explicit TorrentTask(std::shared_ptr<TorrentHandle> descriptor);
+    TorrentTask(std::shared_ptr<TorrentHandle> descriptor);  
+    TorrentTask(SharedQueue<Wrapper>* spawn_queue, std::shared_ptr<TorrentHandle> descriptor);
 };
 
 /// Load torrent from file and spawn all piece download tasks
 class TorrentFileLoad : public TorrentTask {
 public:
-    explicit TorrentFileLoad(std::shared_ptr<TorrentHandle> descriptor);
-    void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
-
+    TorrentFileLoad(std::shared_ptr<TorrentHandle> descriptor);
+    TorrentFileLoad(SharedQueue<Wrapper>* spawn_queue, std::shared_ptr<TorrentHandle> descriptor);
+    
+    void execute() override;
     size_t priority() const override { return mt::Priority::PRIORITY_HIGH; }
 };
 
@@ -39,18 +42,27 @@ public:
 
 public:
     TorrentPieceDownload(std::shared_ptr<TorrentHandle> descr, download::Piece piece);
-    void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
-
+    TorrentPieceDownload(SharedQueue<Wrapper>* spawn_queue, std::shared_ptr<TorrentHandle> descr, 
+                         download::Piece piece);
+    
+    void execute() override;
     size_t priority() const override;
 };
 
 /// Refresh peers list of a torrent
 class TorrentPeerRefresh : public TorrentTask {
 public:
-    explicit TorrentPeerRefresh(std::shared_ptr<TorrentHandle> descr);
-    void execute(mt::SharingQueue<mt::ITask::Wrapper>& local_queue) override;
-
+    TorrentPeerRefresh(std::shared_ptr<TorrentHandle> descr);
+    TorrentPeerRefresh(SharedQueue<Wrapper>* spawn_queue, std::shared_ptr<TorrentHandle> descr);
+    
+    void execute() override;
     size_t priority() const override;
+};
+
+/// Policy for extracing highest priority tasks first
+class PriorityPolicy : public policy::IPolicy<TorrentTask::Wrapper> {
+ public:
+  Iterator extract(Iterator begin, Iterator end) const override;
 };
 
 } // namespace fur::task

@@ -16,7 +16,7 @@ TEST_CASE("[mt] Stealing simple") {
   int result_value;
 
   // Queue owner can push work
-  SharingQueue<int> owner_queue;
+  SharedQueue<int> owner_queue;
   std::thread owner([&] { owner_queue.insert(5); });
 
   // Thief steals from queue owner
@@ -46,10 +46,10 @@ TEST_CASE("[mt] Stealing hierarchical") {
   FIFOPolicy<int> policy;
 
   // Contains all global work
-  SharingQueue<int> global_queue;
+  SharedQueue<int> global_queue;
 
   // All local work queues
-  std::array<SharingQueue<int>, THREAD_COUNT> local_queues;
+  std::array<SharedQueue<int>, THREAD_COUNT> local_queues;
 
   std::vector<std::thread> workers;
   for (size_t idx = 0; idx < THREAD_COUNT; idx++)
@@ -98,17 +98,17 @@ class ITask {
   typedef std::unique_ptr<ITask> TaskPtr;
 
   /// Implements task custom logic
-  virtual void operator()(SharingQueue<TaskPtr>& local_queue) = 0;
+  virtual void operator()(SharedQueue<TaskPtr>& local_queue) = 0;
 };
 
 class TerminalTask : public ITask {
  public:
-  void operator()(SharingQueue<TaskPtr>& local_queue) override { /* ... */ }
+  void operator()(SharedQueue<TaskPtr>& local_queue) override { /* ... */ }
 };
 
 class GeneratorTask : public ITask {
  public:
-  void operator()(SharingQueue<TaskPtr>& local_queue) override {
+  void operator()(SharedQueue<TaskPtr>& local_queue) override {
     for (int i = 0; i < 10; i++) {
       local_queue.insert(std::make_unique<TerminalTask>());
     }
@@ -123,10 +123,10 @@ TEST_CASE("[mt] Stealing hierarchical with generator tasks") {
   FIFOPolicy<Task> policy;
 
   // Contains all global work
-  SharingQueue<Task> global_queue;
+  SharedQueue<Task> global_queue;
 
   // All local work queues
-  std::array<SharingQueue<Task>, THREAD_COUNT> local_queues;
+  std::array<SharedQueue<Task>, THREAD_COUNT> local_queues;
 
   std::vector<std::thread> workers;
   for (size_t idx = 0; idx < THREAD_COUNT; idx++)

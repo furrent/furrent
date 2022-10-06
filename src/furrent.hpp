@@ -4,9 +4,11 @@
 #include <download/lender_pool.hpp>
 #include <mt/group.hpp>
 #include <mt/sharing_queue.hpp>
-#include <mt/task.hpp>
-#include <shared_mutex>
+#include <tasks/torrent_task.hpp>
 #include <torrent.hpp>
+
+#include <shared_mutex>
+#include <unordered_map>
 
 namespace fur {
 
@@ -21,12 +23,15 @@ enum class TorrentState {
   Error,
 };
 
+/// UID for torrent handles
+using TorrentHandleID = unsigned int;
+
 /// Minimal amount of data easily transfered between thread boundaries
 /// rappresents a torrent state in a single point in time
 struct TorrentSnapshot {
   
   /// Unique torrent identifier
-  size_t uid;
+  TorrentHandleID uid;
   /// Current state
   TorrentState state;
   /// Priority of the torrent
@@ -44,14 +49,14 @@ struct TorrentSnapshot {
 /// Atomic time point 
 using atomic_time_point = std::atomic<std::chrono::high_resolution_clock::time_point>;
 
-/// Rappresent an mutable active torrent download
-struct TorrentHandle {
-
+/// Rapprensents an mutable active torrent download
+struct TorrentHandle
+{
   // Protects internal state, allows multiple readers but only one writer
   mutable std::shared_mutex mtx;
 
   /// Unique ID for this torrent
-  const size_t uid;
+  const TorrentHandleID uid;
   /// Name of the file where the torrent can be found
   const std::string filename;
   
@@ -76,7 +81,7 @@ struct TorrentHandle {
   /// Constructs a new torrent handle
   /// @param uid unique id of the torrent
   /// @param filename filename of the .torrent file
-  explicit TorrentHandle(size_t uid, const std::string& filename);
+  TorrentHandle(TorrentHandleID uid, const std::string& filename);
 
   /// Regenerate list of peers
   bool regenerate_peers();
@@ -87,8 +92,9 @@ struct TorrentHandle {
 
 /// Main state of the program
 class Furrent {
-  typedef mt::SharingQueue<mt::ITask::Wrapper> TaskSharingQueue;
-  typedef std::list<std::shared_ptr<TorrentHandle>> TorrentDescriptorList;
+  
+  typedef mt::SharedQueue<mt::ITask::Wrapper> TorrentTaskQueue;
+  typedef std::unordered_map<TorrentHandleID, std::shared_ptr<TorrentHandle>> TorrentHandleMap; 
 
   /// State of the worker threads
   struct WorkerState {};
@@ -96,14 +102,18 @@ class Furrent {
   /// Mutex protecting furrent state
   mutable std::shared_mutex _mtx;
   /// List of torrents to download
-  TorrentDescriptorList _descriptors;
+  //TorrentDescriptorList _descriptors;
+
+  /// All created torrents
+  TorrentHandleMap _torrents;
+
   /// Global work queue
-  TaskSharingQueue _global_queue;
+  TorrentTaskQueue _global_queue;
   /// Pool managing worker threads
   mt::ThreadGroup<WorkerState> _workers;
 
   /// Incremental torrent descriptor next id
-  size_t descriptor_next_uid = 0;
+  TorrentHandleID descriptor_next_uid = 0;
 
  public:
 
@@ -121,27 +131,29 @@ class Furrent {
   /// Retrive the snapshot of a torrent descriptor 
   /// @param uid uid of the torrent
   /// @return snapshot of the torrent, if it exists
-  std::optional<TorrentSnapshot> get_snapshot(size_t uid);
+  std::optional<TorrentSnapshot> get_snapshot(TorrentHandleID uid);
 
   /// Removes a torrent descriptor and all of his tasks
   /// @param uid uid of the torrent to remove
   /// @return snapshot of the torrent an the moment of removal, if it exists
-  std::optional<TorrentSnapshot> remove_torrent(size_t uid);
+  std::optional<TorrentSnapshot> remove_torrent(TorrentHandleID uid);
 
   /// Pause the download of a torrent
   /// @param uid uid of the torrent to pause
-  void pause_torrent(size_t uid);
+  void pause_torrent(TorrentHandleID uid);
 
   /// Resume the download of a torrent, wakeup all threads
   /// @param uid uid of the torrent to resume
-  void resume_torrent(size_t uid);
+  void resume_torrent(TorrentHandleID uid);
 
   /// Callbacks from the UI
  public:
+  /*
   bool callback_torrent_insert(const std::string &fine_name, const std::string &file_path);
   bool callback_torrent_remove(const TorrentSnapshot &torrent);
   bool callback_torrent_update(const TorrentSnapshot &torrent);
   bool callback_setting_update(const std::string &path);
+  */
 
  private:
   /// Main function of all workers

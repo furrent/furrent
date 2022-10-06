@@ -1,16 +1,21 @@
 #include <bencode/bencode_parser.hpp>
 #include <config.hpp>
-#include <fstream>
 #include <platform/io.hpp>
 #include <tasks/torrent_task.hpp>
+#include <furrent.hpp>
 
-namespace fur::tasks {
+#include <fstream>
+#include <shared_mutex>
 
-TorrentFileLoad::TorrentFileLoad(std::shared_ptr<TorrentHandle> desc) 
-: TorrentTask(desc) {}
+namespace fur::mt {
 
-void TorrentFileLoad::execute(
-    mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
+TorrentFileLoad::TorrentFileLoad(std::shared_ptr<TorrentHandle> descriptor)
+: TorrentTask(descriptor) {}
+
+TorrentFileLoad::TorrentFileLoad(SharedQueue<Wrapper>* spawn_queue, std::shared_ptr<TorrentHandle> descriptor)
+: TorrentTask(spawn_queue, descriptor) {}
+
+void TorrentFileLoad::execute() {
       
   // ===================================================================
   // Loading torrent file
@@ -151,8 +156,7 @@ void TorrentFileLoad::execute(
 
     // Create piece download task
     download::Piece piece{index, subpieces, 0};
-    local_queue.insert(
-      std::make_unique<TorrentPieceDownload>(descriptor, piece));
+    spawn(std::make_unique<TorrentPieceDownload>(descriptor, piece));
   }
 
   // Generate refresh peers task

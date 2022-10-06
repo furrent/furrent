@@ -1,13 +1,18 @@
 #include <chrono>
+#include <furrent.hpp>
 #include <tasks/torrent_task.hpp>
 
-namespace fur::tasks {
+namespace fur::mt {
 
 TorrentPeerRefresh::TorrentPeerRefresh(std::shared_ptr<TorrentHandle> descr)
-    : TorrentTask(descr) {}
+: TorrentTask(descr) { }
+
+TorrentPeerRefresh::TorrentPeerRefresh(SharedQueue<Wrapper>* spawn_queue, std::shared_ptr<TorrentHandle> descr)
+: TorrentTask(spawn_queue, descr) { }
 
 size_t TorrentPeerRefresh::priority() const {
   
+  /*
   auto now = std::chrono::high_resolution_clock::now();
   auto old = descriptor->last_announce_time.load(std::memory_order_relaxed);
 
@@ -15,10 +20,12 @@ size_t TorrentPeerRefresh::priority() const {
   auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - old);
   return (elapsed.count() > descriptor->announce_interval) ? mt::Priority::PRIORITY_HIGH
                                                            : mt::Priority::PRIORITY_NONE;
+  */
+
+  return mt::Priority::PRIORITY_HIGH;
 }
 
-void TorrentPeerRefresh::execute(
-    mt::SharingQueue<mt::ITask::Wrapper>& local_queue) {
+void TorrentPeerRefresh::execute() {
 
   // Copy the state of the torrent handle in thread local memory 
   TorrentSnapshot snapshot = descriptor->snapshot();

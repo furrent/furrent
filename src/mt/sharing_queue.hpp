@@ -20,10 +20,14 @@
 
 namespace fur::mt {
 
-template <typename Work>
-class SharingQueue {
+/// Wrapper of policy::Queue to make it thread-safe
+/// and add concurrency related functionalities
+template <typename T>
+class SharedQueue {
+
   /// Contains all work that can be executed
-  policy::Queue<Work> _work;
+  policy::Queue<T> _work;
+
   /// Protects internal state and CVs
   mutable std::mutex _mutex;
   /// Signal the insertion of a new element
@@ -34,28 +38,28 @@ class SharingQueue {
   bool _skip_waiting;
 
  public:
-  /// Error are the same of the queue
-  typedef typename policy::Queue<Work>::Error Error;
-  typedef util::Result<Work, Error> Result;
+
+  // Error are the same of the queue
+  typedef typename policy::Queue<T>::Error Error;
+  typedef util::Result<T, Error> Result;
+
+  // Function used to mutate the internal collection
+  typedef typename policy::Queue<T>::MutateFn MutateFn;
 
  public:
-  SharingQueue();
+  SharedQueue();
 
   /// Tries to extract work from the queue
   /// @param policy policy used to extract the element
-  [[nodiscard]] Result try_extract(const policy::IPolicy<Work>& policy);
+  [[nodiscard]] Result try_extract(const policy::IPolicy<T>& policy);
 
   /// Insert new work in the internal list
   /// @param work Work to be inserted
-  void insert(Work&& work);
+  void insert(T&& work);
 
-  /// Removes all elements satisying the filter
-  /// @param filter function used to remove elements, returns true 
-  /// if the elements should be removed, false otherwise
-  void remove(std::function<bool(Work&)> filter);
-
-  /// Steal work from the queue
-  [[nodiscard]] Result steal();
+  /// Mutates the internal list of items in a locked way
+  /// then signals all sleeping threads
+  void mutate(MutateFn mutation);
 
   /// Wake up all waiting threads
   void force_wakeup();

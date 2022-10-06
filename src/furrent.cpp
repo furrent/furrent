@@ -10,11 +10,10 @@
 
 namespace fur {
 
-TorrentHandle::TorrentHandle(size_t uid, const std::string& filename)
-    : filename{filename},
+TorrentHandle::TorrentHandle(TorrentHandleID uid, const std::string& filename)
+  : uid{uid}, filename{filename},
       pieces_processed{0},
-      last_announce_time{{}},
-      uid{uid}
+      last_announce_time{{}}
 { 
   // At the beginning the announce time is the creation time
   last_announce_time = std::chrono::high_resolution_clock::now();
@@ -113,18 +112,16 @@ Furrent::~Furrent() {
 }
 
 void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
-  // TODO: custom policy per thread etc...
-  mt::PriorityPolicy task_policy;
-  const size_t concurrency = _workers.get_worker_count();
-
+  
   // Default global logger
   auto logger = spdlog::get("custom");
-
+  
+  mt::PriorityPolicy task_policy;
   while(runner.alive()) {
     
     auto global_work = _global_queue.try_extract(task_policy);
     if (global_work.valid()) {
-        (*global_work)->execute(_global_queue);
+        (*global_work)->execute();
     } else {
       logger->info("thread {:02d} is waiting for work on global queue", index);
       _global_queue.wait_work();
@@ -135,71 +132,82 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 size_t Furrent::add_torrent(const std::string& filename) {
   std::unique_lock<std::shared_mutex> lock(_mtx);
 
-  /// Allocate descriptor for the new torrent
-  auto descriptor = std::make_shared<TorrentHandle>(descriptor_next_uid, filename);
+  const size_t torrent_uid = descriptor_next_uid;
   descriptor_next_uid += 1;
 
-  _descriptors.emplace_back(descriptor);
+  /// Allocate descriptor for the new torrent
+  auto descriptor = std::make_shared<TorrentHandle>(torrent_uid, filename);
+  _torrents.emplace(torrent_uid, descriptor);
 
   /// Begin loading task
-  _global_queue.insert(std::make_unique<tasks::TorrentFileLoad>(descriptor));
-  return descriptor->uid;
+  _global_queue.insert(std::make_unique<mt::TorrentFileLoad>(&_global_queue, descriptor));
+
+  return torrent_uid;
 }
 
 std::vector<TorrentSnapshot> Furrent::get_torrents_snapshot() const {
   std::shared_lock<std::shared_mutex> lock(_mtx);
 
   std::vector<TorrentSnapshot> result;
-  for (auto& descriptor : _descriptors)
-    result.push_back(descriptor->snapshot());
+  for (auto& item : _torrents)
+    result.push_back(item.second->snapshot());
   return result;
 }
 
-std::optional<TorrentSnapshot> Furrent::get_snapshot(size_t uid) {
+std::optional<TorrentSnapshot> Furrent::get_snapshot(TorrentHandleID uid) {
   std::shared_lock<std::shared_mutex> lock(_mtx);
-  for (auto& descriptor : _descriptors)
-    if (descriptor->uid == uid)
-      return std::make_optional(descriptor->snapshot());
+  
+  auto it = _torrents.find(uid);
+  if (it != _torrents.end())
+    return std::make_optional(it->second->snapshot());
+
   return std::nullopt;
 }
 
-std::optional<TorrentSnapshot> Furrent::remove_torrent(size_t uid) {
+std::optional<TorrentSnapshot> Furrent::remove_torrent(TorrentHandleID uid) {
 
-  // Removes descriptor from list and set it to the stopped state
   std::unique_lock<std::shared_mutex> lock(_mtx);
-  for(auto it = _descriptors.begin(); it != _descriptors.end(); ++it) {
-    std::shared_ptr<TorrentHandle>& descriptor = *it;
-    if (descriptor->uid == uid) {
-      TorrentSnapshot snapshot = descriptor->snapshot();
+  auto it = _torrents.find(uid);
+  if (it != _torrents.end()) {
 
-      // Write lock, all snapshot must be completed
-      std::unique_lock<std::shared_mutex> write_lock(descriptor->mtx);
-      descriptor->state.exchange(TorrentState::Stopped);
-      _descriptors.erase(it);
+    std::shared_ptr<TorrentHandle>& handle = it->second;
+    TorrentSnapshot snapshot = handle->snapshot();
 
-      return std::make_optional(snapshot);
-    }
+    // Write lock, all snapshot must be completed
+    std::unique_lock<std::shared_mutex> write_lock(handle->mtx);
+    handle->state.exchange(TorrentState::Stopped);
+    _torrents.erase(it);
+
+    return std::make_optional(snapshot);
   }
+
   return std::nullopt;
 }
 
-void Furrent::pause_torrent(size_t uid) {
-  std::shared_lock<std::shared_mutex> lock(_mtx);
-  for (auto& descriptor : _descriptors)
-    if (descriptor->uid == uid) {
-      descriptor->state.exchange(TorrentState::Paused, std::memory_order_relaxed);
+void Furrent::pause_torrent(TorrentHandleID uid) {
+  _global_queue.mutate([&](mt::ITask::Wrapper& wrapper) {
+    
+    // Mutate only if it is a TorrentTask
+    auto task = dynamic_cast<mt::TorrentTask*>(wrapper.get());
+    if (task == nullptr)
       return;
-    }
+
+    if (task->descriptor->uid == uid)
+      task->state = mt::TaskState::Paused;
+  });
 }
 
-void Furrent::resume_torrent(size_t uid) {
-  std::shared_lock<std::shared_mutex> lock(_mtx);
-  for (auto& descriptor : _descriptors)
-    if (descriptor->uid == uid) {
-      descriptor->state.exchange(TorrentState::Paused, std::memory_order_relaxed);
-      _global_queue.force_wakeup();
+void Furrent::resume_torrent(TorrentHandleID uid) {
+  _global_queue.mutate([&](mt::ITask::Wrapper& wrapper) {
+
+    // Mutate only if it is a TorrentTask
+    auto task = dynamic_cast<mt::TorrentTask*>(wrapper.get());
+    if (task == nullptr)
       return;
-    }
+
+    if (task->descriptor->uid == uid)
+      task->state = mt::TaskState::Running;
+  });
 }
 
 }  // namespace fur
