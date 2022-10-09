@@ -26,7 +26,7 @@ TEST_CASE("[Peer] Build from invalid IP string") {
 // Not publicly declared in "src/peer.hpp" because not really part of the public
 // API
 namespace fur::peer {
-AnnounceResult parse_tracker_response(const std::string& text);
+Announce parse_tracker_response(const std::string& text);
 }
 
 TEST_CASE("[Peer] Parse tracker response") {
@@ -34,7 +34,7 @@ TEST_CASE("[Peer] Parse tracker response") {
       "d8:intervali900e5:peers6:"
       "\xc0\x00\x02\x7b\x1a\xe1"
       "e";
-  AnnounceResult result =
+  Announce result =
       parse_tracker_response(std::string{raw, sizeof(raw) - 1});
   REQUIRE(result.interval == 900);
   REQUIRE(result.peers.size() == 1);

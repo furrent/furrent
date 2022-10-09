@@ -4,8 +4,10 @@
 #include <string>
 #include <vector>
 
-#include "torrent.hpp"
 #include "util/result.hpp"
+
+// Forward declare TorrentFile
+namespace fur { class TorrentFile; }
 
 /// Contains data structures and facilities for representing and discovering
 /// BitTorrent peers
@@ -31,7 +33,7 @@ struct Peer {
 };
 
 /// The response sent from the tracker when announcing
-struct AnnounceResult {
+struct Announce {
   /// How often (in seconds) we're expected to re-announce ourselves and refresh
   /// the list of peers
   int interval;
@@ -49,9 +51,10 @@ enum class PeerError {
 /// Function to translate a PeerError to a string
 std::string error_to_string(PeerError error);
 
-using PeerResult = util::Result<AnnounceResult, PeerError>;
+using PeerResult = util::Result<Announce, PeerError>;
 
 /// Announce ourselves to the tracker and get a list of peers to download the
 /// file from
-[[nodiscard]] PeerResult announce(const torrent::TorrentFile& torrent_f);
+[[nodiscard]] PeerResult announce(const TorrentFile& torrent_f);
+
 }  // namespace fur::peer

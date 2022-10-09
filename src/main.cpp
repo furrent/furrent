@@ -6,6 +6,7 @@
 
 using namespace fur;
 
+/*
 bool remove_torrent_callback(const TorrentSnapshot& snapshot) {
   auto logger = spdlog::get("custom");
   logger->info("Removing torrent: {}", snapshot.filename);
@@ -23,15 +24,14 @@ bool update_torrent_callback(const TorrentSnapshot& snapshot) {
   logger->info("Updating torrent: {}", snapshot.filename);
   return true;
 }
+*/
 
 int main(int argc, char* argv[]) {
 
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
 
-  Furrent furrent;
-  //furrent.add_torrent("../extra/debian-11.5.0-amd64-i386-netinst.iso.torrent");
-  //while(true);
+  Furrent& furrent = Furrent::instance();
 
 #if 1
 
@@ -63,10 +63,10 @@ int main(int argc, char* argv[]) {
   while (!WindowShouldClose()) {
 
     // Update furrent status
-    for(auto& snapshot : furrent.get_torrents_snapshot()) {
-      auto it = scroll_state.torrents.find(snapshot.uid);
+    for(const auto& gui_data : furrent.get_gui_data()) {
+      auto it = scroll_state.torrents.find(gui_data.tid);
       if (it != scroll_state.torrents.end())
-        it->second = snapshot;
+        it->second = gui_data;
     }
     
     BeginDrawing();
@@ -137,8 +137,8 @@ int main(int argc, char* argv[]) {
         [&] (const std::string &fine_name, const std::string &file_path) -> bool {
           logger->info("Adding new torrent: {}", file_path);
           
-          size_t uid = furrent.add_torrent(file_path);
-          scroll_state.torrents.emplace(uid, *furrent.get_snapshot(uid));
+          TorrentID tid = *furrent.add_torrent(file_path);
+          scroll_state.torrents.emplace(tid, *furrent.get_gui_data(tid));
           
           return true;
         });
@@ -147,16 +147,17 @@ int main(int argc, char* argv[]) {
     // Button remove torrent
     if (scroll_state.torrent_dialog_state.delete_torrent) {
       fur::gui::remove_torrent(scroll_state, confirm_dialog_state, error_dialog_state, 
-        [&] (const TorrentSnapshot& snapshot) -> bool {
-          logger->info("Removing torrent: {}", snapshot.filename);
+        [&] (const TorrentGuiData& data) -> bool {
+          logger->info("Removing torrent: {}", data.filename);
           
-          furrent.remove_torrent(snapshot.uid);
-          scroll_state.torrents.erase(snapshot.uid);
+          furrent.remove_torrent(data.tid);
+          scroll_state.torrents.erase(data.tid);
           
           return true;
         });
     }
 
+    /*
     // Furrent settings dialog
     if (settings_state.show) {
       fur::gui::update_settings(settings_state, error_dialog_state,
@@ -172,6 +173,7 @@ int main(int argc, char* argv[]) {
       fur::gui::update_torrent_priority(scroll_state, error_dialog_state,
                                         &update_torrent_callback);
     }
+    */
 
     
     // Update dialogs

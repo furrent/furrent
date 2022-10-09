@@ -57,6 +57,11 @@ class SharedQueue {
   /// @param work Work to be inserted
   void insert(T&& work);
 
+  /// Construct an insert a new work in the internal list
+  /// @param ...args args used in the constructor of work
+  template<typename... Args>
+  void emplace(Args&&... args);
+
   /// Mutates the internal list of items in a locked way
   /// then signals all sleeping threads
   void mutate(MutateFn mutation);

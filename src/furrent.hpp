@@ -4,116 +4,98 @@
 #include <download/lender_pool.hpp>
 #include <mt/group.hpp>
 #include <mt/sharing_queue.hpp>
-#include <tasks/torrent_task.hpp>
+#include <util/singleton.hpp>
 #include <torrent.hpp>
+#include <types.hpp>
 
 #include <shared_mutex>
 #include <unordered_map>
 
 namespace fur {
 
-enum class TorrentState {
-  Loading,
-  Parsing,
-  Indexing,
-  Downloading,
-  Paused,
-  Completed,
-  Stopped,
-  Error,
-};
+struct TorrentGuiData {
 
-/// UID for torrent handles
-using TorrentHandleID = unsigned int;
-
-/// Minimal amount of data easily transfered between thread boundaries
-/// rappresents a torrent state in a single point in time
-struct TorrentSnapshot {
-  
-  /// Unique torrent identifier
-  TorrentHandleID uid;
-  /// Current state
+  TorrentID tid;
   TorrentState state;
-  /// Priority of the torrent
-  size_t priority;
-  /// Name of the .torrent file
   std::string filename;
-  /// File descriptor if it is loaded
-  std::optional<TorrentFile> torrent;
-  /// All peers that are available at the moment
-  std::vector<Peer> peers;
-  /// Number of pieces that have been procesed
+
   size_t pieces_processed;
+  size_t pieces_count;
 };
 
-/// Atomic time point 
-using atomic_time_point = std::atomic<std::chrono::high_resolution_clock::time_point>;
+/// Contains usefull statistics retrived
+/// during the processing of a piece
+struct PieceTaskStats {
+  /// True if the operation was successfull
+  bool completed;
+  /// Index of the used peer
+  size_t used_peer;
+};
 
-/// Rapprensents an mutable active torrent download
-struct TorrentHandle
-{
-  // Protects internal state, allows multiple readers but only one writer
-  mutable std::shared_mutex mtx;
-
-  /// Unique ID for this torrent
-  const TorrentHandleID uid;
-  /// Name of the file where the torrent can be found
-  const std::string filename;
+/// Class responsible for processing a piece 
+class PieceTask {
   
-  /// Parsed torrent file
-  std::optional<torrent::TorrentFile> torrent;
-  /// Peers' where to ask for the pieces
-  std::vector<Peer> peers;
+  // Downloaded piece content
+  std::optional<download::Downloaded> _data;
 
-  /// Current state of the torrent
-  std::atomic<TorrentState> state;
-  /// Priority of the torrent
-  std::atomic_uint32_t priority;
+public:
+  /// Identifier of the owner torrent
+  TorrentID tid;
+  /// Piece to process
+  Piece piece;
+  /// .torrent descriptor
+  TorrentFile descriptor;
 
-  // Time of last announce
-  atomic_time_point last_announce_time;
-  /// Interval to next update
-  std::atomic_uint32_t announce_interval;
+public:
+  /// Constructs an empty temporary piece task
+  explicit PieceTask();
+  /// Constructs a new piece task
+  PieceTask(TorrentID tid, Piece piece, const TorrentFile& descriptor);
 
-  /// Number of pieces downloaded and written to file
-  std::atomic_uint32_t pieces_processed;
+  /// Process piece from downloading to saving
+  /// @param peer peer to use for the download
+  PieceTaskStats process(const peer::Peer& peer);
 
-  /// Constructs a new torrent handle
-  /// @param uid unique id of the torrent
-  /// @param filename filename of the .torrent file
-  TorrentHandle(TorrentHandleID uid, const std::string& filename);
-
-  /// Regenerate list of peers
-  bool regenerate_peers();
-
-  // Generate a snapshot of the torrent in this moment
-  TorrentSnapshot snapshot() const;
+private:
+  /// Download from a peer
+  bool download(const peer::Peer& peer);
+  /// Save to file
+  bool save() const;
 };
 
 /// Main state of the program
-class Furrent {
+/// NB: All added torrent handle descriptor will never be removed from memory!
+class Furrent : public Singleton<Furrent> {
   
-  typedef mt::SharedQueue<mt::ITask::Wrapper> TorrentTaskQueue;
-  typedef std::unordered_map<TorrentHandleID, std::shared_ptr<TorrentHandle>> TorrentHandleMap; 
-
   /// State of the worker threads
-  struct WorkerState {};
+  struct WorkerState {
+    /// Total number of pieces processed
+    size_t piece_processed = 0;
+  };
+
+  /// Pool managing worker threads
+  mt::ThreadGroup<WorkerState> _workers;
+  /// All pieces to process
+  mt::SharedQueue<PieceTask> _tasks;
 
   /// Mutex protecting furrent state
   mutable std::shared_mutex _mtx;
-  /// List of torrents to download
-  //TorrentDescriptorList _descriptors;
-
-  /// All created torrents
-  TorrentHandleMap _torrents;
-
-  /// Global work queue
-  TorrentTaskQueue _global_queue;
-  /// Pool managing worker threads
-  mt::ThreadGroup<WorkerState> _workers;
-
+  /// All torrent to manage, even those that have been stopped or have errors
+  std::unordered_map<TorrentID, Torrent> _torrents;
   /// Incremental torrent descriptor next id
-  TorrentHandleID descriptor_next_uid = 0;
+  TorrentID descriptor_next_uid = 0u;
+
+public:
+  /// All possible Furrent errors
+  enum class Error {
+
+    LoadingTorrentFailed
+
+  };
+
+  /// Errors for the furrent class
+  template<typename R>
+  using Result = util::Result<R, Error>;
 
  public:
 
@@ -122,29 +104,26 @@ class Furrent {
 
   /// Begin download of a torrent
   /// @param filename filename of the .torrent file
-  /// @return the uid of the new torrent descriptor
-  size_t add_torrent(const std::string& filename);
-
-  /// @return all loaded descriptors
-  std::vector<TorrentSnapshot> get_torrents_snapshot() const;
-
-  /// Retrive the snapshot of a torrent descriptor 
-  /// @param uid uid of the torrent
-  /// @return snapshot of the torrent, if it exists
-  std::optional<TorrentSnapshot> get_snapshot(TorrentHandleID uid);
+  /// @return the id of the new torrent
+  Result<TorrentID> add_torrent(const std::string& filename);
 
   /// Removes a torrent descriptor and all of his tasks
   /// @param uid uid of the torrent to remove
-  /// @return snapshot of the torrent an the moment of removal, if it exists
-  std::optional<TorrentSnapshot> remove_torrent(TorrentHandleID uid);
+  void remove_torrent(TorrentID uid);
 
+  /// Extract torrents stats 
+  std::optional<TorrentGuiData> get_gui_data(TorrentID tid) const;
+  std::vector<TorrentGuiData> get_gui_data() const;
+
+  /*
   /// Pause the download of a torrent
   /// @param uid uid of the torrent to pause
-  void pause_torrent(TorrentHandleID uid);
+  void pause_torrent(TorrentID uid);
 
   /// Resume the download of a torrent, wakeup all threads
   /// @param uid uid of the torrent to resume
-  void resume_torrent(TorrentHandleID uid);
+  void resume_torrent(TorrentID uid);
+  */
 
   /// Callbacks from the UI
  public:
@@ -158,6 +137,9 @@ class Furrent {
  private:
   /// Main function of all workers
   void thread_main(mt::Runner runner, WorkerState& state, size_t index);
+
+  /// Set torrent state to error and remove torrent 
+  void torrent_error(TorrentID tid);
 };
 
 }  // namespace fur

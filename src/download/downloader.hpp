@@ -14,31 +14,11 @@
 
 using namespace fur::util;
 using namespace fur::peer;
-using namespace fur::torrent;
 using namespace fur::download::socket;
 using namespace fur::download::message;
 
 namespace fur::download {
  
-struct Subpiece {
-  /// Index of the file this subpiece belongs to
-  size_t file_index;
-  /// Offset from the beginning of the file
-  size_t file_offset;
-  /// Size in bytes
-  size_t len;
-};
-
-/// Describes a piece of a torrent
-struct Piece {
-  /// Global download index  
-  size_t index;
-  /// Mapping piece-files
-  std::vector<Subpiece> subpieces;
-  /// Attempts at downloading this piece
-  size_t attempts;
-};
-
 /// A downloaded piece for a torrent file.
 // TODO Remove once the real struct is merged
 struct Downloaded {

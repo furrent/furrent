@@ -27,8 +27,8 @@ const int W_HEIGHT = 600;
 // Callbacks
 
 using cbfn_torrent_insert = std::function<bool(const std::string&, const std::string&)>;
-using cbfn_torrent_remove = std::function<bool(const TorrentSnapshot&)>;
-using cbfn_torrent_update = std::function<bool(const TorrentSnapshot&)>;
+using cbfn_torrent_remove = std::function<bool(const TorrentGuiData&)>;
+using cbfn_torrent_update = std::function<bool(const TorrentGuiData&)>;
 using cbfn_setting_update = std::function<bool(const std::string&)>;
 
 // ===============================================================
@@ -57,12 +57,12 @@ struct GuiTorrentDialogState {
   bool update_priority = false;
   /// The priority during the change
   int input_priority{};
-  TorrentSnapshot torrent;
+  TorrentGuiData torrent;
 };
 
 struct GuiScrollTorrentState {
   Vector2 scroll;
-  std::unordered_map<size_t, TorrentSnapshot> torrents;
+  std::unordered_map<size_t, TorrentGuiData> torrents;
   GuiTorrentDialogState torrent_dialog_state;
 };
 
@@ -115,8 +115,10 @@ void setup_config() {
 }
 
 /// Method to draw a single torrent in the scroll panel
-void draw_torrent_item(const TorrentSnapshot &snapshot, float pos,
+void draw_torrent_item(const TorrentGuiData &snapshot, float pos,
                        GuiTorrentDialogState &state) {
+  
+  #if 1
   // Drawing text
   auto name = "Name: " + snapshot.filename;
   // Cut the name if it is too long
@@ -125,10 +127,7 @@ void draw_torrent_item(const TorrentSnapshot &snapshot, float pos,
   }
   // Draw the name
   GuiDrawText(name.c_str(), {20, 112 + pos, 0, 20}, TEXT_ALIGN_LEFT, GRAY);
-
-  int progress = 0;
-  if(snapshot.torrent.has_value())
-    progress = static_cast<int>((static_cast<float>(snapshot.pieces_processed) / snapshot.torrent->pieces_count) * 100);
+  int progress = static_cast<int>((static_cast<float>(snapshot.pieces_processed) / snapshot.pieces_count) * 100);
 
   // Adding buttons actions
   bool play = false;
@@ -154,8 +153,6 @@ void draw_torrent_item(const TorrentSnapshot &snapshot, float pos,
                      progress, 0, 100);
       break;
     case TorrentState::Loading:
-    case TorrentState::Parsing:
-    case TorrentState::Indexing:
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, STOP_COLOR_HEX);
       // Adding progress bar
       GuiProgressBar({275, 110 + pos, 300, 20},
@@ -189,6 +186,7 @@ void draw_torrent_item(const TorrentSnapshot &snapshot, float pos,
 
 
   GuiLine({5, 145 + pos, 800 - 10, 1}, NULL);
+  #endif
 }
 
 /// Function to draw all the torrents based of the scroll state
@@ -408,8 +406,10 @@ void update_settings(GuiSettingsDialogState &settings_dialog_state,
 void update_torrent_state(
     GuiScrollTorrentState &scroll_state, GuiErrorDialogState &dialog_error,
     cbfn_torrent_update fn) {
+
+      #if 1
   auto &torrent =
-      scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.uid];
+      scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.tid];
   auto callback = fn(torrent);
   if (!callback) {
     dialog_error.error = "Some error occurred";
@@ -428,15 +428,17 @@ void update_torrent_state(
   }
   // Reset the action
   scroll_state.torrent_dialog_state.play = false;
+  #endif
 }
 
 /// Function to update the torrent priority, it is called when the user clicks
 /// on the tools icon
 void update_torrent_priority(
     GuiScrollTorrentState &scroll_state, GuiErrorDialogState &dialog_error,
-    bool (*update_torrent_priority_callback)(const TorrentSnapshot &)) {
+    bool (*update_torrent_priority_callback)(const TorrentGuiData &)) {
+      #if 1
   auto &torrent =
-      scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.uid];
+      scroll_state.torrents[scroll_state.torrent_dialog_state.torrent.tid];
   auto callback = update_torrent_priority_callback(torrent);
   if (!callback) {
     dialog_error.error = "Some error occurred";
@@ -447,6 +449,7 @@ void update_torrent_priority(
   //torrent.priority = scroll_state.torrent_dialog_state.input_priority;
   // Reset the action
   scroll_state.torrent_dialog_state.update_priority = false;
+#endif
 }
 
 }  // namespace fur::gui

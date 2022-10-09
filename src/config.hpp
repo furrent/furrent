@@ -5,7 +5,7 @@
 namespace fur::config {
     
 /// Where newly downloaded files are to be stored
-inline const char* DOWNLOAD_FOLDER = "../output/";
+inline const std::string DOWNLOAD_FOLDER = "../output/";
 
 /// Socket timeout seconds
 inline const size_t SOCKET_TIMEOUT_SECONDS = 5;

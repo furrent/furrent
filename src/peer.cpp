@@ -10,6 +10,7 @@
 #include "fmt/core.h"
 #include "hash.hpp"
 #include "spdlog/spdlog.h"
+#include "torrent.hpp"
 
 namespace fur::peer {
 
@@ -52,7 +53,7 @@ Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
 // Forward declare
 PeerResult parse_tracker_response(const std::string& text);
 
-PeerResult announce(const torrent::TorrentFile& torrent_f) {
+PeerResult announce(const TorrentFile& torrent_f) {
   auto res = cpr::Get(cpr::Url{torrent_f.announce_url},
                       cpr::Parameters{
                           {"info_hash", hash::hash_to_str(torrent_f.info_hash)},
@@ -73,7 +74,7 @@ PeerResult announce(const torrent::TorrentFile& torrent_f) {
 }
 
 PeerResult parse_tracker_response(const std::string& text) {
-  AnnounceResult result;
+  Announce result;
 
   bencode::BencodeParser parser;
   auto tree = parser.decode(text);

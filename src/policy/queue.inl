@@ -7,6 +7,11 @@ void Queue<T>::insert(T&& item) {
   _items.push_back(std::forward<T>(item));
 }
 
+template<typename T> 
+template<typename ... Args>
+void Queue<T>::emplace(Args&&... args) {
+  _items.emplace(_items.end(), std::forward<Args>(args)...);
+}
 
 template <typename T>
 std::list<T>& Queue<T>::items() {
@@ -31,8 +36,8 @@ void Queue<T>::mutate(MutateFn mutation) {
   auto it = _items.begin();
   while (it != _items.end()) {
 
-    bool keep = mutation(*it);
-    if (!keep) 
+    bool remove = mutation(*it);
+    if (remove) 
       it = _items.erase(it);
     else 
       ++it;

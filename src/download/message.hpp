@@ -57,7 +57,7 @@ class Message {
   /// required because `BitfieldMessage` needs to know the piece count to
   /// decode itself nicely.
   [[nodiscard]] static Result<std::unique_ptr<Message>, DecodeError> decode(
-      const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
+      const TorrentFile& torrent, const std::vector<uint8_t>& buf);
 
   /// Returns the kind of this message. Used before `dynamic_cast`ing when the
   /// underlying type is not known beforehand.
@@ -188,7 +188,7 @@ class BitfieldMessage final : public Message {
   explicit BitfieldMessage(Bitfield bitfield) : bitfield{std::move(bitfield)} {}
 
   [[nodiscard]] static std::unique_ptr<BitfieldMessage> decode(
-      const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf);
+      const TorrentFile& torrent, const std::vector<uint8_t>& buf);
 
   [[nodiscard]] MessageKind kind() const override {
     return MessageKind::Bitfield;

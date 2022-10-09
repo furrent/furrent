@@ -29,6 +29,16 @@ void SharedQueue<T>::insert(T&& work) {
   _new_work_available.notify_all();
 }
 
+template<typename T> 
+template<typename ... Args>
+void SharedQueue<T>::emplace(Args&&... args) {
+  {
+    std::unique_lock<std::mutex> lock(_mutex);
+    _work.emplace(std::forward<Args>(args)...);
+  }
+  _new_work_available.notify_all();
+}
+
 template <typename T>
 void SharedQueue<T>::force_wakeup() {
   _new_work_available.notify_all();
