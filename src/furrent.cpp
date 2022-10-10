@@ -152,7 +152,6 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
     if (extraction.valid()) {
 
       PieceTask task = *extraction;
-
       std::discrete_distribution<size_t> peers_distribution;
       std::vector<peer::Peer> peers;
 
@@ -290,7 +289,11 @@ void Furrent::remove_torrent(TorrentID tid) {
 
   // Lock against writes to _torrents map
   std::shared_lock<std::shared_mutex> lock(_mtx);
-  _torrents[tid].state.exchange(TorrentState::Stopped);
+  Torrent& torrent = _torrents[tid];
+
+  TorrentState state = torrent.state.load(std::memory_order_relaxed);
+  if (state != TorrentState::Completed || state != TorrentState::Error)
+    _torrents[tid].state.exchange(TorrentState::Stopped, std::memory_order_relaxed);
 }
 
 /// Set torrent state to error and remove torrent 
@@ -331,14 +334,14 @@ std::optional<TorrentGuiData> Furrent::get_gui_data(TorrentID tid) const {
   for (const auto& item : _torrents)
     if (item.first == tid) {
       const TorrentFile& descritor = item.second.descriptor();
-      return std::make_optional<TorrentGuiData>({
+    return std::make_optional<TorrentGuiData>({
         item.first,
         item.second.state.load(),
         descritor.name,
         item.second.pieces_processed.load(),
         descritor.pieces_count
       });
-    }
+  }
 
   return std::nullopt;
 }

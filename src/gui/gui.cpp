@@ -62,7 +62,6 @@ void Window::run() {
         ClearBackground(RAYWHITE);
 
         render_base();
-        render_torrents();
         render_file_dialog();
 
         EndDrawing();
@@ -209,8 +208,8 @@ void Window::render_torrent_item(const TorrentGuiData& torrent, float pos) {
     // Delete torrent event
     Rectangle button_rect = create_rect(760, 110 + pos, 20, 20);
     if (GuiButton(button_rect, "#143#")) {
-        _scroller.torrents.erase(torrent.tid);
         _remove_fn(torrent);
+        _scroller.torrents.erase(torrent.tid);
     }
 }
 

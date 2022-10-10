@@ -130,6 +130,9 @@ public:
   /// @param peer_index index of the peer to increment
   void atomic_add_peer_score(size_t peer_index);
 
+  /// Returns unique id
+  TorrentID tid() const;
+
   /// Returns the .torrent descriptor
   const TorrentFile& descriptor() const;
 

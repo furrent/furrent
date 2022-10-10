@@ -147,6 +147,10 @@ std::discrete_distribution<size_t> Torrent::distribution() const {
     scores.begin(), scores.end());
 }
 
+TorrentID Torrent::tid() const {
+  return _tid;
+}
+
 const TorrentFile& Torrent::descriptor() const {
   return _descriptor;
 }
