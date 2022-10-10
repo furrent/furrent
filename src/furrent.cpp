@@ -91,6 +91,9 @@ bool PieceTask::save() const {
 
 Furrent::Furrent() {
 
+  // Default global logger
+  auto logger = spdlog::get("custom");
+
   using std::placeholders::_1;
   using std::placeholders::_2;
   using std::placeholders::_3;
@@ -99,6 +102,9 @@ Furrent::Furrent() {
   const size_t concurrency = std::thread::hardware_concurrency();
   const size_t threads_cnt = (concurrency > 1) ? concurrency - 1 : 1; 
 
+  logger->info("Launching workers threads (concurrency capability: {}, workers: {})", 
+    concurrency, threads_cnt);
+  
   _workers.launch(std::bind(&Furrent::thread_main, this, _1, _2, _3), threads_cnt);
 }
 
@@ -186,11 +192,15 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 
           // Update score of used peer
           torrent.atomic_add_peer_score(peer_index);
+          size_t processed = torrent.pieces_processed.fetch_add(1, std::memory_order_relaxed);
           
           // Show peers score distribution every 100 pieces processed
-          size_t processed = torrent.pieces_processed.fetch_add(1, std::memory_order_relaxed);
           if (processed % 100 == 0)
             thread_print_torrent_stats(gen, task, peers, peers_distribution);
+
+          // Change state to completed if there are no more pieces to process
+          if (processed == torrent.descriptor().pieces_count)
+            torrent.state.exchange(TorrentState::Completed, std::memory_order_relaxed);
 
           break;
         }

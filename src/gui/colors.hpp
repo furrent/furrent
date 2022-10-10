@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <raylib/raygui.h>
 
 namespace fur::gui {
@@ -20,5 +21,8 @@ const Color DARK_BROWN_COLOR         = GetColor(DARK_BROWN_HEX);
 const Color DARK_BACKGROUND_COLOR    = GetColor(DARK_BACKGROUND_HEX);
 const Color PRESSED_BACKGROUND_COLOR = GetColor(PRESSED_BACKGROUND_HEX);
 const Color DIALOG_BACKGROUND_COLOR  = Fade(PRESSED_BACKGROUND_COLOR, 0.85f);
+
+// Window constants
+const uint32_t WINDOW_BORDER = 5;
 
 } // namespace fur::gui

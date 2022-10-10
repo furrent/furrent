@@ -65,7 +65,6 @@ FetchContent_MakeAvailable(cpr)
 # =================
 file(GLOB_RECURSE SOURCES_LIB "${PROJECT_SOURCE_DIR}/src/*.cpp")
 list(REMOVE_ITEM SOURCES_LIB "${PROJECT_SOURCE_DIR}/src/main.cpp")
-list(REMOVE_ITEM SOURCES_LIB "${PROJECT_SOURCE_DIR}/src/gui/gui.cpp")
 file(GLOB SOURCES_TEST "${PROJECT_SOURCE_DIR}/test/*.cpp")
 
 # =============
