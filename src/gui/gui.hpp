@@ -2,7 +2,7 @@
 
 #include <furrent.hpp>
 
-#include <unordered_map>
+#include <list>
 #include <functional>
 #include <string>
 
@@ -46,7 +46,7 @@ struct GuiTorrentDialogState
 struct GuiScrollTorrentState 
 {
   Vector2 scroll;
-  std::unordered_map<size_t, TorrentGuiData> torrents;
+  std::list<TorrentGuiData> torrents;
   GuiTorrentDialogState torrent_dialog_state;
 };
 

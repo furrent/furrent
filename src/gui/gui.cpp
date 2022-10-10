@@ -52,8 +52,8 @@ void Window::run() {
         if (clock_elapsed.count() >= 30) {
 
             // TODO: update furrent every tot milliseconds
-            for (auto& item : _scroller.torrents)
-                _scroller.torrents[item.first] = _update_fn(item.first);
+            for (auto& torrent : _scroller.torrents)
+                torrent = _update_fn(torrent.tid);
 
             clock_old = std::chrono::high_resolution_clock::now();
         }
@@ -107,7 +107,7 @@ void Window::render_file_dialog() {
 
         // Create new torrent item
         TorrentGuiData item = _insert_fn(_file_loader.fileNameText, _file_loader.dirPathText);
-        _scroller.torrents.emplace(item.tid, item);
+        _scroller.torrents.emplace_back(item);
 
         _file_loader.SelectFilePressed = false;
         _file_loader.fileDialogActive = false;
@@ -204,13 +204,6 @@ void Window::render_torrent_item(const TorrentGuiData& torrent, float pos) {
 
     Rectangle end_rect = create_rect(5, 145 + pos, 790, 1);
     GuiLine(end_rect, NULL);
-
-    // Delete torrent event
-    Rectangle button_rect = create_rect(760, 110 + pos, 20, 20);
-    if (GuiButton(button_rect, "#143#")) {
-        _remove_fn(torrent);
-        _scroller.torrents.erase(torrent.tid);
-    }
 }
 
 void Window::render_torrents() {
@@ -219,14 +212,22 @@ void Window::render_torrents() {
     static GuiErrorDialogState error;
 
     float pos = 5;
-    for (auto &item : _scroller.torrents) {
+    for (auto it = _scroller.torrents.begin(); it != _scroller.torrents.end(); ++it) {
         if (pos + 50 < abs(_scroller.scroll.y)) {
             pos += 50;
             continue;
         }
 
-        TorrentGuiData& torrent = item.second;
-        render_torrent_item(torrent, pos);
+        render_torrent_item(*it, pos);
+        
+        // Delete torrent event
+        Rectangle button_rect = create_rect(760, 110 + pos, 20, 20);
+        if (GuiButton(button_rect, "#143#")) {
+            _remove_fn(*it);
+
+            it = _scroller.torrents.erase(it);
+        }
+        
         pos += 50;
     }
 }
