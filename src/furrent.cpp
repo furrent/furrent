@@ -67,7 +67,7 @@ bool PieceTask::save() const {
 
   // Write every subpiece
   size_t piece_offset = 0;
-  for(int i = 0; i < piece.subpieces.size(); i++) {
+  for(size_t i = 0; i < piece.subpieces.size(); i++) {
       
       const auto& subpiece = piece.subpieces[i];
       const std::string filepath = config::DOWNLOAD_FOLDER + subpiece.filepath;
@@ -124,7 +124,7 @@ static void thread_print_torrent_stats(std::mt19937& gen, PieceTask& task,
     rolls[distr(gen)] += 1;
 
   std::stringstream ss;
-  for(int i = 0; i < peers.size(); i++) {
+  for(size_t i = 0; i < peers.size(); i++) {
     ss.width(30); ss << std::right << peers[i].address(); ss.width(0);
     ss << " : " << std::string(rolls[i] * peers.size() / 1000, '*');
     ss << std::endl;
