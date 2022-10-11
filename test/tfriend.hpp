@@ -9,6 +9,7 @@
 #include "download/socket.hpp"
 #include "util/result.hpp"
 
+using namespace fur;
 using namespace fur::download;
 using namespace fur::download::socket;
 using namespace fur::download::downloader;

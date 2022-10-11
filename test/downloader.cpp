@@ -8,11 +8,13 @@
 
 #include "bencode/bencode_parser.hpp"
 #include "catch2/catch.hpp"
+#include "torrent.hpp"
 #include "hash.hpp"
 #include "log/logger.hpp"
 #include "peer.hpp"
 #include "tfriend.hpp"
 
+using namespace fur;
 using namespace fur::peer;
 using namespace fur::bencode;
 using namespace fur::download::downloader;
@@ -65,9 +67,9 @@ TEST_CASE("[Downloader] Download one piece, same size as a block") {
 
   Downloader down(torrent, peer);
 
-  std::vector<Subpiece> subpieces = { Subpiece{ 0, 0, torrent.piece_length } };
+  std::vector<Subpiece> subpieces = { Subpiece{ "Subpiece", 0, torrent.piece_length } };
   auto maybe_downloaded = TestingFriend::Downloader_try_download(down, Piece{
-    0u, subpieces, 0u});
+    0u, subpieces});
 
   REQUIRE(maybe_downloaded.valid());
   auto downloaded = *maybe_downloaded;
@@ -108,7 +110,7 @@ void test_alice(std::vector<DownloaderError>& errors) {
       std::vector<Subpiece> subpieces = { Subpiece{ 0, 0, torrent.piece_length } };
       auto maybe_downloaded =
           TestingFriend::Downloader_try_download(down, Piece{
-            static_cast<size_t>(idx), subpieces, 0});
+            static_cast<size_t>(idx), subpieces});
       if (!maybe_downloaded.valid()) {
         spdlog::get("custom")->error(
             "error in downloader: {}",
