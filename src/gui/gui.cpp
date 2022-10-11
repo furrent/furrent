@@ -1,4 +1,3 @@
-
 #include <chrono>
 
 #include <raylib/raylib.h>
@@ -26,6 +25,7 @@ Window::Window(const std::string& title, uint32_t width, uint32_t heigth)
     configure_style();
 
     _file_loader = InitGuiFileDialog(550, 500, GetWorkingDirectory(), false, ".torrent");
+    _confirm_dialog = {};
 }
 
 Window::~Window() {
@@ -63,6 +63,7 @@ void Window::run() {
 
         render_base();
         render_file_dialog();
+        render_confirm_dialog();
 
         EndDrawing();
     }
@@ -112,6 +113,35 @@ void Window::render_file_dialog() {
         _file_loader.SelectFilePressed = false;
         _file_loader.fileDialogActive = false;
     }
+}
+
+void Window::render_confirm_dialog(){
+  if(!_scroller.torrent_dialog_state.delete_torrent){
+    return;
+  }
+  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                DIALOG_BACKGROUND_COLOR);
+
+  auto response = GuiMessageBox(
+      {200, 100, 400, 200},
+      "#198# Confirm action",
+      "Are you sure you want to delete this torrent?",
+      "Yes;No");
+
+  // Se è stato cliccato un bottone chiudo la finestra e aggiorno lo stato
+  if (response == 0 || response == 1 || response == 2) {
+    _scroller.torrent_dialog_state.delete_torrent = false;
+    if(response==1){
+      auto torrent = _scroller.torrent_dialog_state.torrent;
+      _remove_fn(torrent);
+        _scroller.torrents.erase(
+            std::remove_if(_scroller.torrents.begin(), _scroller.torrents.end(),
+                                 [torrent](const TorrentGuiData& t) {
+                                   return t.tid == torrent.tid;
+                                 }),
+            _scroller.torrents.end());
+    }
+  }
 }
 
 void Window::render_base() {
@@ -223,9 +253,10 @@ void Window::render_torrents() {
         // Delete torrent event
         Rectangle button_rect = create_rect(760, 110 + pos, 20, 20);
         if (GuiButton(button_rect, "#143#")) {
-            _remove_fn(*it);
-
-            it = _scroller.torrents.erase(it);
+            _scroller.torrent_dialog_state.delete_torrent = true;
+            _scroller.torrent_dialog_state.torrent = *it;
+            // _remove_fn(*it);
+            // it = _scroller.torrents.erase(it);
         }
         
         pos += 50;

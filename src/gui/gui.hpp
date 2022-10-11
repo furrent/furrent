@@ -89,6 +89,8 @@ private:
     GuiFileDialogState _file_loader;
     /// All item to be displayed
     GuiScrollTorrentState _scroller;
+    /// Confirm dialog
+    GuiConfirmDialogState _confirm_dialog;
 
     torrent_insert_fn _insert_fn;
     torrent_update_fn _update_fn;
@@ -118,6 +120,8 @@ private:
     void render_torrent_item(const TorrentGuiData& torrent, float pos);
     /// Render the torrents items
     void render_torrents();
+    /// Render the confirm dialog
+    void render_confirm_dialog();
 };
 
 } // namespace fur::gui
