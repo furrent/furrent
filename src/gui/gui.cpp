@@ -12,6 +12,7 @@
 
 #include <gui/colors.hpp>
 #include <gui/gui.hpp>
+#include <iostream>
 
 namespace fur::gui {
 
@@ -31,15 +32,6 @@ Window::Window(const std::string& title, uint32_t width, uint32_t heigth)
 Window::~Window() { CloseWindow(); }
 
 void Window::run() {
-  /*
-  fur::gui::GuiSettingsDialogState settings_state{
-      false, const_cast<char *>(GetWorkingDirectory()),
-      GetWorkingDirectory(), ""};
-
-  fur::gui::GuiConfirmDialogState confirm_dialog_state;
-  fur::gui::GuiErrorDialogState error_dialog_state;
-  */
-
   auto clock_old = std::chrono::high_resolution_clock::now();
   while (!WindowShouldClose()) {
     auto clock_now = std::chrono::high_resolution_clock::now();
@@ -147,14 +139,17 @@ void Window::render_base() {
   // _button_settings = GuiButton(button_settings_rect, "#141#");
 
   // Scroll panel
-  static Rectangle scroll_rect_1 =
-      create_rect(WINDOW_BORDER, 100, _width - WINDOW_BORDER * 2,
-                  _width - 100 - WINDOW_BORDER);
-  static Rectangle scroll_rect_2 =
-      create_rect(WINDOW_BORDER, 50, _width - 150,
-                  static_cast<float>(50 * _scroller.torrents.size()));
-  GuiScrollPanel(scroll_rect_1, NULL, scroll_rect_2, &_scroller.scroll);
-
+  static Rectangle scroll_rect_1 = {
+      WINDOW_BORDER, 100, static_cast<float>(_width - WINDOW_BORDER * 2),
+      static_cast<float>(_heigth - 100 - WINDOW_BORDER)};
+  // static Rectangle scroll_rect_2 ={WINDOW_BORDER, 50,
+  // static_cast<float>(_width - 150),
+  //                   static_cast<float>(1000 * _scroller.torrents.size())};
+  // GuiScrollPanel(scroll_rect_1, NULL, scroll_rect_2, &_scroller.scroll);
+  GuiScrollPanel(scroll_rect_1, NULL,
+                 {WINDOW_BORDER, 50, static_cast<float>(_width - 150),
+                  static_cast<float>(50 * _scroller.torrents.size())},
+                 &_scroller.scroll);
   // Drawing torrents
   render_torrents();
 
@@ -173,6 +168,10 @@ void Window::render_base() {
       create_rect(WINDOW_BORDER, _heigth - WINDOW_BORDER, _width, _width);
   GuiDrawRectangle(scroll_bottom_rect, 1, PRESSED_BACKGROUND_COLOR,
                    PRESSED_BACKGROUND_COLOR);
+  float wheel_move = GetMouseWheelMove();
+  if (wheel_move != 0) {
+    _scroller.scroll.y += wheel_move * 20;
+  }
 }
 
 void Window::render_torrent_item(const TorrentGuiData& torrent, float pos) {
@@ -226,9 +225,6 @@ void Window::render_torrent_item(const TorrentGuiData& torrent, float pos) {
 }
 
 void Window::render_torrents() {
-  static GuiTorrentDialogState dialog;
-  static GuiErrorDialogState error;
-
   float pos = 5;
   for (auto it = _scroller.torrents.begin(); it != _scroller.torrents.end();
        ++it) {
@@ -237,10 +233,11 @@ void Window::render_torrents() {
       continue;
     }
 
-    render_torrent_item(*it, pos);
+    render_torrent_item(*it, pos + _scroller.scroll.y);
 
     // Delete torrent event
-    Rectangle button_rect = create_rect(760, 110 + pos, 20, 20);
+    Rectangle button_rect =
+        create_rect(760, 110 + pos + _scroller.scroll.y, 20, 20);
     if (GuiButton(button_rect, "#143#")) {
       _scroller.torrent_dialog_state.delete_torrent = true;
       _scroller.torrent_dialog_state.torrent = *it;

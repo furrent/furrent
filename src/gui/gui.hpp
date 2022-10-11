@@ -31,8 +31,6 @@ struct GuiTorrentDialogState {
   bool play;
   /// True if the button stop has been pressed
   bool delete_torrent;
-  /// True if the button save on change has been pressed
-  bool update_priority;
   /// The priority during the change
   int input_priority;
   /// Target torrent
@@ -58,11 +56,6 @@ struct GuiConfirmDialogState {
   std::string cancel_button;
 };
 
-struct GuiErrorDialogState {
-  /// Message to display in the dialog
-  std::string error;
-};
-
 using torrent_insert_fn =
     std::function<TorrentGuiData(const std::string&, const std::string&)>;
 using torrent_update_fn = std::function<TorrentGuiData(TorrentID tid)>;
@@ -71,7 +64,7 @@ using torrent_remove_fn = std::function<void(const TorrentGuiData&)>;
 /// Responsible for rendering the UI
 class Window {
   std::string _title;
-  uint32_t _width, _heigth;
+  int _width, _heigth;
 
  private:
   // All GUI buttons

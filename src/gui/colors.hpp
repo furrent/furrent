@@ -23,6 +23,6 @@ const Color PRESSED_BACKGROUND_COLOR = GetColor(PRESSED_BACKGROUND_HEX);
 const Color DIALOG_BACKGROUND_COLOR  = Fade(PRESSED_BACKGROUND_COLOR, 0.85f);
 
 // Window constants
-const uint32_t WINDOW_BORDER = 5;
+const int WINDOW_BORDER = 5;
 
 } // namespace fur::gui
