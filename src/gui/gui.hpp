@@ -1,23 +1,20 @@
 #pragma once
 
-#include <furrent.hpp>
-
-#include <list>
-#include <functional>
-#include <string>
-
 #include <raylib/raylib.h>
 
+#include <functional>
+#include <furrent.hpp>
+#include <list>
+#include <string>
+
 #undef RAYGUI_IMPLEMENTATION
+#include <raylib/file_dialog.h>
 #include <raylib/raygui.h>
 
-#include <raylib/file_dialog.h>
-
 namespace fur::gui {
-    
+
 /// State of the settings dialog
-struct GuiSettingsDialogState 
-{
+struct GuiSettingsDialogState {
   /// True if the path has been updated and the dialog should be closed
   /// used in the main loop to retrieve the new path
   bool updated_path;
@@ -29,8 +26,7 @@ struct GuiSettingsDialogState
   std::string error;
 };
 
-struct GuiTorrentDialogState 
-{
+struct GuiTorrentDialogState {
   /// True if the button play has been pressed
   bool play;
   /// True if the button stop has been pressed
@@ -43,15 +39,13 @@ struct GuiTorrentDialogState
   TorrentGuiData torrent;
 };
 
-struct GuiScrollTorrentState 
-{
+struct GuiScrollTorrentState {
   Vector2 scroll;
   std::list<TorrentGuiData> torrents;
   GuiTorrentDialogState torrent_dialog_state;
 };
 
-struct GuiConfirmDialogState 
-{
+struct GuiConfirmDialogState {
   /// True if the user clicked on the confirm button
   bool confirm = false;
   /// True if the user has clicked on a button (confirm, cancel of exit)
@@ -64,64 +58,62 @@ struct GuiConfirmDialogState
   std::string cancel_button;
 };
 
-struct GuiErrorDialogState 
-{
+struct GuiErrorDialogState {
   /// Message to display in the dialog
   std::string error;
 };
 
-using torrent_insert_fn = std::function<TorrentGuiData(const std::string&, const std::string&)>;
+using torrent_insert_fn =
+    std::function<TorrentGuiData(const std::string&, const std::string&)>;
 using torrent_update_fn = std::function<TorrentGuiData(TorrentID tid)>;
 using torrent_remove_fn = std::function<void(const TorrentGuiData&)>;
 
 /// Responsible for rendering the UI
 class Window {
+  std::string _title;
+  uint32_t _width, _heigth;
 
-    std::string _title;
-    uint32_t _width, _heigth;
+ private:
+  // All GUI buttons
+  bool _button_file_dialog;
 
-private:
-    // All GUI buttons
-    bool _button_file_dialog;
-    bool _button_settings;
+  /// File dialog for file loading
+  GuiFileDialogState _file_loader;
+  /// All item to be displayed
+  GuiScrollTorrentState _scroller;
+  /// Confirm dialog
+  GuiConfirmDialogState _confirm_dialog;
 
-    /// File dialog for file loading
-    GuiFileDialogState _file_loader;
-    /// All item to be displayed
-    GuiScrollTorrentState _scroller;
-    /// Confirm dialog
-    GuiConfirmDialogState _confirm_dialog;
+  torrent_insert_fn _insert_fn;
+  torrent_update_fn _update_fn;
+  torrent_remove_fn _remove_fn;
 
-    torrent_insert_fn _insert_fn;
-    torrent_update_fn _update_fn;
-    torrent_remove_fn _remove_fn;
+ public:
+  /// Constructs a new window of a fixed size
+  Window(const std::string& title, uint32_t width, uint32_t heigth);
+  virtual ~Window();
 
-public:
-    /// Constructs a new window of a fixed size
-    Window(const std::string& title, uint32_t width, uint32_t heigth);
-    virtual ~Window();
+  /// Start the UI loop
+  void run();
 
-    /// Start the UI loop
-    void run();
+  void set_torrent_insert_fn(torrent_insert_fn fn);
+  void set_torrent_update_fn(torrent_update_fn fn);
+  void set_torrent_remove_fn(torrent_remove_fn fn);
 
-    void set_torrent_insert_fn(torrent_insert_fn fn);
-    void set_torrent_update_fn(torrent_update_fn fn);
-    void set_torrent_remove_fn(torrent_remove_fn fn);
+ private:
+  /// Configure window style
+  void configure_style();
 
-private:
-    /// Configure window style
-    void configure_style();
-
-    /// Render the main window panel
-    void render_base();
-    /// Render all dialogs
-    void render_file_dialog();
-    /// Render single torrent item
-    void render_torrent_item(const TorrentGuiData& torrent, float pos);
-    /// Render the torrents items
-    void render_torrents();
-    /// Render the confirm dialog
-    void render_confirm_dialog();
+  /// Render the main window panel
+  void render_base();
+  /// Render all dialogs
+  void render_file_dialog();
+  /// Render single torrent item
+  void render_torrent_item(const TorrentGuiData& torrent, float pos);
+  /// Render the torrents items
+  void render_torrents();
+  /// Render the confirm dialog
+  void render_confirm_dialog();
 };
 
-} // namespace fur::gui
+}  // namespace fur::gui

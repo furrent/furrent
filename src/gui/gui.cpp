@@ -136,14 +136,15 @@ void Window::render_base() {
   GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
 
   // Load file button
+  // with width = _width - WINDOW_BORDER - 150
   static Rectangle button_file_rect =
-      create_rect(_width - WINDOW_BORDER - 190, 15, 150, 30);
+      create_rect(_width - WINDOW_BORDER - 150, 15, 150, 30);
   _button_file_dialog = GuiButton(button_file_rect, "#3# Open torrent");
 
   // Settings button
-  static Rectangle button_settings_rect =
-      create_rect(_width - WINDOW_BORDER - 30, 15, 30, 30);
-  _button_settings = GuiButton(button_settings_rect, "#141#");
+  // static Rectangle button_settings_rect =
+  //    create_rect(_width - WINDOW_BORDER - 30, 15, 30, 30);
+  // _button_settings = GuiButton(button_settings_rect, "#141#");
 
   // Scroll panel
   static Rectangle scroll_rect_1 =
