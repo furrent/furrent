@@ -4,17 +4,15 @@
 #include <download/lender_pool.hpp>
 #include <mt/group.hpp>
 #include <mt/sharing_queue.hpp>
-#include <util/singleton.hpp>
+#include <shared_mutex>
 #include <torrent.hpp>
 #include <types.hpp>
-
-#include <shared_mutex>
 #include <unordered_map>
+#include <util/singleton.hpp>
 
 namespace fur {
 
 struct TorrentGuiData {
-
   TorrentID tid;
   TorrentState state;
   std::string filename;
@@ -32,13 +30,12 @@ struct PieceTaskStats {
   size_t used_peer;
 };
 
-/// Class responsible for processing a piece 
+/// Class responsible for processing a piece
 class PieceTask {
-  
   // Downloaded piece content
   std::optional<download::Downloaded> _data;
 
-public:
+ public:
   /// Identifier of the owner torrent
   TorrentID tid;
   /// Piece to process
@@ -46,7 +43,7 @@ public:
   /// .torrent descriptor
   TorrentFile descriptor;
 
-public:
+ public:
   /// Constructs an empty temporary piece task
   explicit PieceTask();
   /// Constructs a new piece task
@@ -56,7 +53,7 @@ public:
   /// @param peer peer to use for the download
   PieceTaskStats process(const peer::Peer& peer);
 
-private:
+ private:
   /// Download from a peer
   bool download(const peer::Peer& peer);
   /// Save to file
@@ -66,7 +63,6 @@ private:
 /// Main state of the program
 /// NB: All added torrent handle descriptor will never be removed from memory!
 class Furrent : public Singleton<Furrent> {
-  
   /// State of the worker threads
   struct WorkerState {
     /// Total number of pieces processed
@@ -85,7 +81,7 @@ class Furrent : public Singleton<Furrent> {
   /// Incremental torrent descriptor next id
   TorrentID descriptor_next_uid = 0u;
 
-public:
+ public:
   /// All possible Furrent errors
   enum class Error {
 
@@ -94,11 +90,10 @@ public:
   };
 
   /// Errors for the furrent class
-  template<typename R>
+  template <typename R>
   using Result = util::Result<R, Error>;
 
  public:
-
   Furrent();
   virtual ~Furrent();
 
@@ -111,7 +106,7 @@ public:
   /// @param uid uid of the torrent to remove
   void remove_torrent(TorrentID uid);
 
-  /// Extract torrents stats 
+  /// Extract torrents stats
   std::optional<TorrentGuiData> get_gui_data(TorrentID tid) const;
   std::vector<TorrentGuiData> get_gui_data() const;
 
@@ -128,8 +123,8 @@ public:
   /// Callbacks from the UI
  public:
   /*
-  bool callback_torrent_insert(const std::string &fine_name, const std::string &file_path);
-  bool callback_torrent_remove(const TorrentSnapshot &torrent);
+  bool callback_torrent_insert(const std::string &fine_name, const std::string
+  &file_path); bool callback_torrent_remove(const TorrentSnapshot &torrent);
   bool callback_torrent_update(const TorrentSnapshot &torrent);
   bool callback_setting_update(const std::string &path);
   */
@@ -138,7 +133,7 @@ public:
   /// Main function of all workers
   void thread_main(mt::Runner runner, WorkerState& state, size_t index);
 
-  /// Set torrent state to error and remove torrent 
+  /// Set torrent state to error and remove torrent
   void torrent_error(TorrentID tid);
 };
 
