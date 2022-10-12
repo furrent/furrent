@@ -8,7 +8,7 @@
 #include "catch2/catch.hpp"
 #include "hash.hpp"
 
-using namespace fur::torrent;
+using namespace fur;
 using namespace fur::hash;
 using namespace fur::bencode;
 

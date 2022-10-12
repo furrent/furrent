@@ -9,7 +9,7 @@
 #include "download/bitfield.hpp"
 #include "torrent.hpp"
 
-using namespace fur::torrent;
+using namespace fur;
 using namespace fur::download::message;
 
 TEST_CASE("[Message] Decoding basic message") {

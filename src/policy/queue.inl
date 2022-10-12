@@ -7,6 +7,17 @@ void Queue<T>::insert(T&& item) {
   _items.push_back(std::forward<T>(item));
 }
 
+template<typename T> 
+template<typename ... Args>
+void Queue<T>::emplace(Args&&... args) {
+  _items.emplace(_items.end(), std::forward<Args>(args)...);
+}
+
+template <typename T>
+std::list<T>& Queue<T>::items() {
+  return _items;
+}
+
 template <typename T>
 auto Queue<T>::extract(const IPolicy<T>& policy) -> Result {
   if (_items.empty()) return Result::ERROR(Error::Empty);
@@ -18,6 +29,19 @@ auto Queue<T>::extract(const IPolicy<T>& policy) -> Result {
   _items.erase(it);
 
   return Result::OK(std::move(result));
+}
+
+template<typename T>
+void Queue<T>::mutate(MutateFn mutation) {
+  auto it = _items.begin();
+  while (it != _items.end()) {
+
+    bool remove = mutation(*it);
+    if (remove) 
+      it = _items.erase(it);
+    else 
+      ++it;
+  }
 }
 
 template <typename T>

@@ -223,7 +223,7 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Piece& task) 
     return Result::ERROR(DownloaderError::MissingPiece);
 
   assert(!torrent.piece_hashes.empty());
-  assert(torrent.piece_hashes.size() - 1 <= std::numeric_limits<long>::max());
+  assert(torrent.piece_hashes.size() - 1u <= std::numeric_limits<size_t>::max());
 
   // The resulting piece
   std::vector<uint8_t> piece;
@@ -233,12 +233,10 @@ Result<Downloaded, DownloaderError> Downloader::try_download(const Piece& task) 
   if (static_cast<size_t>(task.index) == torrent.piece_hashes.size() - 1) {
     // Perform computation in `long` because `torrent.length` might be large but
     // then go back to a smaller `int` which should suffice.
-    long before_this_piece =
-        static_cast<long>(torrent.piece_hashes.size() - 1) *
-        torrent.piece_length;
+    size_t before_this_piece = (torrent.piece_hashes.size() - 1) * torrent.piece_length;
     assert(torrent.length >= before_this_piece);
     long l_piece_length = torrent.length - before_this_piece;
-    assert(piece_length <= std::numeric_limits<int>::max());
+    assert(piece_length <= std::numeric_limits<size_t>::max());
     piece_length = static_cast<int>(l_piece_length);
   }
 

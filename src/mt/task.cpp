@@ -2,21 +2,16 @@
 
 namespace fur::mt {
 
-auto PriorityPolicy::extract(Iterator begin, Iterator end) const -> Iterator {
-  size_t priority_best = 0;
-  Iterator result = end;
-  while (begin != end) {
-    ITask::Wrapper& item = *begin;
-    const size_t priority = item->priority();
+ITask::ITask(mt::SharedQueue<Wrapper>* spawn_queue)
+  : state{TaskState::Running}, _spawn_queue{spawn_queue} {} 
 
-    if (priority > priority_best) {
-      priority_best = priority;
-      result = begin;
-    }
+void ITask::set_spawn_queue(SharedQueue<Wrapper>* spawn_queue) {
+  _spawn_queue = spawn_queue;
+}
 
-    ++begin;
-  }
-  return result;
+void ITask::spawn(Wrapper&& task) {
+  task->set_spawn_queue(_spawn_queue);
+  _spawn_queue->insert(std::move(task));
 }
 
 }  // namespace fur::mt

@@ -6,7 +6,7 @@
 
 namespace fur::platform::io {
 
-enum class IOError { GenericError };
+enum class IOError { GenericError, CannotOpenFile };
 
 /// Empty result for handling IO errors
 template<typename T>
@@ -37,5 +37,10 @@ IOResult<Empty> transfer_bytes(const std::string& source, const std::string& des
 /// @param subfolders sequence of nested folders
 /// @return constructed path or and error 
 IOResult<std::string> create_subfolders(const std::string& base, const std::vector<std::string>& subfolders);
+
+/// Load file content of a file
+/// @param filepath filepath of the target file
+/// @return loaded text or an error
+IOResult<std::string> load_file_text(const std::string& filepath);
 
 }  // namespace fur::platform::io

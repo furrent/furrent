@@ -40,7 +40,7 @@ std::vector<uint8_t> Message::encode() const {
 }
 
 Result<std::unique_ptr<Message>, DecodeError> Message::decode(
-    const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf) {
+    const TorrentFile& torrent, const std::vector<uint8_t>& buf) {
   using Result = Result<std::unique_ptr<Message>, DecodeError>;
 
   // Treat `KeepAliveMessage` differently because that's the only message
@@ -159,7 +159,7 @@ std::vector<uint8_t> HaveMessage::encode_payload() const {
 }
 
 std::unique_ptr<BitfieldMessage> BitfieldMessage::decode(
-    const torrent::TorrentFile& torrent, const std::vector<uint8_t>& buf) {
+    const TorrentFile& torrent, const std::vector<uint8_t>& buf) {
   return std::make_unique<BitfieldMessage>(
       Bitfield(buf, torrent.piece_hashes.size()));
 }
