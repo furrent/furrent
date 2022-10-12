@@ -82,9 +82,10 @@ void Window::render_file_dialog() {
     }
 
     // Create new torrent item
-    TorrentGuiData item =
-        _insert_fn(_file_loader.fileNameText, _file_loader.dirPathText);
-    _scroller.torrents.emplace_back(item);
+    auto item = _insert_fn(_file_loader.fileNameText, _file_loader.dirPathText);
+    if (item.has_value()) {
+      _scroller.torrents.emplace_back(*item);
+    }
 
     _file_loader.SelectFilePressed = false;
     _file_loader.fileDialogActive = false;

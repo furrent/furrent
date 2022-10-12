@@ -6,7 +6,13 @@
 
 namespace fur::platform::io {
 
-enum class IOError { GenericError, CannotOpenFile };
+enum class IOError { 
+    GenericError, 
+    CannotOpenFile,
+    PathDoesNotExists,
+    FileAlreadyExists,
+    DirectoryAlreadyExists,
+};
 
 /// Empty result for handling IO errors
 template<typename T>
@@ -17,6 +23,10 @@ using util::Empty;
 /// @param filename filename of the new file
 /// @param size size of the new file
 IOResult<Empty> touch(const std::string& filename, size_t size);
+
+/// Removes a file or directory
+/// @param filename filename of the target file/directory
+IOResult<Empty> remove(const std::string& filename);
 
 /// Write bytes to file
 /// @param filename filename of the target file

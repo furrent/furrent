@@ -135,6 +135,10 @@ class Furrent : public Singleton<Furrent> {
 
   /// Set torrent state to error and remove torrent
   void torrent_error(TorrentID tid);
+
+  /// Prepare all folders and files for a torrent
+  /// @return True if the operation was a success, false otherwise
+  bool prepare_torrent_files(TorrentFile& descriptor);
 };
 
 }  // namespace fur

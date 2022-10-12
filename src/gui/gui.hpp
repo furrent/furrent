@@ -57,7 +57,7 @@ struct GuiConfirmDialogState {
 };
 
 using torrent_insert_fn =
-    std::function<TorrentGuiData(const std::string&, const std::string&)>;
+    std::function<std::optional<TorrentGuiData>(const std::string&, const std::string&)>;
 using torrent_update_fn = std::function<TorrentGuiData(TorrentID tid)>;
 using torrent_remove_fn = std::function<void(const TorrentGuiData&)>;
 
