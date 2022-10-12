@@ -68,10 +68,9 @@ bool PieceTask::save() const {
   // Write every subpiece
   size_t piece_offset = 0;
   for(size_t i = 0; i < piece.subpieces.size(); i++) {
-      
       const auto& subpiece = piece.subpieces[i];
-      const std::string filepath = config::DOWNLOAD_FOLDER + subpiece.filepath;
 
+      const std::string filepath = descriptor.folder_name + '/' + subpiece.filepath;
       if (!fur::platform::io::write_bytes(filepath, _data.value().content, subpiece.file_offset).valid()) {
           logger->error("Error while saving piece [{:4}] of T{} to {}", 
             piece.index, tid, piece.subpieces[0].filepath);
@@ -231,6 +230,70 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
   }
 }
 
+bool Furrent::prepare_torrent_files(TorrentFile& descriptor) {
+  using namespace fur::platform; // For IO operations
+
+  // Create output directory
+  auto torrent_dirpath = io::create_subfolders(config::DOWNLOAD_FOLDER, { descriptor.name });
+  if (!torrent_dirpath.valid()) {
+    switch (torrent_dirpath.error()) {
+
+      // Directory already exists, then modify name of the torrent base directory
+      case platform::io::IOError::DirectoryAlreadyExists: {
+
+        const int MAX_COPY_ATTEMPTS = 10;
+        int attempts = 0;
+        
+        std::string descriptor_name_copy = descriptor.name;
+        do {
+          descriptor_name_copy += " COPY";
+          torrent_dirpath = io::create_subfolders(config::DOWNLOAD_FOLDER, { descriptor_name_copy });
+          attempts += 1;
+
+        } while (!torrent_dirpath.valid() && attempts < MAX_COPY_ATTEMPTS);
+        
+        // If we tried to many times to generate new folders copy
+        if (attempts > MAX_COPY_ATTEMPTS)
+          return false;
+
+      } break;
+
+      default:
+        return false;
+    }
+  }
+
+  // Create output files
+  bool must_cleanup = false;
+  descriptor.folder_name = *torrent_dirpath;
+  for(const auto& file : descriptor.files) {
+
+    // Create nested folders
+    std::vector<std::string> subfolders(file.filepath.begin(), file.filepath.end() - 1);
+    auto file_dirpath = io::create_subfolders(descriptor.folder_name, subfolders);
+    if (!file_dirpath.valid()) {
+      must_cleanup = true;
+      break;
+    }
+
+    // Create single output file
+    std::string filepath = *file_dirpath + '/' + file.filepath.back();
+    auto creation = io::touch(filepath, file.length);
+    if (!creation.valid()) {
+      must_cleanup = true;
+      break;
+    }
+  }
+
+  // Remove created content if we failed to create all files
+  if (must_cleanup) {
+    io::remove(descriptor.folder_name);
+    return false;
+  }
+
+  return true;
+}
+
 /// Begin download of a torrent
 auto Furrent::add_torrent(const std::string& filename) -> Result<TorrentID> {
 
@@ -247,8 +310,11 @@ auto Furrent::add_torrent(const std::string& filename) -> Result<TorrentID> {
     auto betree = parser.decode(*reading);
     if (betree.valid()) {
 
-      // Create new torrent object
+      // Create new torrent object and mapped files
       TorrentFile descriptor(*(*betree)); // WTF IS THIS
+      if (!prepare_torrent_files(descriptor))
+        return Result<TorrentID>::ERROR(Error::LoadingTorrentFailed);
+
       logger->info("Announcing T{} to tracker at {}", 
         tid, descriptor.announce_url);
 
