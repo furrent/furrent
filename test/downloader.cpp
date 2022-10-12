@@ -107,7 +107,7 @@ void test_alice(std::vector<DownloaderError>& errors) {
     auto pieces_left_copy = pieces_left;
     for (auto idx : pieces_left_copy) {
 
-      std::vector<Subpiece> subpieces = { Subpiece{ 0, 0, torrent.piece_length } };
+      std::vector<Subpiece> subpieces = { Subpiece{ "Subpiece", 0, torrent.piece_length } };
       auto maybe_downloaded =
           TestingFriend::Downloader_try_download(down, Piece{
             static_cast<size_t>(idx), subpieces});
