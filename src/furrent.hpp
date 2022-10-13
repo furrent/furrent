@@ -104,7 +104,7 @@ class Furrent : public Singleton<Furrent> {
 
   /// Removes a torrent descriptor and all of his tasks
   /// @param uid uid of the torrent to remove
-  void remove_torrent(TorrentID uid);
+  void remove_torrent(TorrentID tid);
 
   /// Extract torrents stats
   std::optional<TorrentGuiData> get_gui_data(TorrentID tid) const;

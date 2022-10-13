@@ -1,22 +1,24 @@
 #include "torrent.hpp"
 
+#include <sstream>
+
 #include "bencode/bencode_parser.hpp"
 #include "bencode/bencode_value.hpp"
 #include "hash.hpp"
 #include "spdlog/spdlog.h"
 
-#include <sstream>
-
 using namespace fur::bencode;
 
 namespace fur {
- 
+
 std::string File::filename() const {
   std::stringstream sstream;
-  for(int i = 0; i < filepath.size(); i++) {
-    sstream << filepath[i];
-    if (i != filepath.size() - 1)
-      sstream << "/";
+
+  size_t i = 0;
+  for (const auto& section : filepath) {
+    sstream << section;
+    if (!filepath.empty() && i != filepath.size() - 1) sstream << "/";
+    i += 1;
   }
   return sstream.str();
 }
@@ -48,7 +50,8 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
   if (it != info_dict.end()) {
     // This is a multifile torrent
 
-    auto& files_list = dynamic_cast<BencodeList&>(*info_dict.at("files")).value();
+    auto& files_list =
+        dynamic_cast<BencodeList&>(*info_dict.at("files")).value();
     for (auto& file_node : files_list) {
       auto& file_dict = dynamic_cast<BencodeDict&>(*file_node).value();
 
@@ -56,7 +59,8 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
       file.length = dynamic_cast<BencodeInt&>(*file_dict.at("length")).value();
       this->length += file.length;
 
-      auto& filepath = dynamic_cast<BencodeList&>(*file_dict.at("path")).value();
+      auto& filepath =
+          dynamic_cast<BencodeList&>(*file_dict.at("path")).value();
       for (auto& path_node : filepath) {
         auto& segment = dynamic_cast<BencodeString&>(*path_node).value();
         file.filepath.push_back(segment);
@@ -65,11 +69,10 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
       this->files.push_back(file);
     }
 
-  }
-  else {
+  } else {
     // This is a single file torrent
     this->length = dynamic_cast<BencodeInt&>(*info_dict.at("length")).value();
-    
+
     File file;
     file.length = this->length;
     file.filepath.push_back(name);
@@ -98,27 +101,30 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
 // TORRENT
 
 Torrent::Torrent()
-: _tid{0}, state{TorrentState::Error}, pieces_processed{0} { }
+    : _tid{0},
+      _update_interval{0},
+      state{TorrentState::Error},
+      pieces_processed{0} {}
 
 Torrent::Torrent(TorrentID tid, const TorrentFile& descriptor)
-: _tid{tid}, _descriptor{descriptor}, state{TorrentState::Loading}, pieces_processed{0} 
-{
+    : _tid{tid},
+      _descriptor{descriptor},
+      _update_interval{0},
+      state{TorrentState::Loading},
+      pieces_processed{0} {
   announce();
 }
 
 std::vector<peer::Peer> Torrent::announce() {
-
   std::vector<peer::Peer> result;
   auto response = peer::announce(_descriptor);
   if (response.valid()) {
-
     _update_interval = response->interval;
     _peers = response->peers;
 
     // Initial score is 1 for every peer
     _peers_score.clear();
-    for (int i = 0; i < _peers.size(); ++i)
-      _peers_score.emplace_back(1u);
+    for (size_t i = 0; i < _peers.size(); i++) _peers_score.emplace_back(1u);
 
     return _peers;
   }
@@ -136,32 +142,23 @@ void Torrent::atomic_add_peer_score(size_t peer_index) {
 }
 
 std::discrete_distribution<size_t> Torrent::distribution() const {
-
   std::vector<size_t> scores;
   for (auto& atomic_score : _peers_score) {
     size_t score = atomic_score.load(std::memory_order_relaxed);
     scores.push_back(score);
   }
 
-  return std::discrete_distribution<size_t>(
-    scores.begin(), scores.end());
+  return {scores.begin(), scores.end()};
 }
 
-TorrentID Torrent::tid() const {
-  return _tid;
-}
+TorrentID Torrent::tid() const { return _tid; }
 
-const TorrentFile& Torrent::descriptor() const {
-  return _descriptor;
-}
+const TorrentFile& Torrent::descriptor() const { return _descriptor; }
 
-std::vector<peer::Peer> Torrent::peers() const {
-  return _peers;
-}
+std::vector<peer::Peer> Torrent::peers() const { return _peers; }
 
 /// Generate all pieces of this torrent
 std::vector<Piece> Torrent::pieces() const {
-
   const size_t PIECES_COUNT = _descriptor.pieces_count;
   const size_t PIECE_LENGTH = _descriptor.piece_length;
 
@@ -178,21 +175,18 @@ std::vector<Piece> Torrent::pieces() const {
 
     // Must create multiple subpieces
     if (cur_file_rem_size < PIECE_LENGTH) {
-
       // Keep incrementing file index until there is no
       // more space available in the piece
       size_t piece_rem_len = PIECE_LENGTH;
-      while(piece_rem_len > 0) {
-
+      while (piece_rem_len > 0) {
         // Can fill entire file in the piece
         if (cur_file_rem_size <= piece_rem_len) {
-
           size_t offset = cur_file_tot_size - cur_file_rem_size;
-          std::string piece_filename = _descriptor.files[cur_file].filename(); 
+          std::string piece_filename = _descriptor.files[cur_file].filename();
 
           subpieces.push_back({piece_filename, offset, cur_file_rem_size});
           piece_rem_len -= cur_file_rem_size;
-          
+
           // Next file
           cur_file += 1;
           cur_file_tot_size = _descriptor.files[cur_file].length;
@@ -201,7 +195,6 @@ std::vector<Piece> Torrent::pieces() const {
         }
         // Cannot fill entire file in the piece
         else {
-
           size_t offset = cur_file_tot_size - cur_file_rem_size;
           std::string piece_filename = _descriptor.files[cur_file].filename();
           subpieces.push_back({piece_filename, offset, piece_rem_len});
@@ -213,15 +206,14 @@ std::vector<Piece> Torrent::pieces() const {
     }
     // Single "piece/file" mapping
     else {
-
       size_t offset = cur_file_tot_size - cur_file_rem_size;
       std::string piece_filename = _descriptor.files[cur_file].filename();
 
       subpieces.push_back(Subpiece{piece_filename, offset, PIECE_LENGTH});
-      cur_file_rem_size -= PIECE_LENGTH;  
+      cur_file_rem_size -= PIECE_LENGTH;
     }
 
-    pieces.push_back(Piece{ index, subpieces });
+    pieces.push_back(Piece{index, subpieces});
   }
 
   return pieces;

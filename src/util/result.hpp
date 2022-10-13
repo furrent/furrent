@@ -18,11 +18,11 @@ template <typename R, typename E>
 class Result {
   std::variant<R, E> _inner;
 
-  /// Construct result from an lvalue 
+  /// Construct result from an lvalue
   explicit Result(const R& result);
   /// Construct result from an rvalue
   explicit Result(R&& result);
-  
+
   explicit Result(E&& error);
 
  public:
