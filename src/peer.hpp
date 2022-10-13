@@ -7,7 +7,9 @@
 #include "util/result.hpp"
 
 // Forward declare TorrentFile
-namespace fur { class TorrentFile; }
+namespace fur {
+class TorrentFile;
+}
 
 /// Contains data structures and facilities for representing and discovering
 /// BitTorrent peers

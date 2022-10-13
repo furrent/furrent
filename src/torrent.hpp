@@ -1,15 +1,15 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <vector>
 #include <atomic>
+#include <cstdint>
 #include <deque>
+#include <peer.hpp>
 #include <random>
+#include <string>
+#include <types.hpp>
+#include <vector>
 
 #include "bencode/bencode_value.hpp"
-#include <types.hpp>
-#include <peer.hpp>
 #include "hash.hpp"
 
 namespace fur {
@@ -18,13 +18,13 @@ namespace fur {
 struct File {
   /// Name of the file relative to the download folder,
   /// contains all subfolders
-  std::vector<std::string> filepath;   
+  std::vector<std::string> filepath;
   /// Number of bytes in the file
   size_t length;
 
   // =======================================================
 
-  /// @return filename in string form without base 
+  /// @return filename in string form without base
   std::string filename() const;
 };
 
@@ -43,7 +43,7 @@ struct TorrentFile {
   /// The length, in bytes, of the entire shared file
   size_t length;
   /// Total number of pieces
-  size_t pieces_count; 
+  size_t pieces_count;
   /// The name of the shared file
   std::string name;
 
@@ -73,7 +73,7 @@ struct Subpiece {
 /// Describes a piece of a torrent with all the information
 /// necessary to complete his download an saving on file
 struct Piece {
-  /// Global download index  
+  /// Global download index
   size_t index;
   /// Mapping piece-files
   std::vector<Subpiece> subpieces;
@@ -88,9 +88,8 @@ enum class TorrentState {
   Error,
 };
 
-/// Completely describes a torrent in furrent 
+/// Completely describes a torrent in furrent
 class Torrent {
-
   // Unique identifier for each torrent
   TorrentID _tid;
   /// Parsed .torrent file descriptor
@@ -103,8 +102,7 @@ class Torrent {
   /// Next peers update interval time
   size_t _update_interval;
 
-public:
-
+ public:
   /// Current state of the torrent,
   /// this value can be changed concurrently
   std::atomic<TorrentState> state;
@@ -113,7 +111,7 @@ public:
   /// this value can be changed concurrently
   std::atomic_uint32_t pieces_processed;
 
-public:
+ public:
   /// Construct empty temporary torrent
   explicit Torrent();
 
@@ -131,19 +129,19 @@ public:
   void atomic_add_peer_score(size_t peer_index);
 
   /// Returns unique id
-  TorrentID tid() const;
+  [[nodiscard]] TorrentID tid() const;
 
   /// Returns the .torrent descriptor
-  const TorrentFile& descriptor() const;
+  [[nodiscard]] const TorrentFile& descriptor() const;
 
   /// Returns the loaded peers
-  std::vector<peer::Peer> peers() const;
+  [[nodiscard]] std::vector<peer::Peer> peers() const;
 
   /// Returns a peer distribution
-  std::discrete_distribution<size_t> distribution() const;
+  [[nodiscard]] std::discrete_distribution<size_t> distribution() const;
 
   /// Generate all pieces of this torrent
-  std::vector<Piece> pieces() const;
+  [[nodiscard]] std::vector<Piece> pieces() const;
 };
 
 }  // namespace fur
