@@ -1,0 +1,301 @@
+[10:10:13][I][47793] Launching workers threads (concurrency capability: 4, workers: 3)
+[10:10:13][I][47793] Created base output directory at ../output/
+[10:10:13][I][47796] thread 02 is waiting for work, queue is empty
+[10:10:13][I][47795] thread 01 is waiting for work, queue is empty
+[10:10:13][I][47794] thread 00 is waiting for work, queue is empty
+[10:10:30][I][47793] Announcing T0 to tracker at http://bttracker.debian.org:6969/announce
+[10:10:30][I][47793] Peers:
+  185.148.1.84:50992
+  39.124.182.127:61236
+  78.193.194.253:6882
+  216.14.157.134:12269
+  87.61.92.12:32060
+  212.220.200.246:58862
+  209.181.111.126:64141
+  23.122.134.78:55001
+  92.117.246.117:55564
+  92.117.246.117:55556
+  92.117.246.117:55559
+  82.197.213.132:32767
+  99.63.100.172:19282
+  92.117.246.117:55563
+  212.201.8.116:51711
+  92.117.246.117:55557
+  185.21.217.54:55617
+  193.96.224.244:37212
+  151.81.96.66:35907
+  99.192.111.180:53000
+  219.103.190.244:59153
+  45.14.195.190:17751
+  98.3.21.2:17751
+  84.226.9.165:22751
+  69.195.158.163:47328
+
+[10:10:30][I][47793] Generating 2588 pieces for T0 
+[10:10:37][I][47796] Downloaded piece [   0] of T0 from 99.63.100.172:19282 (5666 ms)
+[10:10:37][I][47796] Saved piece [   0] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:10:37][I][47796] Peers distribution for T[0]:
+            185.148.1.84:50992 : **********
+          39.124.182.127:61236 : **********
+           78.193.194.253:6882 : **********
+          216.14.157.134:12269 : **********
+             87.61.92.12:32060 : **********
+         212.220.200.246:58862 : **********
+         209.181.111.126:64141 : *********
+           23.122.134.78:55001 : **********
+          92.117.246.117:55564 : **********
+          92.117.246.117:55556 : **********
+          92.117.246.117:55559 : *********
+          82.197.213.132:32767 : **********
+           99.63.100.172:19282 : **********
+          92.117.246.117:55563 : *********
+           212.201.8.116:51711 : **********
+          92.117.246.117:55557 : **********
+           185.21.217.54:55617 : *********
+          193.96.224.244:37212 : **********
+            151.81.96.66:35907 : *********
+          99.192.111.180:53000 : *********
+         219.103.190.244:59153 : *********
+           45.14.195.190:17751 : *********
+               98.3.21.2:17751 : **********
+            84.226.9.165:22751 : *********
+          69.195.158.163:47328 : *********
+
+[10:10:42][I][47796] Downloaded piece [   3] of T0 from 92.117.246.117:55559 (5174 ms)
+[10:10:42][I][47796] Saved piece [   3] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:10:45][I][47794] Downloaded piece [   2] of T0 from 92.117.246.117:55563 (3091 ms)
+[10:10:45][I][47794] Saved piece [   2] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:10:48][I][47794] Downloaded piece [   5] of T0 from 92.117.246.117:55563 (2597 ms)
+[10:10:48][I][47794] Saved piece [   5] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:10:52][I][47794] Downloaded piece [   6] of T0 from 92.117.246.117:55559 (4035 ms)
+[10:10:52][I][47794] Saved piece [   6] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:10:57][I][47796] Downloaded piece [   4] of T0 from 92.117.246.117:55563 (4311 ms)
+[10:10:57][I][47796] Saved piece [   4] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:10:59][I][47796] Downloaded piece [   8] of T0 from 99.63.100.172:19282 (2211 ms)
+[10:10:59][I][47796] Saved piece [   8] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:01][I][47794] Downloaded piece [   7] of T0 from 92.117.246.117:55559 (2403 ms)
+[10:11:01][I][47794] Saved piece [   7] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:01][E][47794] received invalid message: UnknownMessageID
+[10:11:03][I][47794] Downloaded piece [  10] of T0 from 92.117.246.117:55563 (2198 ms)
+[10:11:03][I][47794] Saved piece [  10] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:08][I][47796] Downloaded piece [   9] of T0 from 92.117.246.117:55557 (3205 ms)
+[10:11:08][I][47796] Saved piece [   9] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:11][I][47796] Downloaded piece [  12] of T0 from 99.63.100.172:19282 (2255 ms)
+[10:11:11][I][47796] Saved piece [  12] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:15][I][47796] Downloaded piece [  13] of T0 from 92.117.246.117:55563 (3666 ms)
+[10:11:15][I][47796] Saved piece [  13] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:21][I][47794] Downloaded piece [  11] of T0 from 92.117.246.117:55563 (2776 ms)
+[10:11:21][I][47794] Saved piece [  11] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:24][I][47794] Downloaded piece [  15] of T0 from 92.117.246.117:55557 (3006 ms)
+[10:11:24][I][47794] Saved piece [  15] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:27][I][47794] Downloaded piece [  16] of T0 from 151.81.96.66:35907 (2893 ms)
+[10:11:27][I][47794] Saved piece [  16] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:41][I][47796] Downloaded piece [  14] of T0 from 99.63.100.172:19282 (2254 ms)
+[10:11:41][I][47796] Saved piece [  14] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:44][I][47796] Downloaded piece [  18] of T0 from 99.63.100.172:19282 (2249 ms)
+[10:11:44][I][47796] Saved piece [  18] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:44][I][47794] Downloaded piece [  17] of T0 from 92.117.246.117:55563 (3560 ms)
+[10:11:44][I][47794] Saved piece [  17] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:45][I][47795] Downloaded piece [   1] of T0 from 212.201.8.116:51711 (38715 ms)
+[10:11:45][I][47795] Saved piece [   1] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:49][I][47794] Downloaded piece [  20] of T0 from 92.117.246.117:55563 (5027 ms)
+[10:11:49][I][47794] Saved piece [  20] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:54][I][47796] Downloaded piece [  19] of T0 from 212.201.8.116:51711 (601 ms)
+[10:11:54][I][47796] Saved piece [  19] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:11:57][I][47795] Downloaded piece [  21] of T0 from 92.117.246.117:55563 (6012 ms)
+[10:11:57][I][47795] Saved piece [  21] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:02][I][47795] Downloaded piece [  24] of T0 from 92.117.246.117:55556 (4911 ms)
+[10:12:02][I][47795] Saved piece [  24] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:07][E][47794] received invalid message: UnknownMessageID
+[10:12:08][I][47796] Downloaded piece [  23] of T0 from 99.63.100.172:19282 (3177 ms)
+[10:12:08][I][47796] Saved piece [  23] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:10][I][47795] Downloaded piece [  25] of T0 from 92.117.246.117:55563 (7416 ms)
+[10:12:10][I][47795] Saved piece [  25] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:12][I][47795] Downloaded piece [  27] of T0 from 212.201.8.116:51711 (1776 ms)
+[10:12:12][I][47795] Saved piece [  27] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:14][I][47794] Downloaded piece [  22] of T0 from 69.195.158.163:47328 (1862 ms)
+[10:12:14][I][47794] Saved piece [  22] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:14][E][47794] received invalid message: UnknownMessageID
+[10:12:21][I][47795] Downloaded piece [  28] of T0 from 92.117.246.117:55557 (8750 ms)
+[10:12:21][I][47795] Saved piece [  28] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:23][I][47796] Downloaded piece [  26] of T0 from 212.201.8.116:51711 (1385 ms)
+[10:12:23][I][47796] Saved piece [  26] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:24][I][47796] Downloaded piece [  31] of T0 from 212.201.8.116:51711 (1327 ms)
+[10:12:24][I][47796] Saved piece [  31] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:26][I][47796] Downloaded piece [  32] of T0 from 99.63.100.172:19282 (2224 ms)
+[10:12:26][I][47796] Saved piece [  32] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:28][I][47796] Downloaded piece [  33] of T0 from 69.195.158.163:47328 (1652 ms)
+[10:12:28][I][47796] Saved piece [  33] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:28][I][47795] Downloaded piece [  30] of T0 from 92.117.246.117:55557 (6973 ms)
+[10:12:28][I][47795] Saved piece [  30] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:28][E][47795] received invalid message: UnknownMessageID
+[10:12:30][I][47796] Downloaded piece [  34] of T0 from 69.195.158.163:47328 (2204 ms)
+[10:12:30][I][47796] Saved piece [  34] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:35][I][47796] Downloaded piece [  36] of T0 from 99.63.100.172:19282 (4900 ms)
+[10:12:35][I][47796] Saved piece [  36] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:36][I][47796] Downloaded piece [  37] of T0 from 212.201.8.116:51711 (726 ms)
+[10:12:36][I][47796] Saved piece [  37] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:37][I][47795] Downloaded piece [  35] of T0 from 151.81.96.66:35907 (3142 ms)
+[10:12:37][I][47795] Saved piece [  35] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:37][E][47795] received invalid message: UnknownMessageID
+[10:12:42][I][47794] Downloaded piece [  29] of T0 from 92.117.246.117:55563 (11697 ms)
+[10:12:42][I][47794] Saved piece [  29] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:42][I][47795] Downloaded piece [  39] of T0 from 99.63.100.172:19282 (4270 ms)
+[10:12:42][I][47795] Saved piece [  39] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:44][I][47794] Downloaded piece [  40] of T0 from 99.63.100.172:19282 (1848 ms)
+[10:12:44][I][47794] Saved piece [  40] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:46][I][47796] Downloaded piece [  38] of T0 from 92.117.246.117:55563 (3492 ms)
+[10:12:46][I][47796] Saved piece [  38] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:48][I][47796] Downloaded piece [  43] of T0 from 92.117.246.117:55559 (2432 ms)
+[10:12:48][I][47796] Saved piece [  43] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:51][I][47795] Downloaded piece [  41] of T0 from 69.195.158.163:47328 (1603 ms)
+[10:12:51][I][47795] Saved piece [  41] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:51][I][47796] Downloaded piece [  44] of T0 from 92.117.246.117:55559 (3145 ms)
+[10:12:51][I][47796] Saved piece [  44] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:53][I][47796] Downloaded piece [  46] of T0 from 92.117.246.117:55557 (1992 ms)
+[10:12:53][I][47796] Saved piece [  46] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:54][I][47795] Downloaded piece [  45] of T0 from 212.201.8.116:51711 (3112 ms)
+[10:12:54][I][47795] Saved piece [  45] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:56][I][47796] Downloaded piece [  47] of T0 from 69.195.158.163:47328 (2504 ms)
+[10:12:56][I][47796] Saved piece [  47] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:57][I][47795] Downloaded piece [  48] of T0 from 92.117.246.117:55563 (2915 ms)
+[10:12:57][I][47795] Saved piece [  48] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:12:59][I][47796] Downloaded piece [  49] of T0 from 212.201.8.116:51711 (2877 ms)
+[10:12:59][I][47796] Saved piece [  49] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:00][I][47794] Downloaded piece [  42] of T0 from 99.63.100.172:19282 (2932 ms)
+[10:13:00][I][47794] Saved piece [  42] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:01][I][47795] Downloaded piece [  50] of T0 from 92.117.246.117:55564 (3846 ms)
+[10:13:01][I][47795] Saved piece [  50] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:05][I][47795] Downloaded piece [  53] of T0 from 92.117.246.117:55559 (3968 ms)
+[10:13:05][I][47795] Saved piece [  53] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:05][I][47796] Downloaded piece [  51] of T0 from 212.201.8.116:51711 (6491 ms)
+[10:13:05][I][47796] Saved piece [  51] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:05][I][47794] Downloaded piece [  52] of T0 from 69.195.158.163:47328 (1851 ms)
+[10:13:05][I][47794] Saved piece [  52] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:11][I][47796] Downloaded piece [  55] of T0 from 212.201.8.116:51711 (3410 ms)
+[10:13:11][I][47796] Saved piece [  55] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:12][I][47795] Downloaded piece [  54] of T0 from 69.195.158.163:47328 (1802 ms)
+[10:13:12][I][47795] Saved piece [  54] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:12][I][47794] Downloaded piece [  56] of T0 from 92.117.246.117:55559 (6780 ms)
+[10:13:12][I][47794] Saved piece [  56] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:16][I][47795] Downloaded piece [  58] of T0 from 69.195.158.163:47328 (1958 ms)
+[10:13:16][I][47795] Saved piece [  58] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:16][I][47796] Downloaded piece [  57] of T0 from 212.201.8.116:51711 (4780 ms)
+[10:13:16][I][47796] Saved piece [  57] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:17][I][47794] Downloaded piece [  59] of T0 from 92.117.246.117:55564 (3941 ms)
+[10:13:17][I][47794] Saved piece [  59] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:18][I][47795] Downloaded piece [  60] of T0 from 69.195.158.163:47328 (2042 ms)
+[10:13:18][I][47795] Saved piece [  60] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:18][I][47796] Downloaded piece [  61] of T0 from 99.63.100.172:19282 (2146 ms)
+[10:13:18][I][47796] Saved piece [  61] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:24][I][47795] Downloaded piece [  63] of T0 from 92.117.246.117:55564 (4397 ms)
+[10:13:24][I][47795] Saved piece [  63] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:25][I][47796] Downloaded piece [  64] of T0 from 99.63.100.172:19282 (6170 ms)
+[10:13:25][I][47796] Saved piece [  64] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:25][I][47794] Downloaded piece [  62] of T0 from 69.195.158.163:47328 (2119 ms)
+[10:13:25][I][47794] Saved piece [  62] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:28][I][47795] Downloaded piece [  65] of T0 from 92.117.246.117:55563 (3591 ms)
+[10:13:28][I][47795] Saved piece [  65] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:28][I][47796] Downloaded piece [  66] of T0 from 99.63.100.172:19282 (3375 ms)
+[10:13:28][I][47796] Saved piece [  66] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:31][I][47794] Downloaded piece [  67] of T0 from 212.201.8.116:51711 (5475 ms)
+[10:13:31][I][47794] Saved piece [  67] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:32][I][47796] Downloaded piece [  69] of T0 from 99.63.100.172:19282 (3570 ms)
+[10:13:32][I][47796] Saved piece [  69] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:34][I][47795] Downloaded piece [  68] of T0 from 92.117.246.117:55563 (6531 ms)
+[10:13:34][I][47795] Saved piece [  68] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:37][E][47796] received invalid message: UnknownMessageID
+[10:13:37][I][47795] Downloaded piece [  72] of T0 from 212.201.8.116:51711 (2918 ms)
+[10:13:37][I][47795] Saved piece [  72] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:37][I][47794] Downloaded piece [  70] of T0 from 99.63.100.172:19282 (5275 ms)
+[10:13:37][I][47794] Saved piece [  70] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:41][I][47796] Downloaded piece [  71] of T0 from 92.117.246.117:55559 (4510 ms)
+[10:13:41][I][47796] Saved piece [  71] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:42][I][47795] Downloaded piece [  73] of T0 from 212.201.8.116:51711 (4585 ms)
+[10:13:42][I][47795] Saved piece [  73] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:45][I][47796] Downloaded piece [  75] of T0 from 92.117.246.117:55559 (4018 ms)
+[10:13:45][I][47796] Saved piece [  75] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:46][I][47795] Downloaded piece [  76] of T0 from 99.63.100.172:19282 (2567 ms)
+[10:13:46][I][47795] Saved piece [  76] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:49][I][47795] Downloaded piece [  78] of T0 from 99.63.100.172:19282 (2879 ms)
+[10:13:49][I][47795] Saved piece [  78] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:52][I][47796] Downloaded piece [  77] of T0 from 92.117.246.117:55563 (6493 ms)
+[10:13:52][I][47796] Saved piece [  77] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:55][I][47794] Downloaded piece [  74] of T0 from 99.63.100.172:19282 (2292 ms)
+[10:13:55][I][47794] Saved piece [  74] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:58][I][47794] Downloaded piece [  81] of T0 from 69.195.158.163:47328 (2163 ms)
+[10:13:58][I][47794] Saved piece [  81] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:13:58][I][47796] Downloaded piece [  80] of T0 from 92.117.246.117:55559 (6501 ms)
+[10:13:58][I][47796] Saved piece [  80] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:00][I][47794] Downloaded piece [  82] of T0 from 99.63.100.172:19282 (2235 ms)
+[10:14:00][I][47794] Saved piece [  82] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:02][I][47794] Downloaded piece [  84] of T0 from 99.63.100.172:19282 (2258 ms)
+[10:14:02][I][47794] Saved piece [  84] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:05][I][47794] Downloaded piece [  85] of T0 from 69.195.158.163:47328 (2267 ms)
+[10:14:05][I][47794] Saved piece [  85] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:13][I][47795] Downloaded piece [  79] of T0 from 99.63.100.172:19282 (2457 ms)
+[10:14:13][I][47795] Saved piece [  79] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:15][I][47796] Downloaded piece [  83] of T0 from 92.117.246.117:55563 (8704 ms)
+[10:14:15][I][47796] Saved piece [  83] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:15][I][47794] Downloaded piece [  86] of T0 from 99.63.100.172:19282 (5099 ms)
+[10:14:15][I][47794] Saved piece [  86] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:19][I][47795] Downloaded piece [  87] of T0 from 99.63.100.172:19282 (4892 ms)
+[10:14:19][I][47795] Saved piece [  87] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:31][I][47796] Downloaded piece [  88] of T0 from 92.117.246.117:55559 (15889 ms)
+[10:14:31][I][47796] Saved piece [  88] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:31][I][47795] Downloaded piece [  90] of T0 from 69.195.158.163:47328 (1995 ms)
+[10:14:31][I][47795] Saved piece [  90] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:33][I][47795] Downloaded piece [  92] of T0 from 69.195.158.163:47328 (2015 ms)
+[10:14:33][I][47795] Saved piece [  92] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:36][I][47795] Downloaded piece [  93] of T0 from 99.63.100.172:19282 (2556 ms)
+[10:14:36][I][47795] Saved piece [  93] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:45][I][47795] Downloaded piece [  94] of T0 from 99.63.100.172:19282 (1698 ms)
+[10:14:45][I][47795] Saved piece [  94] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:47][I][47795] Downloaded piece [  95] of T0 from 69.195.158.163:47328 (2209 ms)
+[10:14:47][I][47795] Saved piece [  95] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:52][I][47795] Downloaded piece [  96] of T0 from 69.195.158.163:47328 (4586 ms)
+[10:14:52][I][47795] Saved piece [  96] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:53][I][47796] Downloaded piece [  91] of T0 from 92.117.246.117:55559 (22009 ms)
+[10:14:53][I][47796] Saved piece [  91] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:57][I][47795] Downloaded piece [  97] of T0 from 99.63.100.172:19282 (5342 ms)
+[10:14:57][I][47795] Saved piece [  97] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:14:59][I][47795] Downloaded piece [  99] of T0 from 69.195.158.163:47328 (1820 ms)
+[10:14:59][I][47795] Saved piece [  99] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:15:04][I][47796] Downloaded piece [  98] of T0 from 99.63.100.172:19282 (5943 ms)
+[10:15:04][I][47796] Saved piece [  98] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:15:09][I][47794] Downloaded piece [  89] of T0 from 92.117.246.117:55564 (17188 ms)
+[10:15:09][I][47794] Saved piece [  89] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:15:09][I][47794] thread 00 is waiting for work, queue is empty
+[10:15:11][I][47795] Downloaded piece [ 100] of T0 from 99.63.100.172:19282 (4023 ms)
+[10:15:11][I][47795] Saved piece [ 100] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:15:11][I][47795] Peers distribution for T[0]:
+            185.148.1.84:50992 : *
+          39.124.182.127:61236 : *
+           78.193.194.253:6882 : *
+          216.14.157.134:12269 : **
+             87.61.92.12:32060 : **
+         212.220.200.246:58862 : **
+         209.181.111.126:64141 : **
+           23.122.134.78:55001 : **
+          92.117.246.117:55564 : ********
+          92.117.246.117:55556 : ****
+          92.117.246.117:55559 : ************************
+          82.197.213.132:32767 : *
+           99.63.100.172:19282 : ******************************************************
+          92.117.246.117:55563 : **************************************
+           212.201.8.116:51711 : ******************************
+          92.117.246.117:55557 : ************
+           185.21.217.54:55617 : *
+          193.96.224.244:37212 : **
+            151.81.96.66:35907 : ******
+          99.192.111.180:53000 : **
+         219.103.190.244:59153 : **
+           45.14.195.190:17751 : **
+               98.3.21.2:17751 : **
+            84.226.9.165:22751 : **
+          69.195.158.163:47328 : *************************************
+
+[10:15:11][I][47795] thread 01 is waiting for work, queue is empty
+[10:15:21][I][47796] Downloaded piece [ 101] of T0 from 212.201.8.116:51711 (13395 ms)
+[10:15:21][I][47796] Saved piece [ 101] of T0 to debian-11.5.0-amd64-i386-netinst.iso
+[10:15:21][I][47796] thread 02 is waiting for work, queue is empty

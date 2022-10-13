@@ -6,7 +6,7 @@
 
 using namespace fur;
 
-int main(int argc, char* argv[]) {
+int main(int, char* argv[]) {
 
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");

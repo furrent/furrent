@@ -13,10 +13,13 @@ namespace fur {
  
 std::string File::filename() const {
   std::stringstream sstream;
-  for(int i = 0; i < filepath.size(); i++) {
-    sstream << filepath[i];
-    if (i != filepath.size() - 1)
+
+  size_t i = 0;
+  for(const auto& section : filepath) {
+    sstream << section;
+    if (!filepath.empty() && i != filepath.size() - 1)
       sstream << "/";
+    i += 1;
   }
   return sstream.str();
 }
@@ -117,7 +120,7 @@ std::vector<peer::Peer> Torrent::announce() {
 
     // Initial score is 1 for every peer
     _peers_score.clear();
-    for (int i = 0; i < _peers.size(); ++i)
+    for (size_t i = 0; i < _peers.size(); i++)
       _peers_score.emplace_back(1u);
 
     return _peers;
