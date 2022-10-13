@@ -7,7 +7,6 @@
 #include <list>
 #include <string>
 
-#undef RAYGUI_IMPLEMENTATION
 #include <raylib/file_dialog.h>
 #include <raylib/raygui.h>
 
