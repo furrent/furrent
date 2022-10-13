@@ -98,7 +98,10 @@ IOResult<Empty> transfer_bytes(const std::string& source, const std::string& des
 
 IOResult<std::string> create_subfolders(const std::string& base, const std::vector<std::string>& subfolders) {
   
-  std::string real_base = (base.back() == '/' || base.size() == 0) ? base : base + '/';
+  std::string real_base = base;
+  if (!base.empty() && base.back() != '/')
+    real_base = base + '/';
+
   std::stringstream sstream; 
   sstream << base;
 
