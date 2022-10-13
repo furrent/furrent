@@ -13,6 +13,7 @@
 #include <gui/colors.hpp>
 #include <gui/gui.hpp>
 #include <iostream>
+#include <utility>
 
 namespace fur::gui {
 
@@ -60,11 +61,17 @@ void Window::run() {
   }
 }
 
-void Window::set_torrent_insert_fn(torrent_insert_fn fn) { _insert_fn = fn; }
+void Window::set_torrent_insert_fn(torrent_insert_fn fn) {
+  _insert_fn = std::move(fn);
+}
 
-void Window::set_torrent_update_fn(torrent_update_fn fn) { _update_fn = fn; }
+void Window::set_torrent_update_fn(torrent_update_fn fn) {
+  _update_fn = std::move(fn);
+}
 
-void Window::set_torrent_remove_fn(torrent_remove_fn fn) { _remove_fn = fn; }
+void Window::set_torrent_remove_fn(torrent_remove_fn fn) {
+  _remove_fn = std::move(fn);
+}
 
 static Rectangle create_rect(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
   return {static_cast<float>(x), static_cast<float>(y), static_cast<float>(w),

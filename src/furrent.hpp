@@ -108,7 +108,6 @@ class Furrent : public Singleton<Furrent> {
 
   /// Extract torrents stats
   std::optional<TorrentGuiData> get_gui_data(TorrentID tid) const;
-  std::vector<TorrentGuiData> get_gui_data() const;
 
   /*
   /// Pause the download of a torrent
