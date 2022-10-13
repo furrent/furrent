@@ -16,9 +16,14 @@
 
 namespace fur::gui {
 
-Window::Window(const std::string& title, uint32_t width, uint32_t heigth)
-    : _title{title}, _width{width}, _heigth{heigth} {
-  InitWindow(width, heigth, title.c_str());
+Window::Window(const std::string& title, uint32_t width, uint32_t height)
+    : _title{title},
+      _width{width},
+      _height{height},
+      _button_file_dialog{false},
+      _file_loader{},
+      _scroller{} {
+  InitWindow(static_cast<int>(width), static_cast<int>(height), title.c_str());
   SetWindowPosition(0, 0);
   SetTargetFPS(60);
 
@@ -26,7 +31,6 @@ Window::Window(const std::string& title, uint32_t width, uint32_t heigth)
 
   _file_loader =
       InitGuiFileDialog(550, 500, GetWorkingDirectory(), false, ".torrent");
-  _confirm_dialog = {};
 }
 
 Window::~Window() { CloseWindow(); }
@@ -109,6 +113,7 @@ void Window::render_confirm_dialog() {
     if (response == 1) {
       auto torrent = _scroller.torrent_dialog_state.torrent;
       _remove_fn(torrent);
+      // Remove torrent in the UI
       _scroller.torrents.erase(
           std::remove_if(_scroller.torrents.begin(), _scroller.torrents.end(),
                          [torrent](const TorrentGuiData& t) {
@@ -134,19 +139,12 @@ void Window::render_base() {
       create_rect(_width - WINDOW_BORDER - 150, 15, 150, 30);
   _button_file_dialog = GuiButton(button_file_rect, "#3# Open torrent");
 
-  // Settings button
-  // static Rectangle button_settings_rect =
-  //    create_rect(_width - WINDOW_BORDER - 30, 15, 30, 30);
-  // _button_settings = GuiButton(button_settings_rect, "#141#");
-
   // Scroll panel
   static Rectangle scroll_rect_1 = {
       WINDOW_BORDER, 100, static_cast<float>(_width - WINDOW_BORDER * 2),
-      static_cast<float>(_heigth - 100 - WINDOW_BORDER)};
-  // static Rectangle scroll_rect_2 ={WINDOW_BORDER, 50,
-  // static_cast<float>(_width - 150),
-  //                   static_cast<float>(1000 * _scroller.torrents.size())};
-  // GuiScrollPanel(scroll_rect_1, NULL, scroll_rect_2, &_scroller.scroll);
+      static_cast<float>(_height - 100 - WINDOW_BORDER)};
+
+  // Draw scroll panel
   GuiScrollPanel(scroll_rect_1, NULL,
                  {WINDOW_BORDER, 50, static_cast<float>(_width - 150),
                   static_cast<float>(50 * _scroller.torrents.size())},
@@ -166,7 +164,7 @@ void Window::render_base() {
 
   // Scroll panel bottom
   static Rectangle scroll_bottom_rect =
-      create_rect(WINDOW_BORDER, _heigth - WINDOW_BORDER, _width, _width);
+      create_rect(WINDOW_BORDER, _height - WINDOW_BORDER, _width, _width);
   GuiDrawRectangle(scroll_bottom_rect, 1, PRESSED_BACKGROUND_COLOR,
                    PRESSED_BACKGROUND_COLOR);
   float wheel_move = GetMouseWheelMove();
@@ -181,7 +179,8 @@ void Window::render_torrent_item(const TorrentGuiData& torrent, float pos) {
   if (name.size() > 20) name = name.substr(0, 20) + "...";
 
   // Draw the name
-  Rectangle name_rect = create_rect(20, 112 + pos, 0, 20);
+  Rectangle name_rect =
+      create_rect(20, static_cast<uint32_t>(112 + pos), 0, 20);
   GuiDrawText(name.c_str(), name_rect, TEXT_ALIGN_LEFT, GRAY);
 
   int progress = static_cast<int>(
@@ -191,28 +190,28 @@ void Window::render_torrent_item(const TorrentGuiData& torrent, float pos) {
   switch (torrent.state) {
     case TorrentState::Downloading: {
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DOWNLOADING_COLOR_HEX);
-      Rectangle rect = create_rect(275, 110 + pos, 300, 20);
+      Rectangle rect = create_rect(275, static_cast<int>(110 + pos), 300, 20);
       GuiProgressBar(rect, (std::to_string(progress) + "% ").c_str(),
                      "#6#Downloading", progress, 0, 100);
 
     } break;
     case TorrentState::Completed: {
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, DONE_COLOR_HEX);
-      Rectangle rect = create_rect(275, 110 + pos, 300, 20);
+      Rectangle rect = create_rect(275, static_cast<int>(110 + pos), 300, 20);
       GuiProgressBar(rect, (std::to_string(progress) + "% ").c_str(),
                      "#112#Downloaded", progress, 0, 100);
 
     } break;
     case TorrentState::Stopped: {
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, STOP_COLOR_HEX);
-      Rectangle rect = create_rect(275, 110 + pos, 300, 20);
+      Rectangle rect = create_rect(275, static_cast<int>(110 + pos), 300, 20);
       GuiProgressBar(rect, (std::to_string(progress) + "% ").c_str(),
                      "#132#Stopped", progress, 0, 100);
 
     } break;
     case TorrentState::Error: {
       GuiSetStyle(PROGRESSBAR, BASE_COLOR_PRESSED, ERROR_COLOR_HEX);
-      Rectangle rect = create_rect(275, 110 + pos, 300, 20);
+      Rectangle rect = create_rect(275, static_cast<int>(110 + pos), 300, 20);
       GuiProgressBar(rect, (std::to_string(progress) + "% ").c_str(),
                      "#113#Error", progress, 0, 100);
 
@@ -221,7 +220,7 @@ void Window::render_torrent_item(const TorrentGuiData& torrent, float pos) {
       break;
   }
 
-  Rectangle end_rect = create_rect(5, 145 + pos, 790, 1);
+  Rectangle end_rect = create_rect(5, static_cast<uint32_t>(145 + pos), 790, 1);
   GuiLine(end_rect, NULL);
 }
 
@@ -237,15 +236,12 @@ void Window::render_torrents() {
     render_torrent_item(*it, pos + _scroller.scroll.y);
 
     // Delete torrent event
-    Rectangle button_rect =
-        create_rect(760, 110 + pos + _scroller.scroll.y, 20, 20);
+    Rectangle button_rect = create_rect(
+        760, static_cast<uint32_t>(110 + pos + _scroller.scroll.y), 20, 20);
     if (GuiButton(button_rect, "#143#")) {
       _scroller.torrent_dialog_state.delete_torrent = true;
       _scroller.torrent_dialog_state.torrent = *it;
-      // _remove_fn(*it);
-      // it = _scroller.torrents.erase(it);
     }
-
     pos += 50;
   }
 }
