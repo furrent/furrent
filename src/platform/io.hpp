@@ -2,6 +2,7 @@
 
 #include <string>
 #include <util/result.hpp>
+#include <filesystem>
 #include <vector>
 
 namespace fur::platform::io {
@@ -9,6 +10,7 @@ namespace fur::platform::io {
 enum class IOError { 
     GenericError, 
     CannotOpenFile,
+    InvalidPath,
     PathDoesNotExists,
     FileAlreadyExists,
     DirectoryAlreadyExists,
@@ -24,6 +26,10 @@ using util::Empty;
 /// @param size size of the new file
 IOResult<Empty> touch(const std::string& filename, size_t size);
 
+/// Check if a directory or file exists
+/// @param filename path to check
+IOResult<bool> exists(const std::string& filename);
+
 /// Removes a file or directory
 /// @param filename filename of the target file/directory
 IOResult<Empty> remove(const std::string& filename);
@@ -35,18 +41,11 @@ IOResult<Empty> remove(const std::string& filename);
 IOResult<Empty> write_bytes(const std::string& filename,
                      const std::vector<uint8_t>& bytes, size_t offset);
 
-/// Read bytes from source and copy them to destination
-/// @param source filepath of the source file
-/// @param dest filepath of the destination file
-/// @param offset offset from the beginning of the source file
-/// @param bytes how many bytes to copy
-IOResult<Empty> transfer_bytes(const std::string& source, const std::string& dest, size_t offset, size_t bytes);
-
 /// Create a nested folders structure
-/// @param base base of the nested structure
-/// @param subfolders sequence of nested folders
+/// @param path path including all directories to create
+/// @param skip_last skip last section of the path, used for files
 /// @return constructed path or and error 
-IOResult<std::string> create_subfolders(const std::string& base, const std::vector<std::string>& subfolders);
+IOResult<std::string> create_directories(const std::string& path, bool skip_last = false);
 
 /// Load file content of a file
 /// @param filepath filepath of the target file

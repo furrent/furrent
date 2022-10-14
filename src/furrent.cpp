@@ -83,7 +83,9 @@ bool PieceTask::save() const {
 
 // ======================================================================================
 
-Furrent::Furrent() {
+Furrent::Furrent() 
+: _descriptor_next_uid{0u}, _download_folder{"."}
+{
   // Default global logger
   auto logger = spdlog::get("custom");
 
@@ -106,6 +108,32 @@ Furrent::Furrent() {
 Furrent::~Furrent() {
   _tasks.begin_skip_waiting();
   _workers.terminate();
+}
+
+auto Furrent::set_download_folder(const std::string& folder) -> Result<Empty> {
+
+  // Default global logger
+  auto logger = spdlog::get("custom");
+
+  auto existence = fur::platform::io::exists(folder);
+  if (!existence.valid()) {
+    logger->error("Unable to check existence of download folder at {}", folder);
+    return Result<Empty>::ERROR(Error::GenericError);
+  }
+
+  // If the folder doesn't exists create it
+  if (!*existence) {
+    logger->info("Download folder doesn't exists, creating it at {}", folder);
+    auto creation = fur::platform::io::create_directories(folder);
+    if (!creation.valid()) {
+      logger->error("Unable to create download folder at {}", folder);
+      return Result<Empty>::ERROR(Error::GenericError);
+    }
+  }
+
+  logger->info("Valid download folder at {}", folder);
+  _download_folder = folder;
+  return Result<Empty>::OK({});
 }
 
 const size_t THREAD_TASK_PROCESS_MAX_TRY = 50;
@@ -231,45 +259,35 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
 bool Furrent::prepare_torrent_files(TorrentFile& descriptor) {
   using namespace fur::platform;  // For IO operations
 
-  // Create output directory
-  auto torrent_dirpath =
-      io::create_subfolders(config::DOWNLOAD_FOLDER, {descriptor.name});
-  if (!torrent_dirpath.valid()) {
-    switch (torrent_dirpath.error()) {
-      // Directory already exists, then modify name of the torrent base
-      // directory
-      case platform::io::IOError::DirectoryAlreadyExists: {
-        const int MAX_COPY_ATTEMPTS = 10;
-        int attempts = 0;
+  std::string torrent_base_path = _download_folder + '/' + descriptor.name;
+  auto existence = io::exists(torrent_base_path);
+  
+  const int MAX_COPY_ATTEMPTS = 10;
+  int attempts = 0;
 
-        std::string descriptor_name_copy = descriptor.name;
-        do {
-          descriptor_name_copy += " COPY";
-          torrent_dirpath = io::create_subfolders(config::DOWNLOAD_FOLDER,
-                                                  {descriptor_name_copy});
-          attempts += 1;
-
-        } while (!torrent_dirpath.valid() && attempts < MAX_COPY_ATTEMPTS);
-
-        // If we tried to many times to generate new folders copy
-        if (attempts > MAX_COPY_ATTEMPTS) return false;
-
-      } break;
-
-      default:
-        return false;
-    }
+  // If directory already exists then keep adding "COPY"
+  while(attempts < MAX_COPY_ATTEMPTS && existence.valid() && *existence) {
+    torrent_base_path += " COPY";
+    existence = io::exists(torrent_base_path);
+    attempts += 1;
   }
+
+  // If we tried to many times to generate new folders copy
+  if (attempts > MAX_COPY_ATTEMPTS) 
+    return false;
+
+  // Create output directory
+  auto torrent_dirpath = io::create_directories(torrent_base_path);
+  if (!torrent_dirpath.valid())
+    return false;
 
   // Create output files
   bool must_cleanup = false;
   descriptor.folder_name = *torrent_dirpath;
   for (const auto& file : descriptor.files) {
+
     // Create nested folders
-    std::vector<std::string> subfolders(file.filepath.begin(),
-                                        file.filepath.end() - 1);
-    auto file_dirpath =
-        io::create_subfolders(descriptor.folder_name, subfolders);
+    auto file_dirpath = io::create_directories(descriptor.folder_name + '/' + file.filename(), true);
     if (!file_dirpath.valid()) {
       must_cleanup = true;
       break;
@@ -296,8 +314,9 @@ bool Furrent::prepare_torrent_files(TorrentFile& descriptor) {
 /// Begin download of a torrent
 auto Furrent::add_torrent(const std::string& filename) -> Result<TorrentID> {
   auto logger = spdlog::get("custom");
-  TorrentID tid = descriptor_next_uid;
-  descriptor_next_uid += 1;
+
+  TorrentID tid = _descriptor_next_uid;
+  _descriptor_next_uid += 1;
 
   // Load .torrent content
   auto reading = fur::platform::io::load_file_text(filename);

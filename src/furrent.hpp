@@ -79,23 +79,29 @@ class Furrent : public Singleton<Furrent> {
   /// All torrent to manage, even those that have been stopped or have errors
   std::unordered_map<TorrentID, Torrent> _torrents;
   /// Incremental torrent descriptor next id
-  TorrentID descriptor_next_uid = 0u;
+  TorrentID _descriptor_next_uid;
+
+  /// Filepath of the folder containing all downloaded content
+  std::string _download_folder; 
 
  public:
   /// All possible Furrent errors
   enum class Error {
-
+    GenericError,
     LoadingTorrentFailed
-
   };
 
   /// Errors for the furrent class
   template <typename R>
   using Result = util::Result<R, Error>;
+  using Empty  = util::Empty;
 
  public:
   Furrent();
   virtual ~Furrent();
+
+  /// Set the download folder
+  Result<Empty> set_download_folder(const std::string& folder);
 
   /// Begin download of a torrent
   /// @param filename filename of the .torrent file
