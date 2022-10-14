@@ -11,22 +11,15 @@ int main(int, char* argv[]) {
   fur::log::initialize_custom_logger();
   auto logger = spdlog::get("custom");
 
-  Furrent& furrent = Furrent::instance();
-
+  // Create output directory
+  
   const std::string argv_0(argv[0]);
   auto last_slash = argv_0.find_last_of('/');
   const std::string path_base = argv_0.substr(0, last_slash + 1);
-
-  // Create output directory
-  auto creation = fur::platform::io::create_subfolders("", { fur::config::DOWNLOAD_FOLDER });
-  if (creation.valid())
-    logger->info("Created base output directory at {}", *creation);
-  else if (creation.error() == platform::io::IOError::DirectoryAlreadyExists)
-    logger->info("Output directory already exists!");
-  else {
-    logger->critical("Error creating output directory!");
+  
+  Furrent& furrent = Furrent::instance();
+  if (!furrent.set_download_folder(path_base + fur::config::DOWNLOAD_FOLDER).valid())
     return -1;
-  }
 
   fur::gui::Window window("Furrent", 800, 600);
   
@@ -46,5 +39,4 @@ int main(int, char* argv[]) {
   });
 
   window.run();
-
 }
