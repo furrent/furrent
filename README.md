@@ -102,3 +102,33 @@ to catch the most common programming errors right in the editor.
 
 `.clang-format` is taken from the Google convention while `.clang-tidy` is a modified version of a dump
 [dump](https://gist.github.com/ArnaudValensi/0d36639fb84b80ee57d0c3c977deb70e) from a recent version of the CLion IDE.
+
+## Code quality
+### Coverage
+Note that this is without running the GUI
+
+![](cov.png)
+
+### UB Sanitizer
+```
+Test project /home/elia/code/furrent_fork/build
+    Start 1: tstandard
+1/1 Test #1: tstandard ........................   Passed   63.76 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =  63.76 sec
+```
+(Any UB would have produced an error log)
+
+### Valgrind
+```
+Test project /home/elia/code/furrent_fork/build
+    Start 1: tvalgrind
+1/1 Test #1: tvalgrind ........................   Passed  1226.90 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) = 1326.78 sec
+```
+(Any memory error would have produced an error log)
