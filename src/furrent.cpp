@@ -7,7 +7,6 @@
 #include <platform/io.hpp>
 #include <policy/policy.hpp>
 #include <random>
-#include <sstream>
 
 namespace fur {
 
@@ -365,22 +364,6 @@ void Furrent::torrent_error(TorrentID tid) {
   // Lock against writes to _torrents map
   std::shared_lock<std::shared_mutex> lock(_mtx);
   _torrents[tid].state.exchange(TorrentState::Error);
-}
-
-// Extract torrents stats
-std::vector<TorrentGuiData> Furrent::get_gui_data() const {
-  // Lock against writes to _torrents map
-  std::shared_lock<std::shared_mutex> lock(_mtx);
-
-  std::vector<TorrentGuiData> result(_torrents.size());
-  for (const auto& item : _torrents) {
-    const TorrentFile& descritor = item.second.descriptor();
-    result.push_back({item.first, item.second.state.load(), descritor.name,
-                      item.second.pieces_processed.load(),
-                      descritor.pieces_count});
-  }
-
-  return result;
 }
 
 // Extract torrents stats
