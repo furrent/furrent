@@ -13,7 +13,7 @@ Furrent is a tiny BitTorrent client
 
 ## See it in action
 
-https://user-images.githubusercontent.com/6002855/195923378-ae9f8c57-5658-404a-ac5d-a4d3c9f2648f.mp4
+https://user-images.githubusercontent.com/6002855/195927219-f23fc5ce-3f4b-4597-9fca-a973a9179515.mp4
 
 The SHA256 sum should be equal to `e307d0e583b4a8f7e5b436f8413d4707dd4242b70aea61eb08591dc0378522f3` (see https://cdimage.debian.org/debian-cd/11.5.0/amd64/bt-cd/SHA256SUMS).  
 Let's see if Furrent downloaded the file correctly.
