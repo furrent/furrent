@@ -13,6 +13,8 @@ Furrent is a tiny BitTorrent client
 
 ## See it in action
 
+![](demo.mp4)
+
 The SHA256 sum should be equal to `e307d0e583b4a8f7e5b436f8413d4707dd4242b70aea61eb08591dc0378522f3` (see https://cdimage.debian.org/debian-cd/11.5.0/amd64/bt-cd/SHA256SUMS).  
 Let's see if Furrent downloaded the file correctly.
 
