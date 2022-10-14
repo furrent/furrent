@@ -25,7 +25,7 @@ struct File {
   // =======================================================
 
   /// @return filename in string form without base
-  std::string filename() const;
+  [[nodiscard]] std::string filename() const;
 };
 
 /// Represents a parsed .torrent file
@@ -35,15 +35,15 @@ struct TorrentFile {
   std::string announce_url;
   /// The SHA1 hash of the "info" dict from the decoded .torrent file. Uniquely
   /// identifies this torrent to the tracker and other peers
-  hash::hash_t info_hash;
+  hash::hash_t info_hash{};
   /// SHA1 hashes, one for each piece of the shared file
   std::vector<hash::hash_t> piece_hashes;
   /// The length, in bytes, of each piece
-  size_t piece_length;
+  size_t piece_length = 0;
   /// The length, in bytes, of the entire shared file
-  size_t length;
+  size_t length = 0;
   /// Total number of pieces
-  size_t pieces_count;
+  size_t pieces_count = 0;
   /// The name of the shared file
   std::string name;
 

@@ -14,17 +14,6 @@
 
 namespace fur::peer {
 
-std::string error_to_string(const PeerError error) {
-  switch (error) {
-    case PeerError::AnnounceError:
-      return "can't announce to the tracker";
-    case PeerError::ParserError:
-      return "error during parsing of the file";
-    default:
-      return "unknown error";
-  }
-}
-
 std::string Peer::address() const {
   return fmt::format("{}.{}.{}.{}:{}", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
                      (ip >> 8) & 0xFF, ip & 0xFF, port);

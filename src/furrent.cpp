@@ -21,7 +21,7 @@ PieceTask::PieceTask(TorrentID tid, Piece piece, const TorrentFile& descriptor)
 
 /// Process piece, downloads it from a peer and saves it to file
 PieceTaskStats PieceTask::process(const peer::Peer& peer) {
-  PieceTaskStats stats;
+  PieceTaskStats stats{};
   stats.completed = false;
 
   if (download(peer) && save()) {

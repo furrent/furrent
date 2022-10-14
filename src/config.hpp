@@ -1,13 +1,10 @@
 #pragma once
 
-#include <cstddef>
+#include <string>
 
 namespace fur::config {
-    
+
 /// Where newly downloaded files are to be stored
 static std::string DOWNLOAD_FOLDER = "output";
 
-/// Socket timeout seconds
-inline const size_t SOCKET_TIMEOUT_SECONDS = 5;
-
-} // namespace fur::config
+}  // namespace fur::config

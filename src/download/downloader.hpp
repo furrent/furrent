@@ -18,9 +18,8 @@ using namespace fur::download::socket;
 using namespace fur::download::message;
 
 namespace fur::download {
- 
+
 /// A downloaded piece for a torrent file.
-// TODO Remove once the real struct is merged
 struct Downloaded {
   size_t index;
   std::vector<uint8_t> content;
@@ -47,8 +46,6 @@ enum class DownloaderError {
   SocketOther,
 };
 
-std::string display_downloader_error(const DownloaderError& err);
-
 DownloaderError from_socket_error(const socket::SocketError& err);
 
 /// Handles downloading of torrent pieces. Must be initialized with a
@@ -66,11 +63,7 @@ class Downloader {
   ///  - This peer not having the requested piece available
   ///  - The connection timing out
   ///  - The downloaded piece being corrupt
-  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(
-      const Piece&);
-
-  const TorrentFile& get_torrent() const;
-  const Peer& get_peer() const;
+  [[nodiscard]] Result<Downloaded, DownloaderError> try_download(const Piece&);
 
  private:
   const TorrentFile& torrent;

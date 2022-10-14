@@ -1,3 +1,5 @@
+#pragma GCC system_header
+#pragma clang system_header
 /**********************************************************************************************
 *
 *   raylib v4.2 - A simple and easy-to-use library to enjoy videogames programming (www.raylib.com)

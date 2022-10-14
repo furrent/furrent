@@ -112,10 +112,6 @@ void test_alice(std::vector<DownloaderError>& errors) {
           TestingFriend::Downloader_try_download(down, Piece{
             static_cast<size_t>(idx), subpieces});
       if (!maybe_downloaded.valid()) {
-        spdlog::get("custom")->error(
-            "error in downloader: {}",
-            display_downloader_error(maybe_downloaded.error()));
-
         auto erase_me =
             std::find(errors.begin(), errors.end(), maybe_downloaded.error());
         if (erase_me != errors.end()) {

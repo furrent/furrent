@@ -57,7 +57,7 @@ class PieceTask {
   /// Download from a peer
   bool download(const peer::Peer& peer);
   /// Save to file
-  bool save() const;
+  [[nodiscard]] bool save() const;
 };
 
 /// Main state of the program

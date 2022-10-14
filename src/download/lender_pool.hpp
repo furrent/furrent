@@ -48,7 +48,7 @@ struct Borrow {
 /// A simple strategy for picking an object when a borrow is requested to a
 /// `LenderPool`.
 template <typename T>
-struct StratFirstAvailable {
+struct [[maybe_unused]] StratFirstAvailable {
   SlotPtr<T>* operator()(std::vector<SlotPtr<T>>& storage);
 };
 
