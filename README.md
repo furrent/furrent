@@ -11,6 +11,18 @@ Furrent is a tiny BitTorrent client
 ![](screen1.png)
 ![](screen2.png)
 
+## See it in action
+
+The SHA256 sum should be equal to `e307d0e583b4a8f7e5b436f8413d4707dd4242b70aea61eb08591dc0378522f3` (see https://cdimage.debian.org/debian-cd/11.5.0/amd64/bt-cd/SHA256SUMS).  
+Let's see if Furrent downloaded the file correctly.
+
+```
+$ sha256sum debian-11.5.0-amd64-netinst.iso 
+e307d0e583b4a8f7e5b436f8413d4707dd4242b70aea61eb08591dc0378522f3
+```
+
+Yay!
+
 ## Known limitations
 
 - No [DHT](https://en.wikipedia.org/wiki/BitTorrent#Distributed_trackers) support (tracker-less torrents with
