@@ -1,3 +1,5 @@
+#pragma GCC system_header
+#pragma clang system_header
 /*******************************************************************************************
 *
 *   FileDialog v1.2 - Modal file dialog to open/save files

@@ -3,7 +3,6 @@
 #include <array>
 #include <cassert>
 #include <limits>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -32,9 +31,10 @@ std::string hash_to_hex(const hash_t& hash) {
 }
 
 hash_t compute_info_hash(const std::string& bencoded_info_dict) {
+  int len = static_cast<int>(bencoded_info_dict.length());
+
   hash_t buffer;
-  sha1::calc(bencoded_info_dict.data(), bencoded_info_dict.length(),
-             buffer.begin());
+  sha1::calc(bencoded_info_dict.data(), len, buffer.begin());
   return buffer;
 }
 

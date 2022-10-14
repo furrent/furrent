@@ -13,9 +13,9 @@
 #pragma once
 
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <optional>
-#include <functional>
 #include <policy/queue.hpp>
 
 namespace fur::mt {
@@ -24,7 +24,6 @@ namespace fur::mt {
 /// and add concurrency related functionalities
 template <typename T>
 class SharedQueue {
-
   /// Contains all work that can be executed
   policy::Queue<T> _work;
 
@@ -38,7 +37,6 @@ class SharedQueue {
   bool _skip_waiting;
 
  public:
-
   // Error are the same of the queue
   typedef typename policy::Queue<T>::Error Error;
   typedef util::Result<T, Error> Result;
@@ -59,7 +57,7 @@ class SharedQueue {
 
   /// Construct an insert a new work in the internal list
   /// @param ...args args used in the constructor of work
-  template<typename... Args>
+  template <typename... Args>
   void emplace(Args&&... args);
 
   /// Mutates the internal list of items in a locked way

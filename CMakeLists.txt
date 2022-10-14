@@ -17,7 +17,7 @@ option(COVERAGE "Enable coverage output" OFF)
 option(RAYLIB_ENABLE "Enable raylib" ON)
 
 set(COMPILER_FLAGS
-    -Wall -Wextra -Wpedantic
+    -Wall -Wextra -Wpedantic -Werror
 
     # We need to force "char" to be undefined because bencoded strings can contain any unsigned byte value ranging from
     # 0 to 255

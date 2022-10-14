@@ -17,6 +17,7 @@ class BencodeValue {
   [[nodiscard]] virtual std::string to_string() const = 0;
   /// Returns the type of the bencode value as a BencodeType enum
   [[nodiscard]] virtual BencodeType get_type() const = 0;
+  virtual ~BencodeValue() = default;
 };
 
 class BencodeInt : public BencodeValue {

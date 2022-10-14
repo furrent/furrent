@@ -123,7 +123,9 @@ Result<std::unique_ptr<Message>, DecodeError> Message::decode(
           err = message.error();
         break;
       }
-      default:;  // Unreachable
+      default:
+        // Unreachable
+        err = DecodeError(0);
     }
 
     return Result::ERROR(DecodeError(err));

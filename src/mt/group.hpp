@@ -74,7 +74,7 @@ class ThreadGroup {
   std::vector<State>& get_states();
 
   /// Get total number of workers
-  size_t get_worker_count() const;
+  [[nodiscard]] size_t get_worker_count() const;
 
  private:
   /// Workers thread main function

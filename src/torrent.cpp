@@ -38,8 +38,7 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
 
   auto& bencode_info_dict = dynamic_cast<BencodeDict&>(*dict.at("info"));
 
-  BencodeParser parser;
-  std::string encoded_info_dict = parser.encode(bencode_info_dict);
+  std::string encoded_info_dict = BencodeParser::encode(bencode_info_dict);
   this->info_hash = hash::compute_info_hash(encoded_info_dict);
 
   auto& info_dict = bencode_info_dict.value();

@@ -1,14 +1,13 @@
 #pragma once
 
+#include <raylib/file_dialog.h>
+#include <raylib/raygui.h>
 #include <raylib/raylib.h>
 
 #include <functional>
 #include <furrent.hpp>
 #include <list>
 #include <string>
-
-#include <raylib/file_dialog.h>
-#include <raylib/raygui.h>
 
 namespace fur::gui {
 

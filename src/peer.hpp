@@ -8,7 +8,7 @@
 
 // Forward declare TorrentFile
 namespace fur {
-class TorrentFile;
+struct TorrentFile;
 }
 
 /// Contains data structures and facilities for representing and discovering
@@ -49,9 +49,6 @@ enum class PeerError {
   /// Can't announce to the tracker
   AnnounceError
 };
-
-/// Function to translate a PeerError to a string
-std::string error_to_string(PeerError error);
 
 using PeerResult = util::Result<Announce, PeerError>;
 

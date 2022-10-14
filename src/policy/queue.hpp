@@ -47,7 +47,7 @@ class Queue {
 
   /// Construct and insert a new element
   /// @param ...args arguments list used in constructor of T
-  template<typename... Args>
+  template <typename... Args>
   void emplace(Args&&... args);
 
   /// Tries to extract an element using a policy

@@ -1,3 +1,5 @@
+#pragma GCC system_header
+#pragma clang system_header
 /*******************************************************************************************
 *
 *   raygui v3.2 - A simple and easy-to-use immediate-mode gui library

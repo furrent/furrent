@@ -1,5 +1,6 @@
 .vscode/
 .idea/
 .cache/
-__pycache__
+__pycache__/
 output/
+log.txt
