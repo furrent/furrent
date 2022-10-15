@@ -25,6 +25,10 @@ e307d0e583b4a8f7e5b436f8413d4707dd4242b70aea61eb08591dc0378522f3
 
 Yay!
 
+## Documentation
+
+The docs are hosted [here](https://furrent.github.io/furrent/annotated.html) and are automatically built in the cloud after every commit.
+
 ## Known limitations
 
 - No [DHT](https://en.wikipedia.org/wiki/BitTorrent#Distributed_trackers) support (tracker-less torrents with
@@ -45,7 +49,9 @@ All of these combined unfortunately result in many torrents being undownloadable
 
 [Debian](https://www.debian.org/CD/torrent-cd/index.it.html) should work fine instead.
 
-## Building
+## How to
+
+### Build the main executable
 
 The requirements are:
 
@@ -65,7 +71,7 @@ $ make install
 
 The instructions that follow assume that you have built Furrent and are in the `build/` directory.
 
-## Documentation
+### Build the documentation
 
 You can build the documentation like so:
 
@@ -78,7 +84,7 @@ $ make install
 
 Note that you will need to have Doxygen installed on your system.
 
-## Testing
+### Build and run unit tests
 
 You can run all tests like so:
 
@@ -93,7 +99,7 @@ Additionally, if you have Valgrind installed on your system, you can run the tes
 $ ctest -C valgrind
 ```
 
-## Coverage
+### Gather coverage data
 
 To enable coverage support, add the `-DCOVERAGE=ON` flag when running `cmake`. Then build the `furrent`
 or `furrent_test`
@@ -104,20 +110,20 @@ every time you want to refresh the results).
 
 This step requires you to have `gcov` and `gcovr` installed on your system.
 
-## Sanitizer
+### Enable sanitizers
 
 We're using the undefined behaviour runtime sanitizer that will print a message to the console in the unfortunate
 event that Furrent runs into any UB. To enable it, add the `-DUSAN=ON` flag when running `cmake`.
 
-## Tidy and format
-
-We're using the `clang-format` formatter to maintain a uniform code style and the `clang-tidy` static analyzer (linter)
-to catch the most common programming errors right in the editor.
-
-`.clang-format` is taken from the Google convention while `.clang-tidy` is a modified version of a dump
-[dump](https://gist.github.com/ArnaudValensi/0d36639fb84b80ee57d0c3c977deb70e) from a recent version of the CLion IDE.
-
 ## Code quality
+### Warnings, CLangTidy and CLangFormat
+The flags `-Wall -Wextra -Wpedantic -Werror` are provided to the compiler. This means that any warning is turned into an error and almost all of them are enabled. Furrent should currently compile just fine with 0 warnings.
+
+The `clang-tidy` static analyzer (linter) is used to include more sophisticated checks. Furrent should currently exhibit no
+`clang-tidy` warnings except a couple related to the usage of a C library: raylib. The configuration file, `.clang-tidy`, is a modified version of a [dump](https://gist.github.com/ArnaudValensi/0d36639fb84b80ee57d0c3c977deb70e) from a recent version of the CLion IDE.
+
+We're using the `clang-format` formatter to maintain a uniform code style. The configuration file, `.clang-format`, is taken from the Google convention.
+
 ### Coverage
 Note that this is without running the GUI
 
