@@ -23,6 +23,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Install Doxygen
+        run: apt-get update && apt-get install -y doxygen
+    
       - name: Checkout
         uses: actions/checkout@v3
         
