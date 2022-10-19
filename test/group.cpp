@@ -1,6 +1,7 @@
 #include <iostream>
 #include <mt/group.hpp>
 #include <vector>
+#include <mutex>
 
 #include "catch2/catch.hpp"
 
@@ -16,21 +17,32 @@ TEST_CASE("Thread group creation") {
   std::vector<bool> checked;
   checked.resize(THREADS_NUM);
 
+  std::mutex mx;
+  int left_waiting = THREADS_NUM;
+
   {
     // Threads whould exists only inside this scope
     ThreadGroup<ThreadState> group{};
     group.launch(
         [&](Runner runner, ThreadState& state, size_t index) {
-          while (runner.alive()) {
-            state.value = 100;
-            checked[index] = true;
-          }
+          assert(runner.alive());
+          state.value = 100;
+          checked[index] = true;
+
+          auto lock = std::unique_lock(mx);
+          left_waiting--;
         },
         THREADS_NUM);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    while (true) {
+      {
+        auto lock = std::unique_lock(mx);
+        if (left_waiting <= 0) break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+
     group.terminate();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     for (auto& state : group.get_states()) REQUIRE(state.value == 100);
   }

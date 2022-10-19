@@ -143,12 +143,9 @@ Total Test time (real) =  63.76 sec
 
 ### Valgrind
 ```
-Test project /home/elia/code/furrent_fork/build
-    Start 1: tvalgrind
-1/1 Test #1: tvalgrind ........................   Passed  1226.90 sec
-
-100% tests passed, 0 tests failed out of 1
-
-Total Test time (real) = 1326.78 sec
+==12439== HEAP SUMMARY:
+==12439==     in use at exit: 0 bytes in 0 blocks
+==12439==   total heap usage: 379,823 allocs, 379,823 frees, 55,922,506 bytes allocated
+==12439== 
+==12439== All heap blocks were freed -- no leaks are possible
 ```
-(Any memory error would have produced an error log)
