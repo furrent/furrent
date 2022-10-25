@@ -100,10 +100,7 @@ auto BencodeParser::decode_string() -> BencodeResult {
     len += _tokens[_index];
     _index++;
   }
-  if (len == "-0") {
-    // The "-0" is not a valid integer
-    return BencodeResult::ERROR(BencodeParserError::StringFormat);
-  } else if (!std::regex_match(len, std::regex("^\\d+$"))) {
+  if (!std::regex_match(len, std::regex("^\\d+$"))) {
     // Check if the length is a positive integer
     return BencodeResult::ERROR(BencodeParserError::InvalidString);
   }

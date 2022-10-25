@@ -31,6 +31,9 @@ TEST_CASE("[BencodeParser::decode()] Wrong decode of a integer") {
   auto r_2 = parser.decode("i-0e");
   REQUIRE(!r_2.valid());
   REQUIRE(r_2.error() == BencodeParserError::IntValue);
+  auto r_3 = parser.decode("iXe");
+  REQUIRE(!r_3.valid());
+  REQUIRE(r_3.error() == BencodeParserError::IntValue);
 }
 
 TEST_CASE("[BencodeParser::decode()] Correct decode of a string") {
@@ -147,4 +150,14 @@ TEST_CASE(
   REQUIRE(b_string.value() == "interval");
   auto& b_int = dynamic_cast<BencodeInt&>(*b_list.value()[1]);
   REQUIRE(b_int.value() == 3);
+}
+
+TEST_CASE("[BencodeParser:error_to_string()] Test unread error") {
+  std::vector<std::string> s = {
+      "InvalidString", "IntFormat",    "IntValue",
+      "StringFormat",  "ListFormat",   "DictFormat",
+      "DictKey",       "DictKeyOrder", "<invalid parser error>"};
+  for (int i = 0; i < static_cast<int>(s.size()); i++) {
+    REQUIRE(error_to_string(static_cast<BencodeParserError>(i)) == s[i]);
+  }
 }
