@@ -2,6 +2,7 @@
 
 #include <thread>
 #include <atomic>
+#include <condition_variable>
 
 #include <mt/sharing_queue.hpp>
 #include <policy/policy.hpp>
@@ -14,6 +15,7 @@ TEST_CASE("[Sharing queue][policy] Standard operations") {
 
     std::atomic_bool alive{true};
     std::atomic_uint32_t counter{0};
+    std::condition_variable CV;
 
     std::thread reader([&] {
 
@@ -24,7 +26,10 @@ TEST_CASE("[Sharing queue][policy] Standard operations") {
             auto result = items.try_extract(policy);
             if (result.valid())
                 counter += result->value;
+
+            CV.notify_one();
         }
+        CV.notify_one();
     });
 
     const int TOTAL_COUNT = 100;
@@ -32,6 +37,13 @@ TEST_CASE("[Sharing queue][policy] Standard operations") {
         items.insert({ 1 });
 
     items.wait_empty();
+
+    {
+      std::mutex mtx;
+      std::unique_lock<std::mutex> lock(mtx);
+      CV.wait(lock);
+    }
+
     REQUIRE(counter == TOTAL_COUNT);
 
     alive.exchange(false);
