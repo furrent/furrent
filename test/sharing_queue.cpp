@@ -1,0 +1,75 @@
+#include "catch2/catch.hpp"
+
+#include <thread>
+#include <atomic>
+
+#include <mt/sharing_queue.hpp>
+#include <policy/policy.hpp>
+
+struct Item { int value; };
+
+TEST_CASE("[Sharing queue][policy] Standard operations") {
+
+    fur::mt::SharedQueue<Item> items;
+
+    std::atomic_bool alive{true};
+    std::atomic_uint32_t counter{0};
+
+    std::thread reader([&] {
+
+        fur::policy::FIFOPolicy<Item> policy;
+        items.wait_work();
+
+        while(alive) {
+            auto result = items.try_extract(policy);
+            if (result.valid())
+                counter += result->value;
+        }
+    });
+
+    const int TOTAL_COUNT = 100;
+    for(int i = 0; i < TOTAL_COUNT; i++)
+        items.insert({ 1 });
+
+    items.wait_empty();
+    REQUIRE(counter == TOTAL_COUNT);
+
+    alive.exchange(false);
+    reader.join();
+}
+
+TEST_CASE("[Sharing queue][policy] Mutation") {
+
+    fur::mt::SharedQueue<Item> items;
+
+    const int TOTAL_COUNT = 100;
+    for (int i = 0; i < 100; i++)
+        items.insert({ 0 });
+
+    std::thread mutator([&] {
+
+        int counter = 0;
+        items.mutate([&](Item& item) -> bool {
+            item.value = 1;
+
+            bool result = false;
+            if (counter % 2 != 0)
+                result = true;
+
+            counter += 1;
+            return result;
+        });
+    });
+
+    mutator.join();
+
+    int count = 0;
+    fur::policy::FIFOPolicy<Item> policy;
+    for(int i = 0; i < TOTAL_COUNT / 2; i++) {
+        auto result = items.try_extract(policy);
+        REQUIRE(result.valid());
+        count += result->value;
+    }
+
+    REQUIRE(count == TOTAL_COUNT / 2);
+}
