@@ -1,23 +1,23 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <util/result.hpp>
-#include <filesystem>
 #include <vector>
 
 namespace fur::platform::io {
 
-enum class IOError { 
-    GenericError, 
-    CannotOpenFile,
-    InvalidPath,
-    PathDoesNotExists,
-    FileAlreadyExists,
-    DirectoryAlreadyExists,
+enum class IOError {
+  GenericError,
+  CannotOpenFile,
+  InvalidPath,
+  PathDoesNotExists,
+  FileAlreadyExists,
+  DirectoryAlreadyExists,
 };
 
 /// Empty result for handling IO errors
-template<typename T>
+template <typename T>
 using IOResult = util::Result<T, IOError>;
 using util::Empty;
 
@@ -39,13 +39,14 @@ IOResult<Empty> remove(const std::string& filename);
 /// @param bytes number of files to write
 /// @param offset where to write the bytes in the file
 IOResult<Empty> write_bytes(const std::string& filename,
-                     const std::vector<uint8_t>& bytes, size_t offset);
+                            const std::vector<uint8_t>& bytes, size_t offset);
 
 /// Create a nested folders structure
 /// @param path path including all directories to create
 /// @param skip_last skip last section of the path, used for files
-/// @return constructed path or and error 
-IOResult<std::string> create_directories(const std::string& path, bool skip_last = false);
+/// @return constructed path or and error
+IOResult<std::string> create_directories(const std::string& path,
+                                         bool skip_last = false);
 
 /// Load file content of a file
 /// @param filepath filepath of the target file

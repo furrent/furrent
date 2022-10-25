@@ -82,19 +82,16 @@ class Furrent : public Singleton<Furrent> {
   TorrentID _descriptor_next_uid;
 
   /// Filepath of the folder containing all downloaded content
-  std::string _download_folder; 
+  std::string _download_folder;
 
  public:
   /// All possible Furrent errors
-  enum class Error {
-    GenericError,
-    LoadingTorrentFailed
-  };
+  enum class Error { GenericError, LoadingTorrentFailed };
 
   /// Errors for the furrent class
   template <typename R>
   using Result = util::Result<R, Error>;
-  using Empty  = util::Empty;
+  using Empty = util::Empty;
 
  public:
   Furrent();

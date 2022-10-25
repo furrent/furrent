@@ -5,12 +5,10 @@
 
 namespace fur::tasks {
 
-/// Task responsible for the rendering of the ui  
+/// Task responsible for the rendering of the ui
 class GuiTask : public mt::ITask {
-
-public:
-    explicit GuiTask(Furrent& furrent);
-
+ public:
+  explicit GuiTask(Furrent& furrent);
 };
 
-} // namespace fur::tasks
+}  // namespace fur::tasks

@@ -83,9 +83,7 @@ bool PieceTask::save() const {
 
 // ======================================================================================
 
-Furrent::Furrent() 
-: _descriptor_next_uid{0u}, _download_folder{"."}
-{
+Furrent::Furrent() : _descriptor_next_uid{0u}, _download_folder{"."} {
   // Default global logger
   auto logger = spdlog::get("custom");
 
@@ -111,7 +109,6 @@ Furrent::~Furrent() {
 }
 
 auto Furrent::set_download_folder(const std::string& folder) -> Result<Empty> {
-
   // Default global logger
   auto logger = spdlog::get("custom");
 
@@ -261,33 +258,31 @@ bool Furrent::prepare_torrent_files(TorrentFile& descriptor) {
 
   std::string torrent_base_path = _download_folder + '/' + descriptor.name;
   auto existence = io::exists(torrent_base_path);
-  
+
   const int MAX_COPY_ATTEMPTS = 10;
   int attempts = 0;
 
   // If directory already exists then keep adding "COPY"
-  while(attempts < MAX_COPY_ATTEMPTS && existence.valid() && *existence) {
+  while (attempts < MAX_COPY_ATTEMPTS && existence.valid() && *existence) {
     torrent_base_path += " COPY";
     existence = io::exists(torrent_base_path);
     attempts += 1;
   }
 
   // If we tried to many times to generate new folders copy
-  if (attempts > MAX_COPY_ATTEMPTS) 
-    return false;
+  if (attempts > MAX_COPY_ATTEMPTS) return false;
 
   // Create output directory
   auto torrent_dirpath = io::create_directories(torrent_base_path);
-  if (!torrent_dirpath.valid())
-    return false;
+  if (!torrent_dirpath.valid()) return false;
 
   // Create output files
   bool must_cleanup = false;
   descriptor.folder_name = *torrent_dirpath;
   for (const auto& file : descriptor.files) {
-
     // Create nested folders
-    auto file_dirpath = io::create_directories(descriptor.folder_name + '/' + file.filename(), true);
+    auto file_dirpath = io::create_directories(
+        descriptor.folder_name + '/' + file.filename(), true);
     if (!file_dirpath.valid()) {
       must_cleanup = true;
       break;
