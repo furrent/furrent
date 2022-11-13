@@ -1,7 +1,7 @@
-#include <stdexcept>
-#include <limits>
-
 #include "download/util.hpp"
+
+#include <limits>
+#include <stdexcept>
 
 std::array<uint8_t, 4> encode_integer(int64_t n) {
   if (n < 0) {

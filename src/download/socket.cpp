@@ -1,7 +1,7 @@
 #include "download/socket.hpp"
 
-#include <system_error>
 #include <stdexcept>
+#include <system_error>
 
 #include "log/logger.hpp"
 
