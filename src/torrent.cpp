@@ -132,23 +132,24 @@ Torrent::Torrent(TorrentID tid, const TorrentFile& descriptor)
 
 void Torrent::announce() {
   auto response = peer::announce(_descriptor);
-  if (response.valid()) {
-    _update_interval = response->interval;
-    _peers = response->peers;
-
-    if (_peers.size() > std::numeric_limits<int64_t>::max()) {
-      throw std::out_of_range("too many peers");
-    }
-
-    // Initial score is 1 for every peer
-    _peers_score.clear();
-    for (int64_t i = 0; i < static_cast<int64_t>(_peers.size()); i++) {
-      _peers_score.emplace_back(1);
-    }
+  if (!response.valid()) {
+    auto logger = spdlog::get("custom");
+    logger->critical("Error announcing to tracker!");
+    return;
   }
 
-  auto logger = spdlog::get("custom");
-  logger->critical("Error announcing to tracker!");
+  _update_interval = response->interval;
+  _peers = response->peers;
+
+  if (_peers.size() > std::numeric_limits<int64_t>::max()) {
+    throw std::out_of_range("too many peers");
+  }
+
+  // Initial score is 1 for every peer
+  _peers_score.clear();
+  for (int64_t i = 0; i < static_cast<int64_t>(_peers.size()); i++) {
+    _peers_score.emplace_back(1);
+  }
 }
 
 void Torrent::atomic_add_peer_score(int64_t peer_index) {
