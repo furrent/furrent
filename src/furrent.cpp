@@ -129,8 +129,6 @@ auto Furrent::set_download_folder(const std::string& folder) -> Result<Empty> {
   return Result<Empty>::OK({});
 }
 
-const int64_t THREAD_TASK_PROCESS_MAX_TRY = 50;
-
 /// Print the peers distribution of a torrent
 static void thread_print_torrent_stats(
     std::mt19937& gen, PieceTask& task, const std::vector<peer::Peer>& peers,
@@ -192,16 +190,10 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state,
         peers = torrent.peers();
       }
 
-      int64_t cur_try = 0;
       while (true) {
-        if (cur_try > THREAD_TASK_PROCESS_MAX_TRY) {
-          throw std::logic_error("too many attempts at downloading a piece");
-        }
-
         int64_t peer_index = peers_distribution(gen);
         PieceTaskStats stats = task.process(peers[peer_index]);
         if (!stats.completed) {
-          cur_try++;
           continue;
         }
 
