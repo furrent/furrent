@@ -23,7 +23,7 @@ TEST_CASE("[Bitfield] Initialized to correct length") {
 TEST_CASE("[Bitfield] Basic Set/Get") {
   Bitfield bf(10);
   REQUIRE(TestingFriend::Bitfield_storage(bf) == std::vector<uint8_t>{0, 0});
-  for (int64_t i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     REQUIRE(!bf.get(i));
   }
 

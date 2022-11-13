@@ -31,7 +31,7 @@ TEST_CASE("[Sharing queue][policy] Standard operations") {
   });
 
   const int64_t TOTAL_COUNT = 100;
-  for (int64_t i = 0; i < TOTAL_COUNT; i++) items.insert({1});
+  for (int i = 0; i < TOTAL_COUNT; i++) items.insert({1});
 
   items.wait_empty();
 
@@ -51,7 +51,7 @@ TEST_CASE("[Sharing queue][policy] Mutation") {
   fur::mt::SharedQueue<Item> items;
 
   const int64_t TOTAL_COUNT = 100;
-  for (int64_t i = 0; i < 100; i++) items.insert({0});
+  for (int i = 0; i < 100; i++) items.insert({0});
 
   std::thread mutator([&] {
     int counter = 0;
@@ -70,7 +70,7 @@ TEST_CASE("[Sharing queue][policy] Mutation") {
 
   int64_t count = 0;
   fur::policy::FIFOPolicy<Item> policy;
-  for (int64_t i = 0; i < TOTAL_COUNT / 2; i++) {
+  for (int i = 0; i < TOTAL_COUNT / 2; i++) {
     auto result = items.try_extract(policy);
     REQUIRE(result.valid());
     count += result->value;

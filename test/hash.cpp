@@ -11,7 +11,7 @@ using namespace fur::hash;
 
 static void check_string(const std::string& string, const hash_t& hash) {
   REQUIRE(string.length() == 20);
-  for (int64_t i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     REQUIRE(static_cast<uint8_t>(string[i]) == hash[i]);
   }
 }
@@ -51,7 +51,7 @@ TEST_CASE("[Hash] Split pieces string") {
   REQUIRE(r.valid());
   auto pieces = *r;
   REQUIRE(pieces.size() == 3);
-  for (int64_t i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     hash_t want;
     std::fill(want.begin(), want.end(), i);
     REQUIRE(pieces[i] == want);

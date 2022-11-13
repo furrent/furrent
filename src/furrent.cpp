@@ -134,7 +134,7 @@ static void thread_print_torrent_stats(
     std::mt19937& gen, PieceTask& task, const std::vector<peer::Peer>& peers,
     std::discrete_distribution<int64_t>& distr) {
   std::vector<int64_t> rolls(peers.size());
-  for (int64_t i = 0; i < 10000; i++) rolls[distr(gen)] += 1;
+  for (int i = 0; i < 10000; i++) rolls[distr(gen)] += 1;
 
   // Number of peers is guaranteed to fit in an int64_t, see torrent.cpp
 

@@ -149,7 +149,7 @@ TEST_CASE("[Downloader] Download alice") {
 
   // Do it a couple of times because the alice faker is non-deterministic and
   // may not always stress all `Downloader` behavior patterns
-  for (int64_t i = 0; i < 30; i++) {
+  for (int i = 0; i < 30; i++) {
     test_alice(errors);
   }
 

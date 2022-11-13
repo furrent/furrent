@@ -33,7 +33,7 @@ Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
     throw std::invalid_argument("not a valid ip");
   }
 
-  for (int64_t i = 1; i <= 4; i++) {
+  for (int i = 1; i <= 4; i++) {
     uint32_t octet = std::stoi(match[i]);
     ip |= octet << 8 * (4 - i);
   }
