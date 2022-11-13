@@ -38,7 +38,7 @@ struct Peer {
 struct Announce {
   /// How often (in seconds) we're expected to re-announce ourselves and refresh
   /// the list of peers
-  int interval;
+  int64_t interval;
   /// The list of peers that we can download the file from
   std::vector<Peer> peers;
 };

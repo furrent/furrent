@@ -23,14 +23,14 @@ class BencodeValue {
 class BencodeInt : public BencodeValue {
  private:
   /// The integer value of the bencode value
-  long _val;
+  int64_t _val;
 
  public:
-  explicit BencodeInt(long data);
+  explicit BencodeInt(int64_t data);
   [[nodiscard]] std::string to_string() const override;
   [[nodiscard]] BencodeType get_type() const override;
   /// Returns the integer value of the bencode value
-  [[nodiscard]] long value() const;
+  [[nodiscard]] int64_t value() const;
 };
 
 class BencodeString : public BencodeValue {

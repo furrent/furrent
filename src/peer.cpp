@@ -33,7 +33,7 @@ Peer::Peer(const std::string& ip_s, uint16_t port) : ip{0}, port{port} {
     throw std::invalid_argument("not a valid ip");
   }
 
-  for (int i = 1; i <= 4; i++) {
+  for (int64_t i = 1; i <= 4; i++) {
     uint32_t octet = std::stoi(match[i]);
     ip |= octet << 8 * (4 - i);
   }
@@ -76,7 +76,7 @@ PeerResult parse_tracker_response(const std::string& text) {
   auto& dict = dynamic_cast<bencode::BencodeDict&>(*(*tree)).value();
 
   auto& interval = dynamic_cast<bencode::BencodeInt&>(*dict.at("interval"));
-  result.interval = static_cast<int>(interval.value());
+  result.interval = interval.value();
 
   auto& peers = dynamic_cast<bencode::BencodeString&>(*dict.at("peers"));
   for (auto it = peers.value().begin(); it < peers.value().end(); it += 6) {

@@ -1,7 +1,6 @@
 #include "download/downloader.hpp"
 
 #include <array>
-#include <cassert>
 #include <cstdint>
 #include <stdexcept>
 

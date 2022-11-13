@@ -38,7 +38,7 @@ using BencodeResult =
 class BencodeParser {
  private:
   /// The index of the current token used for decoding
-  unsigned int _index{};
+  int64_t _index{};
   /// The list of tokens to be decoded
   std::string _tokens;
   /// Private method used recursively to decode the bencode data

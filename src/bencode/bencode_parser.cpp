@@ -1,6 +1,8 @@
 #include "bencode_parser.hpp"
 
+#include <limits>
 #include <regex>
+#include <stdexcept>
 
 namespace fur::bencode {
 std::string error_to_string(const BencodeParserError error) {
@@ -30,11 +32,16 @@ std::string BencodeParser::encode(const BencodeValue& value) {
   return value.to_string();
 }
 
-auto BencodeParser::decode(const std::string& decoded) -> BencodeResult {
+BencodeResult BencodeParser::decode(const std::string& decoded) {
+  if (decoded.length() > std::numeric_limits<int64_t>::max()) {
+    throw std::invalid_argument("string to decode is too large");
+  }
+
   _tokens = decoded;
   _index = 0;  // Reset the index
+
   auto r = decode();
-  if (r.valid() && _index != _tokens.size()) {
+  if (r.valid() && _index != static_cast<int64_t>(_tokens.length())) {
     // If the result is not an error and the string was not fully parsed
     return BencodeResult::ERROR(BencodeParserError::InvalidString);
   }
@@ -60,18 +67,19 @@ auto BencodeParser::decode() -> BencodeResult {
 
 auto BencodeParser::decode_int() -> BencodeResult {
   // The token must be in the form ['i', 'number', 'e']
-  if (_tokens.size() - _index < 3) {
+  if (static_cast<int64_t>(_tokens.size()) - _index < 3) {
     return BencodeResult::ERROR(BencodeParserError::IntFormat);
   }
   // Skip the 'i' token already checked before entering this function
   _index++;
   // Decoding the integer
   std::string integer{};
-  while (_index < _tokens.size() && _tokens[_index] != 'e') {
+  while (_index < static_cast<int64_t>(_tokens.size()) &&
+         _tokens[_index] != 'e') {
     integer += _tokens[_index];
     _index++;
   }
-  if (_index == _tokens.size()) {
+  if (_index == static_cast<int64_t>(_tokens.size())) {
     // No space for the 'e' token
     return BencodeResult::ERROR(BencodeParserError::IntFormat);
   } else if (_tokens[_index] != 'e') {
@@ -91,12 +99,13 @@ auto BencodeParser::decode_int() -> BencodeResult {
 
 auto BencodeParser::decode_string() -> BencodeResult {
   // The token must be in the form ['length', ':', 'string']
-  if (_tokens.size() - _index < 3) {
+  if (static_cast<int64_t>(_tokens.size()) - _index < 3) {
     return BencodeResult::ERROR(BencodeParserError::StringFormat);
   }
   // Calculate the string length until the ':' token
   std::string len{};
-  while (_index < _tokens.size() && _tokens[_index] != ':') {
+  while (_index < static_cast<int64_t>(_tokens.size()) &&
+         _tokens[_index] != ':') {
     len += _tokens[_index];
     _index++;
   }
@@ -107,13 +116,17 @@ auto BencodeParser::decode_string() -> BencodeResult {
   // Skip the ':' token
   _index++;
   // Calculate the string using the length previously calculated
-  auto length_str = std::stol(len);
+  int64_t length_str = std::stol(len);
+
   std::string str{};
-  for (int i = 0; i < length_str && _index < _tokens.size(); i++) {
+  for (int64_t i = 0;
+       i < length_str && _index < static_cast<int64_t>(_tokens.size()); i++) {
     str += _tokens[_index];
     _index++;
   }
-  if (str.size() != static_cast<unsigned int>(length_str)) {
+
+  if (str.size() > std::numeric_limits<int64_t>::max() ||
+      static_cast<int64_t>(str.size()) != length_str) {
     // Exit because the string is not the same length as the given length
     return BencodeResult::ERROR(BencodeParserError::InvalidString);
   }
@@ -122,14 +135,15 @@ auto BencodeParser::decode_string() -> BencodeResult {
 
 auto BencodeParser::decode_list() -> BencodeResult {
   // The token must be in the form ['l',...,'e']
-  if (_tokens.size() - _index < 2) {
+  if (static_cast<int64_t>(_tokens.size()) - _index < 2) {
     return BencodeResult::ERROR(BencodeParserError::ListFormat);
   }
   auto ptr = std::vector<std::unique_ptr<BencodeValue>>();
   // Increment index to skip the first 'l' already checked before enter the
   // function
   _index += 1;
-  while (_index < _tokens.size() && _tokens[_index] != 'e') {
+  while (_index < static_cast<int64_t>(_tokens.size()) &&
+         _tokens[_index] != 'e') {
     auto r = decode();
     if (!r.valid()) {
       // An error occurred while decoding the list
@@ -138,7 +152,7 @@ auto BencodeParser::decode_list() -> BencodeResult {
     ptr.push_back(std::move(*r));
   }
   // Push all items but not space for 'e'
-  if (_index >= _tokens.size()) {
+  if (_index >= static_cast<int64_t>(_tokens.size())) {
     return BencodeResult::ERROR(BencodeParserError::ListFormat);
   }
   // Check if the list is closed with 'e'
@@ -152,7 +166,7 @@ auto BencodeParser::decode_list() -> BencodeResult {
 
 auto BencodeParser::decode_dict() -> BencodeResult {
   // The token must be in the form ['d',...,'e']
-  if (_tokens.size() - _index < 2) {
+  if (static_cast<int64_t>(_tokens.size()) - _index < 2) {
     return BencodeResult::ERROR(BencodeParserError::DictFormat);
   }
   // Increment index to skip the first 'd' already checked before enter the
@@ -160,7 +174,8 @@ auto BencodeParser::decode_dict() -> BencodeResult {
   _index += 1;
   auto ptr = std::map<std::string, std::unique_ptr<BencodeValue>>();
   std::vector<std::string> keys = std::vector<std::string>();
-  while (_index < _tokens.size() && _tokens[_index] != 'e') {
+  while (_index < static_cast<int64_t>(_tokens.size()) &&
+         _tokens[_index] != 'e') {
     auto r_key = decode();
     if (!r_key.valid()) {
       // An error occurred while decoding a dictionary key
@@ -182,7 +197,7 @@ auto BencodeParser::decode_dict() -> BencodeResult {
     ptr.insert({key_str, std::move(*r_value)});
   }
   // Push all items but not space for 'e'
-  if (_index >= _tokens.size()) {
+  if (_index >= static_cast<int64_t>(_tokens.size())) {
     return BencodeResult::ERROR(BencodeParserError::DictFormat);
   }
   // Check if the list is closed with 'e'
@@ -190,9 +205,11 @@ auto BencodeParser::decode_dict() -> BencodeResult {
     return BencodeResult::ERROR(BencodeParserError::DictFormat);
   }
   // Check if the keys array is sorted by lexicographical order
-  for (unsigned long i = 0; i < keys.size() - 1; i++) {
-    if (keys[i] > keys[i + 1]) {
-      return BencodeResult::ERROR(BencodeParserError::DictKeyOrder);
+  if (!keys.empty()) {
+    for (int64_t i = 0; i < static_cast<int64_t>(keys.size()) - 1; i++) {
+      if (keys[i] > keys[i + 1]) {
+        return BencodeResult::ERROR(BencodeParserError::DictKeyOrder);
+      }
     }
   }
   // increment index to skip the last 'e'

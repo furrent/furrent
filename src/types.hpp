@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 /// Common types used in all the project
 namespace fur {
 
-using TorrentID = unsigned int;
+using TorrentID = int64_t;
 
 }  // namespace fur
