@@ -177,7 +177,6 @@ std::vector<peer::Peer> Torrent::peers() const { return _peers; }
 /// Generate all pieces of this torrent
 std::vector<Piece> Torrent::pieces() const {
   const int64_t PIECES_COUNT = _descriptor.pieces_count;
-  const int64_t PIECE_LENGTH = _descriptor.piece_length;
 
   std::vector<Piece> pieces;
   pieces.reserve(PIECES_COUNT);
@@ -190,11 +189,18 @@ std::vector<Piece> Torrent::pieces() const {
   for (int64_t index = 0; index < PIECES_COUNT; index++) {
     std::vector<Subpiece> subpieces;
 
+    int64_t piece_length = _descriptor.piece_length;
+    if (index == PIECES_COUNT - 1) {
+      int64_t before_this_piece =
+          (_descriptor.pieces_count - 1) * _descriptor.piece_length;
+      piece_length = _descriptor.length - before_this_piece;
+    }
+
     // Must create multiple subpieces
-    if (cur_file_rem_size < PIECE_LENGTH) {
+    if (cur_file_rem_size < piece_length) {
       // Keep incrementing file index until there is no
       // more space available in the piece
-      int64_t piece_rem_len = PIECE_LENGTH;
+      int64_t piece_rem_len = piece_length;
       while (piece_rem_len > 0) {
         // Can fill entire file in the piece
         if (cur_file_rem_size <= piece_rem_len) {
@@ -226,8 +232,8 @@ std::vector<Piece> Torrent::pieces() const {
       int64_t offset = cur_file_tot_size - cur_file_rem_size;
       std::string piece_filename = _descriptor.files[cur_file].filename();
 
-      subpieces.push_back(Subpiece{piece_filename, offset, PIECE_LENGTH});
-      cur_file_rem_size -= PIECE_LENGTH;
+      subpieces.push_back(Subpiece{piece_filename, offset, piece_length});
+      cur_file_rem_size -= piece_length;
     }
 
     pieces.push_back(Piece{index, subpieces});
