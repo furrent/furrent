@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <util/result.hpp>
@@ -24,7 +25,7 @@ using util::Empty;
 /// Create a new file on the disk
 /// @param filename filename of the new file
 /// @param size size of the new file
-IOResult<Empty> touch(const std::string& filename, size_t size);
+IOResult<Empty> touch(const std::string& filename, int64_t size);
 
 /// Check if a directory or file exists
 /// @param filename path to check
@@ -39,7 +40,7 @@ IOResult<Empty> remove(const std::string& filename);
 /// @param bytes number of files to write
 /// @param offset where to write the bytes in the file
 IOResult<Empty> write_bytes(const std::string& filename,
-                            const std::vector<uint8_t>& bytes, size_t offset);
+                            const std::vector<uint8_t>& bytes, int64_t offset);
 
 /// Create a nested folders structure
 /// @param path path including all directories to create

@@ -10,6 +10,7 @@
 
 namespace fur {
 
+/// Constructs a new empty piece task
 PieceTask::PieceTask() : _data{std::nullopt}, tid{0} {}
 
 /// Constructs a new piece task
@@ -22,40 +23,35 @@ PieceTask::PieceTask(TorrentID tid, Piece piece, const TorrentFile& descriptor)
 /// Process piece, downloads it from a peer and saves it to file
 PieceTaskStats PieceTask::process(const peer::Peer& peer) {
   PieceTaskStats stats{};
-  stats.completed = false;
-
-  if (download(peer) && save()) {
-    stats.completed = true;
-  }
-
+  stats.completed = download(peer) && save();
   return stats;
 }
 
-/// Download from a suitable peer
+/// Download the PieceTask from the provided peer and inserts it into the _data
+/// member variable.
 bool PieceTask::download(const peer::Peer& peer) {
   auto logger = spdlog::get("custom");
   auto clock_beg = std::chrono::high_resolution_clock::now();
 
   download::downloader::Downloader d(descriptor, peer);
   auto download = d.try_download(piece);
-  if (download.valid()) {
-    auto clock_end = std::chrono::high_resolution_clock::now();
-    auto clock_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        clock_end - clock_beg);
-
-    logger->info("Downloaded piece [{:4}] of T{} from {} ({} ms)", piece.index,
-                 tid, peer.address(), clock_elapsed.count());
-
-    std::optional<download::Downloaded> data(*download);
-    _data.swap(data);
-    return true;
+  if (!download.valid()) {
+    logger->trace("Error while downloading piece [{:4}] of T{} from {}",
+                  piece.index, tid, peer.address());
+    return false;
   }
 
-  logger->trace("Error while downloading piece [{:4}] of T{} from {}",
-                piece.index, tid, peer.address());
+  auto clock_end = std::chrono::high_resolution_clock::now();
+  auto clock_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+      clock_end - clock_beg);
 
-  // TODO: handle error!
-  return false;
+  logger->info("Downloaded piece [{:4}] of T{} from {} ({} ms)", piece.index,
+               tid, peer.address(), clock_elapsed.count());
+
+  std::optional<download::Downloaded> data(*download);
+  _data.swap(data);
+
+  return true;
 }
 
 /// Save to file
@@ -66,12 +62,12 @@ bool PieceTask::save() const {
   for (const auto& subpiece : piece.subpieces) {
     const std::string filepath =
         descriptor.folder_name + '/' + subpiece.filepath;
-    if (!fur::platform::io::write_bytes(filepath, _data.value().content,
-                                        subpiece.file_offset)
-             .valid()) {
+    const auto maybe_write = fur::platform::io::write_bytes(
+        filepath, _data.value().content, subpiece.file_offset);
+
+    if (!maybe_write.valid()) {
       logger->error("Error while saving piece [{:4}] of T{} to {}", piece.index,
                     tid, piece.subpieces[0].filepath);
-
       return false;
     }
   }
@@ -92,8 +88,8 @@ Furrent::Furrent() : _descriptor_next_uid{0u}, _download_folder{"."} {
   using std::placeholders::_3;
 
   /// This is the core of all workers
-  const size_t concurrency = std::thread::hardware_concurrency();
-  const size_t threads_cnt = (concurrency > 1) ? concurrency - 1 : 1;
+  const int64_t concurrency = std::thread::hardware_concurrency();
+  const int64_t threads_cnt = (concurrency > 1) ? concurrency - 1 : 1;
 
   logger->info(
       "Launching workers threads (concurrency capability: {}, workers: {})",
@@ -133,21 +129,25 @@ auto Furrent::set_download_folder(const std::string& folder) -> Result<Empty> {
   return Result<Empty>::OK({});
 }
 
-const size_t THREAD_TASK_PROCESS_MAX_TRY = 50;
+const int64_t THREAD_TASK_PROCESS_MAX_TRY = 50;
 
 /// Print the peers distribution of a torrent
 static void thread_print_torrent_stats(
     std::mt19937& gen, PieceTask& task, const std::vector<peer::Peer>& peers,
-    std::discrete_distribution<size_t>& distr) {
-  std::vector<size_t> rolls(peers.size());
-  for (int i = 0; i < 10000; i++) rolls[distr(gen)] += 1;
+    std::discrete_distribution<int64_t>& distr) {
+  std::vector<int64_t> rolls(peers.size());
+  for (int64_t i = 0; i < 10000; i++) rolls[distr(gen)] += 1;
+
+  // Number of peers is guaranteed to fit in an int64_t, see torrent.cpp
 
   std::stringstream ss;
-  for (size_t i = 0; i < peers.size(); i++) {
+  for (int64_t i = 0; i < static_cast<int64_t>(peers.size()); i++) {
     ss.width(30);
     ss << std::right << peers[i].address();
     ss.width(0);
-    ss << " : " << std::string(rolls[i] * peers.size() / 1000, '*');
+    ss << " : "
+       << std::string(rolls[i] * static_cast<int64_t>(peers.size()) / 1000,
+                      '*');
     ss << std::endl;
   }
 
@@ -155,7 +155,8 @@ static void thread_print_torrent_stats(
   logger->info("Peers distribution for T[{}]:\n{}", task.tid, ss.str());
 }
 
-void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
+void Furrent::thread_main(mt::Runner runner, WorkerState& state,
+                          int64_t index) {
   // Default global logger
   auto logger = spdlog::get("custom");
 
@@ -169,7 +170,7 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
     auto extraction = _tasks.try_extract(piece_policy);
     if (extraction.valid()) {
       PieceTask task = *extraction;
-      std::discrete_distribution<size_t> peers_distribution;
+      std::discrete_distribution<int64_t> peers_distribution;
       std::vector<peer::Peer> peers;
 
       // TODO: update peers if necessary, for now peers are constant!
@@ -191,42 +192,41 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
         peers = torrent.peers();
       }
 
-      size_t cur_try = 0;
-
-      bool success = false;
-      while (!success && cur_try < THREAD_TASK_PROCESS_MAX_TRY) {
-        size_t peer_index = peers_distribution(gen);
-        PieceTaskStats stats = task.process(peers[peer_index]);
-        if (stats.completed) {
-          state.piece_processed += 1;
-          success = true;
-
-          // Lock against writes to the _torrents map
-          std::shared_lock<std::shared_mutex> lock(_mtx);
-          Torrent& torrent = _torrents[task.tid];
-
-          // Update score of used peer
-          torrent.atomic_add_peer_score(peer_index);
-          size_t processed =
-              torrent.pieces_processed.fetch_add(1, std::memory_order_relaxed);
-
-          // Show peers score distribution every 100 pieces processed
-          if (processed % 100 == 0)
-            thread_print_torrent_stats(gen, task, peers, peers_distribution);
-
-          // Change state to completed if there are no more pieces to process
-          if (processed == torrent.descriptor().pieces_count)
-            torrent.state.exchange(TorrentState::Completed,
-                                   std::memory_order_relaxed);
-
-          break;
+      int64_t cur_try = 0;
+      while (true) {
+        if (cur_try > THREAD_TASK_PROCESS_MAX_TRY) {
+          throw std::logic_error("too many attempts at downloading a piece");
         }
-      }
 
-      if (!success) {
-        logger->warn("Unable to process piece of T[{}], setting error!",
-                     task.tid);
-        torrent_error(task.tid);
+        int64_t peer_index = peers_distribution(gen);
+        PieceTaskStats stats = task.process(peers[peer_index]);
+        if (!stats.completed) {
+          cur_try++;
+          continue;
+        }
+
+        state.piece_processed += 1;
+
+        // Lock against writes to the _torrents map
+        std::shared_lock<std::shared_mutex> lock(_mtx);
+        Torrent& torrent = _torrents[task.tid];
+
+        // Update score of used peer
+        torrent.atomic_add_peer_score(peer_index);
+        int64_t processed =
+            torrent.pieces_processed.fetch_add(1, std::memory_order_relaxed);
+
+        // Show peers score distribution every 100 pieces processed
+        if (processed % 100 == 0)
+          thread_print_torrent_stats(gen, task, peers, peers_distribution);
+
+        // Change state to completed if there are no more pieces to process
+        if (processed == torrent.descriptor().pieces_count) {
+          torrent.state.exchange(TorrentState::Completed,
+                                 std::memory_order_relaxed);
+          logger->info("Completed T[{}]", torrent.tid());
+        }
+        break;
       }
     }
 
@@ -238,7 +238,8 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
           logger->info("thread {:02d} is waiting for work, queue is empty",
                        index);
           _tasks.wait_work();
-        } break;
+          break;
+        }
 
         // Policy failed to return an element
         case policy::Queue<PieceTask>::Error::PolicyFailure: {
@@ -247,7 +248,8 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state, size_t index) {
               "nothing",
               index);
           _tasks.wait_work();
-        } break;
+          break;
+        }
       }
     }
   }
@@ -259,8 +261,8 @@ bool Furrent::prepare_torrent_files(TorrentFile& descriptor) {
   std::string torrent_base_path = _download_folder + '/' + descriptor.name;
   auto existence = io::exists(torrent_base_path);
 
-  const int MAX_COPY_ATTEMPTS = 10;
-  int attempts = 0;
+  const int64_t MAX_COPY_ATTEMPTS = 10;
+  int64_t attempts = 0;
 
   // If directory already exists then keep adding "COPY"
   while (attempts < MAX_COPY_ATTEMPTS && existence.valid() && *existence) {
@@ -315,45 +317,49 @@ auto Furrent::add_torrent(const std::string& filename) -> Result<TorrentID> {
 
   // Load .torrent content
   auto reading = fur::platform::io::load_file_text(filename);
-  if (reading.valid()) {
-    // Parse content
-    auto parser = fur::bencode::BencodeParser();
-    auto betree = parser.decode(*reading);
-    if (betree.valid()) {
-      // Create new torrent object and mapped files
-      TorrentFile descriptor(*(*betree));  // WTF IS THIS
-      if (!prepare_torrent_files(descriptor))
-        return Result<TorrentID>::ERROR(Error::LoadingTorrentFailed);
-
-      logger->info("Announcing T{} to tracker at {}", tid,
-                   descriptor.announce_url);
-
-      // Lock against concurrent read/write of the _torrents map
-      std::unique_lock<std::shared_mutex> lock(_mtx);
-      _torrents.try_emplace(tid, tid, descriptor);
-      Torrent& torrent = _torrents[tid];
-
-      // Popolate peers
-      std::stringstream ss;
-      ss << "Peers:\n";
-      for (peer::Peer& peer : torrent.peers())
-        ss << "  " << peer.address() << "\n";
-      logger->info("{}", ss.str());
-
-      // Create a task for each piece
-      logger->info("Generating {} pieces for T{} ", descriptor.pieces_count,
-                   tid);
-      std::vector<Piece> pieces = torrent.pieces();
-      for (Piece& piece : pieces)
-        _tasks.emplace(tid, piece, torrent.descriptor());
-
-      torrent.state.exchange(TorrentState::Downloading);
-      return Result<TorrentID>::OK(std::move(tid));
-    }
+  if (!reading.valid()) {
+    logger->critical("Error loading torrent T{} from file [{}]", tid, filename);
+    return Result<TorrentID>::ERROR(Error::LoadingTorrentFailed);
   }
 
-  logger->critical("Error loading T{} [{}]", tid, filename);
-  return Result<TorrentID>::ERROR(Error::LoadingTorrentFailed);
+  // Parse content
+  auto parser = fur::bencode::BencodeParser();
+  auto btree = parser.decode(*reading);
+  if (!btree.valid()) {
+    logger->critical("Error parsing torrent T{} described at [{}]", tid,
+                     filename);
+    return Result<TorrentID>::ERROR(Error::LoadingTorrentFailed);
+  }
+
+  // Create new torrent object and mapped files
+  TorrentFile descriptor(*(*btree));
+  if (!prepare_torrent_files(descriptor)) {
+    logger->critical("Error preparing torrent T{} described at [{}]", tid,
+                     filename);
+    return Result<TorrentID>::ERROR(Error::LoadingTorrentFailed);
+  }
+
+  logger->info("Announcing T{} to tracker at {}", tid, descriptor.announce_url);
+
+  // Lock against concurrent read/write of the _torrents map
+  std::unique_lock<std::shared_mutex> lock(_mtx);
+  // This creates the Torrent instance and makes the announcement to the tracker
+  _torrents.try_emplace(tid, tid, descriptor);
+  Torrent& torrent = _torrents[tid];
+
+  // Popolate peers
+  std::stringstream ss;
+  ss << "Peers:\n";
+  for (auto& peer : torrent.peers()) ss << "  " << peer.address() << "\n";
+  logger->info("{}", ss.str());
+
+  // Create a task for each piece
+  logger->info("Generating {} pieces for T{} ", descriptor.pieces_count, tid);
+  std::vector<Piece> pieces = torrent.pieces();
+  for (Piece& piece : pieces) _tasks.emplace(tid, piece, torrent.descriptor());
+
+  torrent.state.exchange(TorrentState::Downloading);
+  return Result<TorrentID>::OK(std::move(tid));
 }
 
 /// Removes a torrent descriptor and all of his tasks
@@ -371,28 +377,19 @@ void Furrent::remove_torrent(TorrentID tid) {
                                   std::memory_order_relaxed);
 }
 
-/// Set torrent state to error and remove torrent
-void Furrent::torrent_error(TorrentID tid) {
-  remove_torrent(tid);
-
-  // Lock against writes to _torrents map
-  std::shared_lock<std::shared_mutex> lock(_mtx);
-  _torrents[tid].state.exchange(TorrentState::Error);
-}
-
 // Extract torrents stats
-std::optional<TorrentGuiData> Furrent::get_gui_data(TorrentID tid) const {
+TorrentGuiData Furrent::get_gui_data(TorrentID target_tid) const {
   // Lock against writes to _torrents map
   std::shared_lock<std::shared_mutex> lock(_mtx);
-  for (const auto& item : _torrents)
-    if (item.first == tid) {
-      const TorrentFile& descritor = item.second.descriptor();
-      return std::make_optional<TorrentGuiData>(
-          {item.first, item.second.state.load(), descritor.name,
-           item.second.pieces_processed.load(), descritor.pieces_count});
+  for (const auto& [tid, torrent] : _torrents) {
+    if (target_tid == tid) {
+      const TorrentFile& d = torrent.descriptor();
+      return TorrentGuiData{tid, torrent.state.load(), d.name,
+                            torrent.pieces_processed.load(), d.pieces_count};
     }
+  }
 
-  return std::nullopt;
+  throw std::invalid_argument("asked for a torrent id that doesn't exist");
 }
 
 }  // namespace fur

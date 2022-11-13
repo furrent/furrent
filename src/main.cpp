@@ -2,7 +2,7 @@
 #include <furrent.hpp>
 #include <gui/gui.hpp>
 #include <log/logger.hpp>
-#include <platform/io.hpp>
+#include <stdexcept>
 
 using namespace fur;
 
@@ -18,8 +18,9 @@ int main(int, char* argv[]) {
 
   Furrent& furrent = Furrent::instance();
   if (!furrent.set_download_folder(path_base + fur::config::DOWNLOAD_FOLDER)
-           .valid())
-    return -1;
+           .valid()) {
+    throw std::logic_error("cannot create download folder");
+  }
 
   fur::gui::Window window("Furrent", 800, 600);
 
@@ -27,12 +28,14 @@ int main(int, char* argv[]) {
       [&](const std::string& filepath,
           const std::string&) -> std::optional<TorrentGuiData> {
         auto tid = furrent.add_torrent(filepath);
-        if (tid.valid()) return furrent.get_gui_data(*tid);
-        return std::nullopt;
+        if (tid.valid())
+          return furrent.get_gui_data(*tid);
+        else
+          return std::nullopt;
       });
 
   window.set_torrent_update_fn([&](TorrentID tid) -> TorrentGuiData {
-    return furrent.get_gui_data(tid).value();
+    return furrent.get_gui_data(tid);
   });
 
   window.set_torrent_remove_fn([&](const TorrentGuiData& torrent) {
