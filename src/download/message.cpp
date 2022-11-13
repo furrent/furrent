@@ -7,6 +7,21 @@
 #include "download/util.hpp"
 
 namespace fur::download::message {
+std::string display_decode_error(const DecodeError& err) {
+  switch (err) {
+    case DecodeError::UnexpectedPayload:
+      return "UnexpectedPayload";
+    case DecodeError::InvalidHeader:
+      return "InvalidHeader";
+    case DecodeError::UnknownMessageID:
+      return "UnknownMessageID";
+    case DecodeError::InvalidPayloadLength:
+      return "InvalidPayloadLength";
+    default:
+      return "<invalid decoding error>";
+  }
+}
+
 std::vector<uint8_t> Message::encode() const {
   // Collect bytes here
   std::vector<uint8_t> result;

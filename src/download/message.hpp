@@ -38,6 +38,8 @@ enum class DecodeError {
   InvalidPayloadLength,
 };
 
+std::string display_decode_error(const DecodeError& err);
+
 /// Virtual class for messages exchanged between BitTorrent clients.
 /// They are all shaped like:
 ///   <length><id><payload>

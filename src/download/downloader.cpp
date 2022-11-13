@@ -14,7 +14,7 @@ using fur::download::message::MessageKind;
 namespace fur::download::downloader {
 /// Should be greater than 10 seconds for a realistic torrent client but smaller
 /// values result in quicker testing
-const int UNCHOKE_TIMEOUT = 15;
+const int64_t UNCHOKE_TIMEOUT = 15;
 
 DownloaderError from_socket_error(const socket::SocketError& err) {
   if (err == socket::SocketError::Timeout) {
@@ -112,10 +112,10 @@ Outcome<DownloaderError> Downloader::ensure_connected() {
 // 20 for the info hash
 // 20 for the peer id
 /// Length (in bytes) of a BitTorrent handshake.
-const size_t HANDSHAKE_LENGTH = 1 + 19 + 8 + 20 + 20;
+const int64_t HANDSHAKE_LENGTH = 1 + 19 + 8 + 20 + 20;
 /// Offset (in bytes) from the beginning of a BitTorrent handshake for the
 /// info-hash field.
-const size_t INFO_HASH_OFFSET = 1 + 19 + 8;
+const int64_t INFO_HASH_OFFSET = 1 + 19 + 8;
 
 Outcome<DownloaderError> Downloader::handshake() {
   using Outcome = Outcome<DownloaderError>;
@@ -181,6 +181,12 @@ Result<Downloaded, DownloaderError> Downloader::try_download(
     const Piece& task) {
   using Result = Result<Downloaded, DownloaderError>;
 
+  if (torrent.pieces_count <= 0) {
+    throw std::invalid_argument("expected torrent to have at least a piece");
+  } else if (task.index < 0 || task.index >= torrent.pieces_count) {
+    throw std::invalid_argument("piece index outside valid range");
+  }
+
   auto logger = spdlog::get("custom");
 
   auto maybe_connected = ensure_connected();
@@ -195,29 +201,32 @@ Result<Downloaded, DownloaderError> Downloader::try_download(
   std::vector<uint8_t> piece;
 
   auto piece_length = torrent.piece_length;
-  // Might be shorter if this is the last piece
-  assert(!torrent.piece_hashes.empty());
-  if (task.index == torrent.piece_hashes.size() - 1) {
-    size_t before_this_piece =
-        (torrent.piece_hashes.size() - 1) * torrent.piece_length;
-    assert(torrent.length >= before_this_piece);
+  // Might have to download less bytes if this is the last piece
+  if (task.index == torrent.pieces_count - 1) {
+    int64_t before_this_piece =
+        (torrent.pieces_count - 1) * torrent.piece_length;
     piece_length = torrent.length - before_this_piece;
   }
 
+  if (piece_length <= 0) {
+    throw std::invalid_argument("expected piece to have at least a byte");
+  }
+
+  // Always safe to cast a positive int64_t to size_t
   piece.resize(piece_length);
 
   // How many bytes to demand in a `RequestMessage`. Should be 16KB.
-  constexpr size_t BLOCK_SIZE = 16384;
+  constexpr int64_t BLOCK_SIZE = 16384;
 
   // How many blocks are there to download in total. Integer ceil division.
-  const size_t blocks_total = (piece_length + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  const int64_t blocks_total = (piece_length + BLOCK_SIZE - 1) / BLOCK_SIZE;
   // How many blocks have we requested so far.
-  size_t blocks_requested = 0;
+  int64_t blocks_requested = 0;
   // How many blocks have we received so far.
-  size_t blocks_received = 0;
+  int64_t blocks_received = 0;
 
   // How many requested but unreceived blocks do we want to await at once
-  constexpr size_t PIPELINE_SIZE_MAX = 5;
+  constexpr int64_t PIPELINE_SIZE_MAX = 5;
 
   // Dynamically updated to be longer after a Choke and shorter after an Unchoke
   auto timeout = std::chrono::seconds(5);
@@ -324,7 +333,7 @@ Result<std::unique_ptr<Message>, DownloaderError> Downloader::recv_message(
   }
   auto message_len_bytes = *maybe_message_len_bytes;
 
-  auto message_len = decode_big_endian(
+  auto message_len = decode_integer(
       std::array<uint8_t, 4>{message_len_bytes[0], message_len_bytes[1],
                              message_len_bytes[2], message_len_bytes[3]});
 

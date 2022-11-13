@@ -21,7 +21,7 @@ namespace fur::download {
 
 /// A downloaded piece for a torrent file.
 struct Downloaded {
-  size_t index;
+  int64_t index;
   std::vector<uint8_t> content;
 };
 
