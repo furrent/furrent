@@ -16,7 +16,7 @@ TEST_CASE("[Message] Decoding basic message") {
   // Only *really* needed to decode bitfield messages but still needs to be
   // provided to all calls to `Message::decode()`
   TorrentFile torrent;
-  torrent.piece_hashes.resize(9);
+  torrent.pieces_count = 9;
 
   SECTION("KeepAlive") {
     auto maybe_dec = Message::decode(torrent, std::vector<uint8_t>{0, 0, 0, 0});
@@ -71,7 +71,7 @@ TEST_CASE("[Message] Encode + Decode is identity function") {
   // Only *really* needed to decode bitfield messages but still needs to be
   // provided to all calls to `Message::decode()`
   TorrentFile torrent;
-  torrent.piece_hashes.resize(9);
+  torrent.pieces_count = 9;
 
   SECTION("KeepAlive") {
     auto maybe_dec = Message::decode(

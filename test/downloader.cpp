@@ -8,11 +8,11 @@
 
 #include "bencode/bencode_parser.hpp"
 #include "catch2/catch.hpp"
-#include "torrent.hpp"
 #include "hash.hpp"
 #include "log/logger.hpp"
 #include "peer.hpp"
 #include "tfriend.hpp"
+#include "torrent.hpp"
 
 using namespace fur;
 using namespace fur::peer;
@@ -64,12 +64,14 @@ TEST_CASE("[Downloader] Download one piece, same size as a block") {
       {25,  229, 220, 52,  237, 167, 156, 163, 238, 115,
        134, 11,  97,  182, 97,  133, 20,  155, 111, 180},
   };
+  torrent.pieces_count = 1;
 
   Downloader down(torrent, peer);
 
-  std::vector<Subpiece> subpieces = { Subpiece{ "Subpiece", 0, torrent.piece_length } };
-  auto maybe_downloaded = TestingFriend::Downloader_try_download(down, Piece{
-    0u, subpieces});
+  std::vector<Subpiece> subpieces = {
+      Subpiece{"Subpiece", 0, torrent.piece_length}};
+  auto maybe_downloaded =
+      TestingFriend::Downloader_try_download(down, Piece{0, subpieces});
 
   REQUIRE(maybe_downloaded.valid());
   auto downloaded = *maybe_downloaded;
@@ -99,18 +101,17 @@ void test_alice(std::vector<DownloaderError>& errors) {
 
   Downloader down(torrent, peer);
 
-  std::vector<int> pieces_left{0, 1, 2, 3, 4};
+  std::vector<int64_t> pieces_left{0, 1, 2, 3, 4};
   auto original_pieces_left = pieces_left;
 
   while (!pieces_left.empty()) {
     // Must not mutate original array while iterating
     auto pieces_left_copy = pieces_left;
     for (auto idx : pieces_left_copy) {
-
-      std::vector<Subpiece> subpieces = { Subpiece{ "Subpiece", 0, torrent.piece_length } };
+      std::vector<Subpiece> subpieces = {
+          Subpiece{"Subpiece", 0, torrent.piece_length}};
       auto maybe_downloaded =
-          TestingFriend::Downloader_try_download(down, Piece{
-            static_cast<size_t>(idx), subpieces});
+          TestingFriend::Downloader_try_download(down, Piece{idx, subpieces});
       if (!maybe_downloaded.valid()) {
         auto erase_me =
             std::find(errors.begin(), errors.end(), maybe_downloaded.error());
@@ -148,7 +149,7 @@ TEST_CASE("[Downloader] Download alice") {
 
   // Do it a couple of times because the alice faker is non-deterministic and
   // may not always stress all `Downloader` behavior patterns
-  for (int i = 0; i < 30; i++) {
+  for (int64_t i = 0; i < 30; i++) {
     test_alice(errors);
   }
 

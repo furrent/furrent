@@ -1,30 +1,30 @@
 #include <iostream>
 #include <mt/group.hpp>
-#include <vector>
 #include <mutex>
+#include <vector>
 
 #include "catch2/catch.hpp"
 
 using namespace fur::mt;
 
 struct ThreadState {
-  int value;
+  int64_t value;
 };
 
 TEST_CASE("Thread group creation") {
-  const size_t THREADS_NUM = std::thread::hardware_concurrency();
+  const int64_t THREADS_NUM = std::thread::hardware_concurrency();
 
   std::vector<bool> checked;
   checked.resize(THREADS_NUM);
 
   std::mutex mx;
-  int left_waiting = THREADS_NUM;
+  int64_t left_waiting = THREADS_NUM;
 
   {
     // Threads whould exists only inside this scope
     ThreadGroup<ThreadState> group{};
     group.launch(
-        [&](Runner runner, ThreadState& state, size_t index) {
+        [&](Runner runner, ThreadState& state, int64_t index) {
           assert(runner.alive());
           state.value = 100;
           checked[index] = true;

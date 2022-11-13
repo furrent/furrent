@@ -98,7 +98,7 @@ class Torrent {
   /// Peers where to ask for the pieces and interval time
   std::vector<peer::Peer> _peers;
   /// Hold the number of pieces successfully downloaded from each peer
-  std::deque<std::atomic_int32_t> _peers_score;
+  std::deque<std::atomic_int64_t> _peers_score;
   /// Next peers update interval time
   int64_t _update_interval;
 
@@ -109,7 +109,7 @@ class Torrent {
 
   /// Number of pieces downloaded and written to file.
   /// this value can be changed concurrently
-  std::atomic_int32_t pieces_processed;
+  std::atomic_int64_t pieces_processed;
 
  public:
   /// Construct empty temporary torrent

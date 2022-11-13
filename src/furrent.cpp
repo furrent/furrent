@@ -206,7 +206,8 @@ void Furrent::thread_main(mt::Runner runner, WorkerState& state,
         // Update score of used peer
         torrent.atomic_add_peer_score(peer_index);
         int64_t processed =
-            torrent.pieces_processed.fetch_add(1, std::memory_order_relaxed);
+            torrent.pieces_processed.fetch_add(1, std::memory_order_relaxed) +
+            1;
 
         // Show peers score distribution every 100 pieces processed
         if (processed % 100 == 0)

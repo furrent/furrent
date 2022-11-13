@@ -18,7 +18,7 @@ using namespace fur::bencode;
 extern char debian_pieces_bytes[];
 
 /// How many pieces the Debian torrent is made of
-const int debian_pieces_n = 1516;
+const int64_t debian_pieces_n = 1516;
 
 /// Returns a parsed bencode tree for a Debian .torrent
 std::unique_ptr<BencodeValue> get_debian_tree();

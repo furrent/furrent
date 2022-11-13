@@ -157,7 +157,7 @@ TEST_CASE("[BencodeParser:error_to_string()] Test unread error") {
       "InvalidString", "IntFormat",    "IntValue",
       "StringFormat",  "ListFormat",   "DictFormat",
       "DictKey",       "DictKeyOrder", "<invalid parser error>"};
-  for (int i = 0; i < static_cast<int>(s.size()); i++) {
+  for (int64_t i = 0; i < static_cast<int64_t>(s.size()); i++) {
     REQUIRE(error_to_string(static_cast<BencodeParserError>(i)) == s[i]);
   }
 }

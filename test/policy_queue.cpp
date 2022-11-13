@@ -5,19 +5,19 @@ using namespace fur::policy;
 
 class Movable {
  public:
-  int value = 0;
+  int64_t value = 0;
 
-  Movable(int x) : value{x} {}
+  explicit Movable(int64_t x) : value{x} {}
 
   Movable(const Movable&) = delete;
   Movable& operator=(const Movable&) = delete;
 
-  Movable(Movable&& o) {
+  Movable(Movable&& o) noexcept {
     value = o.value;
     o.value = 0;
   }
 
-  Movable& operator=(Movable&& o) {
+  Movable& operator=(Movable&& o) noexcept {
     value = o.value;
     o.value = 0;
     return *this;
@@ -28,7 +28,7 @@ TEST_CASE("Queue") {
   Queue<Movable> queue;
 
   // Accepts movable values
-  Movable a = {5};
+  Movable a{5};
   queue.insert(std::move(a));
 
   FIFOPolicy<Movable> policy;
