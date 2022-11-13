@@ -34,7 +34,7 @@ using torrent_remove_fn = std::function<void(const TorrentGuiData&)>;
 /// Responsible for rendering the UI
 class Window {
   std::string _title;
-  uint32_t _width, _height;
+  int _width, _height;
 
  private:
   // All GUI buttons
@@ -51,7 +51,7 @@ class Window {
 
  public:
   /// Constructs a new window of a fixed size
-  Window(const std::string& title, uint32_t width, uint32_t height);
+  Window(const std::string& title, int width, int height);
   virtual ~Window();
 
   /// Start the UI loop
