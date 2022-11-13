@@ -19,7 +19,7 @@ template <typename T>
 class IPolicy {
  public:
   /// Iterator type used by the std::list type
-  typedef typename std::list<T>::iterator Iterator;
+  using Iterator = typename std::list<T>::iterator;
 
   /// @brief implements the custom policy logic to extract an element from the
   /// list

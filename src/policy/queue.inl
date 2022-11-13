@@ -1,15 +1,25 @@
+#include <limits>
 #include <policy/queue.hpp>
+#include <stdexcept>
 
 namespace fur::policy {
 
 template <typename T>
 void Queue<T>::insert(T&& item) {
+  if (static_cast<int64_t>(_items.size()) ==
+      std::numeric_limits<int64_t>::max()) {
+    throw std::logic_error("queue cannot fit more items");
+  }
   _items.push_back(std::forward<T>(item));
 }
 
 template <typename T>
 template <typename... Args>
 void Queue<T>::emplace(Args&&... args) {
+  if (static_cast<int64_t>(_items.size()) ==
+      std::numeric_limits<int64_t>::max()) {
+    throw std::logic_error("queue cannot fit more items");
+  }
   _items.emplace(_items.end(), std::forward<Args>(args)...);
 }
 
@@ -44,7 +54,7 @@ void Queue<T>::mutate(MutateFn mutation) {
 }
 
 template <typename T>
-size_t Queue<T>::size() const {
+int64_t Queue<T>::size() const {
   return _items.size();
 }
 

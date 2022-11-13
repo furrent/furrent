@@ -1,4 +1,6 @@
+#include <limits>
 #include <mt/group.hpp>
+#include <stdexcept>
 
 namespace fur::mt {
 
@@ -11,19 +13,23 @@ ThreadGroup<State>::~ThreadGroup() {
 }
 
 template <typename State>
-void ThreadGroup<State>::launch(ThreadFn fn, size_t max_worker_threads) {
+void ThreadGroup<State>::launch(ThreadFn fn, int64_t max_worker_threads) {
+  if (max_worker_threads < 0) {
+    throw std::invalid_argument("expected positive number of workers");
+  }
+
   _thread_fn = fn;
-  size_t size = std::thread::hardware_concurrency();
+  int64_t size = std::thread::hardware_concurrency();
   if (max_worker_threads != 0) size = std::min(size, max_worker_threads);
 
   _states.resize(size);
-  for (size_t i = 0; i < size; i++)
+  for (int64_t i = 0; i < size; i++)
     _threads.emplace_back(std::bind(&ThreadGroup::thread_main, this, i), i,
                           std::ref(*this));
 }
 
 template <typename State>
-void ThreadGroup<State>::thread_main(size_t index) {
+void ThreadGroup<State>::thread_main(int64_t index) {
   State& state = _states.at(index);
   _thread_fn(Runner(_mutex, _should_terminate), state, index);
 }
@@ -43,7 +49,7 @@ std::vector<State>& ThreadGroup<State>::get_states() {
 }
 
 template <typename State>
-size_t ThreadGroup<State>::get_worker_count() const {
+int64_t ThreadGroup<State>::get_worker_count() const {
   return _states.size();
 }
 

@@ -35,7 +35,7 @@ class ThreadGroup {
   /// Functions executed by the threads, as an argument
   /// each threads receives the runner, its own unique state ad its thread
   /// number
-  typedef std::function<void(Runner, State&, size_t)> ThreadFn;
+  using ThreadFn = std::function<void(Runner, State&, size_t)>;
 
   /// Contains all threads handles managed by the group
   std::vector<std::thread> _threads;
@@ -65,7 +65,7 @@ class ThreadGroup {
   //===========================================================================
 
   /// Create threads and begin execution
-  void launch(ThreadFn fn, size_t max_worker_threads = 0);
+  void launch(ThreadFn fn, int64_t max_worker_threads = 0);
 
   /// Terminate thread execution, this operation is irrecuperable
   void terminate();
@@ -74,11 +74,11 @@ class ThreadGroup {
   std::vector<State>& get_states();
 
   /// Get total number of workers
-  [[nodiscard]] size_t get_worker_count() const;
+  [[nodiscard]] int64_t get_worker_count() const;
 
  private:
   /// Workers thread main function
-  void thread_main(size_t index);
+  void thread_main(int64_t index);
 };
 
 }  // namespace fur::mt

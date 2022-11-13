@@ -38,11 +38,11 @@ class SharedQueue {
 
  public:
   // Error are the same of the queue
-  typedef typename policy::Queue<T>::Error Error;
-  typedef util::Result<T, Error> Result;
+  using Error = typename policy::Queue<T>::Error;
+  using Result = util::Result<T, Error>;
 
   // Function used to mutate the internal collection
-  typedef typename policy::Queue<T>::MutateFn MutateFn;
+  using MutateFn = typename policy::Queue<T>::MutateFn;
 
  public:
   SharedQueue();

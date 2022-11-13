@@ -34,11 +34,11 @@ class Queue {
   };
 
   /// Custom queue result type
-  typedef util::Result<T, Error> Result;
+  using Result = util::Result<T, Error>;
 
   // Function used to mutate the internal collection
   // returns false if the element should be kept, true otherwise
-  typedef std::function<bool(T&)> MutateFn;
+  using MutateFn = std::function<bool(T&)>;
 
  public:
   /// Insert a new element
@@ -61,7 +61,7 @@ class Queue {
   std::list<T>& items();
 
   /// @return Number of items present
-  [[nodiscard]] size_t size() const;
+  [[nodiscard]] int64_t size() const;
 };
 
 }  // namespace fur::policy

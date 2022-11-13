@@ -20,7 +20,7 @@ struct File {
   /// contains all subfolders
   std::vector<std::string> filepath;
   /// Number of bytes in the file
-  size_t length;
+  int64_t length;
 
   // =======================================================
 
@@ -98,9 +98,9 @@ class Torrent {
   /// Peers where to ask for the pieces and interval time
   std::vector<peer::Peer> _peers;
   /// Hold the number of pieces successfully downloaded from each peer
-  std::deque<std::atomic_uint32_t> _peers_score;
+  std::deque<std::atomic_int32_t> _peers_score;
   /// Next peers update interval time
-  size_t _update_interval;
+  int64_t _update_interval;
 
  public:
   /// Current state of the torrent,
@@ -109,7 +109,7 @@ class Torrent {
 
   /// Number of pieces downloaded and written to file.
   /// this value can be changed concurrently
-  std::atomic_uint32_t pieces_processed;
+  std::atomic_int32_t pieces_processed;
 
  public:
   /// Construct empty temporary torrent
@@ -120,13 +120,12 @@ class Torrent {
   /// @param descriptor parsed .torrent file descriptor
   Torrent(TorrentID tid, const TorrentFile& descriptor);
 
-  /// Generate a new list of available peers from the tracker
-  /// and returns a copy
-  std::vector<peer::Peer> announce();
+  /// Announces the client to the tracker and sets the list of peers
+  void announce();
 
   /// Atomically increment score of a peer
   /// @param peer_index index of the peer to increment
-  void atomic_add_peer_score(size_t peer_index);
+  void atomic_add_peer_score(int64_t peer_index);
 
   /// Returns unique id
   [[nodiscard]] TorrentID tid() const;
@@ -138,7 +137,7 @@ class Torrent {
   [[nodiscard]] std::vector<peer::Peer> peers() const;
 
   /// Returns a peer distribution
-  [[nodiscard]] std::discrete_distribution<size_t> distribution() const;
+  [[nodiscard]] std::discrete_distribution<int64_t> distribution() const;
 
   /// Generate all pieces of this torrent
   [[nodiscard]] std::vector<Piece> pieces() const;
