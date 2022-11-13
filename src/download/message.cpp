@@ -1,33 +1,23 @@
 #include "download/message.hpp"
 
 #include <array>
+#include <limits>
+#include <stdexcept>
 
 #include "download/util.hpp"
 
 namespace fur::download::message {
-std::string display_decode_error(const DecodeError& err) {
-  switch (err) {
-    case DecodeError::UnexpectedPayload:
-      return "UnexpectedPayload";
-    case DecodeError::InvalidHeader:
-      return "InvalidHeader";
-    case DecodeError::UnknownMessageID:
-      return "UnknownMessageID";
-    case DecodeError::InvalidPayloadLength:
-      return "InvalidPayloadLength";
-    default:
-      return "<invalid decoding error>";
-  }
-}
-
 std::vector<uint8_t> Message::encode() const {
   // Collect bytes here
   std::vector<uint8_t> result;
   // We need to encode the payload first to be able to compute the message's
   // length.
   auto payload = encode_payload();
+  if (payload.size() > std::numeric_limits<int64_t>::max()) {
+    throw std::invalid_argument("payload is too big");
+  }
   // The length is 1 (for the message's ID) + whatever the payload's length is
-  auto len = encode_big_endian(1 + payload.size());
+  auto len = encode_integer(1 + static_cast<int64_t>(payload.size()));
 
   // Length goes first
   result.insert(result.end(), len.begin(), len.end());
@@ -143,14 +133,14 @@ Result<std::unique_ptr<HaveMessage>, DecodeError> HaveMessage::decode(
   if (buf.size() != 4) return Result::ERROR(DecodeError::InvalidPayloadLength);
 
   auto index =
-      decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
+      decode_integer(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
 
   auto message = std::make_unique<HaveMessage>(index);
   return Result::OK(std::move(message));
 }
 
 std::vector<uint8_t> HaveMessage::encode_payload() const {
-  auto array = encode_big_endian(index);
+  auto array = encode_integer(index);
 
   // Payload is just the big-endian encoded index
   std::vector<uint8_t> result;
@@ -162,8 +152,7 @@ std::vector<uint8_t> HaveMessage::encode_payload() const {
 
 std::unique_ptr<BitfieldMessage> BitfieldMessage::decode(
     const TorrentFile& torrent, const std::vector<uint8_t>& buf) {
-  return std::make_unique<BitfieldMessage>(
-      Bitfield(buf, torrent.piece_hashes.size()));
+  return std::make_unique<BitfieldMessage>(Bitfield(buf, torrent.pieces_count));
 }
 
 std::vector<uint8_t> BitfieldMessage::encode_payload() const {
@@ -179,19 +168,19 @@ Result<std::unique_ptr<RequestMessage>, DecodeError> RequestMessage::decode(
     return Result::ERROR(DecodeError::InvalidPayloadLength);
 
   auto index =
-      decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
+      decode_integer(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
   auto begin =
-      decode_big_endian(std::array<uint8_t, 4>{buf[4], buf[5], buf[6], buf[7]});
-  auto length = decode_big_endian(
-      std::array<uint8_t, 4>{buf[8], buf[9], buf[10], buf[11]});
+      decode_integer(std::array<uint8_t, 4>{buf[4], buf[5], buf[6], buf[7]});
+  auto length =
+      decode_integer(std::array<uint8_t, 4>{buf[8], buf[9], buf[10], buf[11]});
   auto message = std::make_unique<RequestMessage>(index, begin, length);
   return Result::OK(std::move(message));
 }
 
 std::vector<uint8_t> RequestMessage::encode_payload() const {
-  auto index_encoded = encode_big_endian(index);
-  auto begin_encoded = encode_big_endian(begin);
-  auto length_encoded = encode_big_endian(length);
+  auto index_encoded = encode_integer(index);
+  auto begin_encoded = encode_integer(begin);
+  auto length_encoded = encode_integer(length);
 
   // Payload is just the big-endian encoded `index`, `begin` and `length` one
   // after another.
@@ -212,9 +201,9 @@ Result<std::unique_ptr<PieceMessage>, DecodeError> PieceMessage::decode(
   if (buf.size() < 8) return Result::ERROR(DecodeError::InvalidPayloadLength);
 
   auto index =
-      decode_big_endian(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
+      decode_integer(std::array<uint8_t, 4>{buf[0], buf[1], buf[2], buf[3]});
   auto begin =
-      decode_big_endian(std::array<uint8_t, 4>{buf[4], buf[5], buf[6], buf[7]});
+      decode_integer(std::array<uint8_t, 4>{buf[4], buf[5], buf[6], buf[7]});
 
   // All remaining bytes compose the block
   auto block = buf;
@@ -226,8 +215,8 @@ Result<std::unique_ptr<PieceMessage>, DecodeError> PieceMessage::decode(
 }
 
 std::vector<uint8_t> PieceMessage::encode_payload() const {
-  auto index_encoded = encode_big_endian(index);
-  auto begin_encoded = encode_big_endian(begin);
+  auto index_encoded = encode_integer(index);
+  auto begin_encoded = encode_integer(begin);
 
   // Payload is just the big-endian encoded `index` and `begin` plus the bytes
   // from the block

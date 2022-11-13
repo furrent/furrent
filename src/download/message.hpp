@@ -38,8 +38,6 @@ enum class DecodeError {
   InvalidPayloadLength,
 };
 
-std::string display_decode_error(const DecodeError& err);
-
 /// Virtual class for messages exchanged between BitTorrent clients.
 /// They are all shaped like:
 ///   <length><id><payload>
@@ -163,9 +161,9 @@ class NotInterestedMessage final : public Message {
 class HaveMessage final : public Message {
  public:
   /// Index of the newly acquired piece.
-  const uint32_t index;
+  const int64_t index;
 
-  explicit HaveMessage(uint32_t index) : index{index} {}
+  explicit HaveMessage(int64_t index) : index{index} {}
 
   [[nodiscard]] static Result<std::unique_ptr<HaveMessage>, DecodeError> decode(
       const std::vector<uint8_t>& buf);
@@ -204,13 +202,13 @@ class BitfieldMessage final : public Message {
 class RequestMessage final : public Message {
  public:
   /// Index of the piece.
-  const uint32_t index;
+  const int64_t index;
   /// Offset from the beginning of the piece.
-  const uint32_t begin;
+  const int64_t begin;
   /// How many bytes we're asking. Typically 16KB.
-  const uint32_t length;
+  const int64_t length;
 
-  RequestMessage(uint32_t index, uint32_t begin, uint32_t length)
+  RequestMessage(int64_t index, int64_t begin, int64_t length)
       : index{index}, begin{begin}, length{length} {}
 
   [[nodiscard]] static Result<std::unique_ptr<RequestMessage>, DecodeError>
@@ -231,13 +229,13 @@ class RequestMessage final : public Message {
 class PieceMessage final : public Message {
  public:
   /// Index of the piece.
-  const uint32_t index;
+  const int64_t index;
   /// Offset from the beginning of the piece.
-  const uint32_t begin;
+  const int64_t begin;
   /// The actual bytes from the piece.
   const std::vector<uint8_t> block;
 
-  PieceMessage(uint32_t index, uint32_t begin, std::vector<uint8_t> block)
+  PieceMessage(int64_t index, int64_t begin, std::vector<uint8_t> block)
       : index{index}, begin{begin}, block{std::move(block)} {}
 
   [[nodiscard]] static Result<std::unique_ptr<PieceMessage>, DecodeError>

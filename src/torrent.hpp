@@ -39,11 +39,11 @@ struct TorrentFile {
   /// SHA1 hashes, one for each piece of the shared file
   std::vector<hash::hash_t> piece_hashes;
   /// The length, in bytes, of each piece
-  size_t piece_length = 0;
+  int64_t piece_length = 0;
   /// The length, in bytes, of the entire shared file
-  size_t length = 0;
+  int64_t length = 0;
   /// Total number of pieces
-  size_t pieces_count = 0;
+  int64_t pieces_count = 0;
   /// The name of the shared file
   std::string name;
 
@@ -65,16 +65,16 @@ struct Subpiece {
   /// Path to the file this subpiece belongs to
   std::string filepath;
   /// Offset from the beginning of the file
-  size_t file_offset;
+  int64_t file_offset;
   /// Size in bytes
-  size_t len;
+  int64_t len;
 };
 
 /// Describes a piece of a torrent with all the information
 /// necessary to complete his download an saving on file
 struct Piece {
   /// Global download index
-  size_t index;
+  int64_t index;
   /// Mapping piece-files
   std::vector<Subpiece> subpieces;
 };

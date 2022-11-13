@@ -41,7 +41,7 @@ class Socket {
   /// timeout.
   Outcome<SocketError> write(const std::vector<uint8_t>& buf, timeout timeout);
   /// Attempt to readn `n` bytes from the socket with the given timeout.
-  Result<std::vector<uint8_t>, SocketError> read(uint32_t n, timeout timeout);
+  Result<std::vector<uint8_t>, SocketError> read(int64_t n, timeout timeout);
 
   /// Close the socket
   Outcome<SocketError> close();

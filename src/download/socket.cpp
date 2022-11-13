@@ -1,6 +1,7 @@
 #include "download/socket.hpp"
 
 #include <system_error>
+#include <stdexcept>
 
 #include "log/logger.hpp"
 
@@ -82,11 +83,16 @@ Outcome<SocketError> Socket::write(const std::vector<uint8_t>& buf,
   return Outcome<SocketError>::OK({});
 }
 
-Result<std::vector<uint8_t>, SocketError> Socket::read(uint32_t n,
+Result<std::vector<uint8_t>, SocketError> Socket::read(int64_t n,
                                                        timeout timeout) {
   using Result = Result<std::vector<uint8_t>, SocketError>;
 
   std::vector<uint8_t> buf{};
+  if (n < 0) {
+    throw std::invalid_argument("expected a positive integer");
+  }
+  /// resize takes in a size_t and we can safely pass an int64_t because, on a
+  /// 64bits machine, it used 1 fewer bits than size_t
   buf.resize(n);
 
   // Error code set by the socket's callback.
