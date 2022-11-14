@@ -21,13 +21,13 @@ TEST_CASE("[Message] Decoding basic message") {
   SECTION("KeepAlive") {
     auto maybe_dec = Message::decode(torrent, std::vector<uint8_t>{0, 0, 0, 0});
     REQUIRE(maybe_dec.valid());
-    dynamic_cast<KeepAliveMessage&>(**maybe_dec);
+    REQUIRE_NOTHROW(dynamic_cast<KeepAliveMessage&>(**maybe_dec));
   }
   SECTION("Unchoke") {
     auto maybe_dec =
         Message::decode(torrent, std::vector<uint8_t>{0, 0, 0, 1, 2});
     REQUIRE(maybe_dec.valid());
-    dynamic_cast<InterestedMessage&>(**maybe_dec);
+    REQUIRE_NOTHROW(dynamic_cast<InterestedMessage&>(**maybe_dec));
   }
   SECTION("Have") {
     auto maybe_dec = Message::decode(
@@ -77,31 +77,31 @@ TEST_CASE("[Message] Encode + Decode is identity function") {
     auto maybe_dec = Message::decode(
         torrent, std::make_unique<KeepAliveMessage>()->encode());
     REQUIRE(maybe_dec.valid());
-    dynamic_cast<KeepAliveMessage&>(**maybe_dec);
+    REQUIRE_NOTHROW(dynamic_cast<KeepAliveMessage&>(**maybe_dec));
   }
   SECTION("Choke") {
     auto maybe_dec =
         Message::decode(torrent, std::make_unique<ChokeMessage>()->encode());
     REQUIRE(maybe_dec.valid());
-    dynamic_cast<ChokeMessage&>(**maybe_dec);
+    REQUIRE_NOTHROW(dynamic_cast<ChokeMessage&>(**maybe_dec));
   }
   SECTION("Unchoke") {
     auto maybe_dec =
         Message::decode(torrent, std::make_unique<UnchokeMessage>()->encode());
     REQUIRE(maybe_dec.valid());
-    dynamic_cast<UnchokeMessage&>(**maybe_dec);
+    REQUIRE_NOTHROW(dynamic_cast<UnchokeMessage&>(**maybe_dec));
   }
   SECTION("Interested") {
     auto maybe_dec = Message::decode(
         torrent, std::make_unique<InterestedMessage>()->encode());
     REQUIRE(maybe_dec.valid());
-    dynamic_cast<InterestedMessage&>(**maybe_dec);
+    REQUIRE_NOTHROW(dynamic_cast<InterestedMessage&>(**maybe_dec));
   }
   SECTION("NotInterested") {
     auto maybe_dec = Message::decode(
         torrent, std::make_unique<NotInterestedMessage>()->encode());
     REQUIRE(maybe_dec.valid());
-    dynamic_cast<NotInterestedMessage&>(**maybe_dec);
+    REQUIRE_NOTHROW(dynamic_cast<NotInterestedMessage&>(**maybe_dec));
   }
   SECTION("Have") {
     auto maybe_dec =
