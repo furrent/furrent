@@ -350,8 +350,11 @@ auto Furrent::add_torrent(const std::string& filename) -> Result<TorrentID> {
   logger->info("Generating {} pieces for T{} ", descriptor.pieces_count, tid);
   std::vector<Piece> pieces = torrent.pieces();
   for (Piece& piece : pieces) _tasks.emplace(tid, piece, torrent.descriptor());
+  logger->info("Begin downloading T{}", tid);
 
   torrent.state.exchange(TorrentState::Downloading);
+  _tasks.force_wakeup();
+
   return Result<TorrentID>::OK(std::move(tid));
 }
 

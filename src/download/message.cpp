@@ -28,7 +28,7 @@ std::vector<uint8_t> Message::encode() const {
   // We need to encode the payload first to be able to compute the message's
   // length.
   auto payload = encode_payload();
-  if (payload.size() > std::numeric_limits<int64_t>::max()) {
+  if (payload.size() > static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
     throw std::invalid_argument("payload is too big");
   }
   // The length is 1 (for the message's ID) + whatever the payload's length is

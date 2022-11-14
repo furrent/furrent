@@ -33,7 +33,7 @@ std::string hash_to_hex(const hash_t& hash) {
 }
 
 hash_t compute_info_hash(const std::string& bencoded_info_dict) {
-  if (bencoded_info_dict.length() > std::numeric_limits<int>::max()) {
+  if (bencoded_info_dict.length() > static_cast<size_t>(std::numeric_limits<int>::max())) {
     throw std::invalid_argument("input info dict is too large");
   }
   // smallsha1 uses int for the length
@@ -48,7 +48,7 @@ util::Result<std::vector<hash_t>, HashError> split_piece_hashes(
     const std::string& piece_hashes_str) {
   using Result = util::Result<std::vector<hash_t>, HashError>;
 
-  if (piece_hashes_str.length() > std::numeric_limits<int64_t>::max()) {
+  if (piece_hashes_str.length() > static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
     return Result::ERROR(HashError::PieceHashesStringTooLarge);
   } else if (piece_hashes_str.length() % 20 > 0) {
     return Result::ERROR(HashError::MalformedPieceHashesString);
@@ -77,7 +77,7 @@ util::Result<std::vector<hash_t>, HashError> split_piece_hashes(
 }
 
 bool verify_piece(const std::vector<uint8_t>& piece, hash_t hash) {
-  if (piece.size() > std::numeric_limits<int>::max()) {
+  if (piece.size() > static_cast<size_t>(std::numeric_limits<int>::max())) {
     throw std::invalid_argument("piece is too big");
   }
   // smallsha1 uses int for the length

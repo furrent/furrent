@@ -57,7 +57,7 @@ IOResult<Empty> write_bytes(const std::string& filename,
   }
 
   // Because we'll need to cast to long later
-  if (bytes.size() > std::numeric_limits<long>::max()) {
+  if (bytes.size() > static_cast<size_t>(std::numeric_limits<long>::max())) {
     throw std::invalid_argument("too many bytes to write");
   }
 

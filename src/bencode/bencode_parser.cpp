@@ -33,7 +33,7 @@ std::string BencodeParser::encode(const BencodeValue& value) {
 }
 
 BencodeResult BencodeParser::decode(const std::string& decoded) {
-  if (decoded.length() > std::numeric_limits<int64_t>::max()) {
+  if (decoded.length() > static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
     throw std::invalid_argument("string to decode is too large");
   }
 
@@ -125,7 +125,7 @@ auto BencodeParser::decode_string() -> BencodeResult {
     _index++;
   }
 
-  if (str.size() > std::numeric_limits<int64_t>::max() ||
+  if (str.size() > static_cast<size_t>(std::numeric_limits<int64_t>::max()) ||
       static_cast<int64_t>(str.size()) != length_str) {
     // Exit because the string is not the same length as the given length
     return BencodeResult::ERROR(BencodeParserError::InvalidString);

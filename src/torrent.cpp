@@ -14,7 +14,7 @@ using namespace fur::bencode;
 namespace fur {
 
 std::string File::filename() const {
-  if (filepath.size() > std::numeric_limits<int64_t>::max()) {
+  if (filepath.size() > static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
     throw std::invalid_argument("file's path is too long");
   }
 
@@ -98,7 +98,7 @@ TorrentFile::TorrentFile(const BencodeValue& tree) {
     throw std::invalid_argument("Malformed piece hashes string");
   }
 
-  if (r_hashes->size() > std::numeric_limits<int64_t>::max()) {
+  if (r_hashes->size() > static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
     throw std::out_of_range("number of pieces is too high");
   }
   this->piece_hashes = *r_hashes;
@@ -141,7 +141,7 @@ void Torrent::announce() {
   _update_interval = response->interval;
   _peers = response->peers;
 
-  if (_peers.size() > std::numeric_limits<int64_t>::max()) {
+  if (_peers.size() > static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
     throw std::out_of_range("too many peers");
   }
 
