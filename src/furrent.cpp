@@ -343,6 +343,11 @@ auto Furrent::add_torrent(const std::string& filename) -> Result<TorrentID> {
   // Popolate peers
   std::stringstream ss;
   ss << "Peers:\n";
+  if(torrent.peers().empty()) {
+    torrent.state.exchange(TorrentState::Error);
+    return Result<TorrentID>::ERROR(Furrent::Error::GenericError);
+  }
+
   for (auto& peer : torrent.peers()) ss << "  " << peer.address() << "\n";
   logger->info("{}", ss.str());
 
